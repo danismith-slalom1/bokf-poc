@@ -6,7 +6,7 @@ If you're looking to invoke the module, please proceed to [INITIALIZER_PROMPT.md
 
 Transform undocumented or poorly documented OMNISCRIPT programs into comprehensive, production-ready documentation using AI assistance with expert human oversight.
 
-**🎯 Now includes**: Error handling analysis, performance optimization, testing guides, integration docs, and business rules extraction.
+**🎯 Now includes**: Error handling analysis, performance optimization, testing guides, integration docs, business rules extraction, and **OmniScript version detection (expected: 6.05) with upgrade readiness assessment to target version 7.0**.
 
 ## Usage Instructions
 
@@ -43,6 +43,8 @@ After documenting an OMNISCRIPT program, you will have:
 
 ### Core Documentation (Always Generated)
 - **Program Analysis** documenting structure, sections, dependencies, and chunking strategy
+- **OmniScript Version Detection and Quality Analysis** identifying current version (expected: 6.05, but detects actual version) and code quality assessment ⭐
+- **Upgrade Readiness Assessment** evaluating migration readiness from detected version to OmniScript 7.0 with detailed roadmap ⭐
 - **Data Dictionary** for all variables with purposes, usage patterns, and buffer limits
 - **Procedure Documentation** for each procedure with business logic, error handling, and performance notes
 - **Call Graph** showing all PERFORM relationships and control flow
