@@ -170,8 +170,8 @@ Use this exact template structure when creating OMNISCRIPT program analysis docu
 - **Deprecated Features in Use**: [Any features marked deprecated in current version, or "Cannot assess without version"]
 
 ### Upgrade Readiness (to Target Version)
-- **Target Version**: [Typically 7.0]
-- **Version Gap**: [e.g., 5.x → 7.0, 6.05 → 7.0, Unknown → 7.0]
+- **Target Version**: [Typically 7.5]
+- **Version Gap**: [e.g., 5.x → 7.5, 6.05 → 7.5, Unknown → 7.5]
 - **Upgrade Complexity**: [Simple/Moderate/Complex/Cannot Assess]
 - **Breaking Changes Impact**: [Summary of breaking changes affecting this program, or "Requires comprehensive review - version unknown"]
 - **Estimated Migration Effort**: [Trivial/Minor/Moderate/Major/Requires Version Detection]

@@ -1,6 +1,6 @@
 # OmniScript Upgrade Assessment Template
 
-This template is **MANDATORY** for all AI agents performing OmniScript version upgrade readiness assessments. Following this template structure is **REQUIRED** when documenting the upgrade path from detected OmniScript version to target version 7.0.
+This template is **MANDATORY** for all AI agents performing OmniScript version upgrade readiness assessments. Following this template structure is **REQUIRED** when documenting the upgrade path from detected OmniScript version to target version 7.5.
 
 **Expected Version Context**: Files are expected to be OmniScript 6.05. Version detection will verify this and identify any discrepancies.
 
@@ -16,7 +16,7 @@ Use this exact template structure when creating OmniScript upgrade assessment do
 **Assessment Date**: [Date]  
 **Expected Version**: 6.05  
 **Detected Version**: [Actual detected version or "Unknown - See Detection Analysis"]  
-**Target Version**: 7.0  
+**Target Version**: 7.5  
 **Assessed By**: [AI Agent with expert review]
 
 ## Executive Summary
@@ -24,7 +24,7 @@ Use this exact template structure when creating OmniScript upgrade assessment do
 ### Upgrade Readiness Overview
 - **Version Detection Status**: [Successfully Detected/Unable to Detect]
 - **Expected vs Detected**: [Match/Discrepancy - Details]
-- **Version Gap**: [e.g., 6.05 → 7.0, or actual detected version → 7.0]
+- **Version Gap**: [e.g., 6.05 → 7.5, or actual detected version → 7.5]
 - **Overall Risk Level**: [Low/Medium/High/Critical]
 - **Migration Complexity**: [Trivial/Minor/Moderate/Major/Severe]
 - **Estimated Migration Effort**: [Duration with breakdown]
@@ -144,7 +144,7 @@ APIs marked deprecated but still working in target version:
 ### Data Structure Compatibility
 
 #### Data Type Changes
-| 6.05 Type | 7.0 Type | Impact | Migration Required |
+| 6.05 Type | 7.5 Type | Impact | Migration Required |
 |-----------|----------|--------|-------------------|
 | [Type] | [Type] | [Description] | [Yes/No - Details] |
 
@@ -300,10 +300,10 @@ External systems with version-specific integration requirements:
 
 #### Preparation Checklist
 - [ ] Complete static analysis of current codebase
-- [ ] Review OmniScript 7.0 migration guide thoroughly
+- [ ] Review OmniScript 7.5 migration guide thoroughly
 - [ ] Inventory all dependencies and versions
 - [ ] Backup production code and data
-- [ ] Set up parallel 7.0 test environment
+- [ ] Set up parallel 7.5 test environment
 - [ ] Establish rollback procedures
 - [ ] Identify and notify stakeholders
 - [ ] Create detailed test plan
@@ -598,7 +598,7 @@ If running both versions simultaneously:
 
 #### Defer Upgrade If:
 - [ ] Critical blockers with no known solution
-- [ ] Dependencies not ready for 7.0
+- [ ] Dependencies not ready for 7.5
 - [ ] Inadequate testing resources
 - [ ] Business-critical deadline conflicts
 - [ ] Unacceptable risk level
@@ -623,7 +623,7 @@ If running both versions simultaneously:
 
 ### Appendix E: Related Documentation
 - OmniScript 6.05 Documentation: [Link]
-- OmniScript 7.0 Documentation: [Link]
+- OmniScript 7.5 Documentation: [Link]
 - Migration Guide: [Link]
 - Release Notes: [Link]
 

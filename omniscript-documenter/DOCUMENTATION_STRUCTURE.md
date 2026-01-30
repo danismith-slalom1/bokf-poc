@@ -179,7 +179,7 @@ omniscript-documentation/
 - Executive summary with risk level and effort estimate
 - **Version Detection Analysis**: Methodology, detected version (expected: 6.05), and confidence level
 - **Current version analysis**: Feature usage and code quality for detected version
-- **6.05 → 7.0 upgrade path**: Primary focus (or actual detected version → 7.0)
+- **6.05 → 7.5 upgrade path**: Primary focus (or actual detected version → 7.5)
 - Breaking changes analysis between detected and target versions
 - API migration requirements (removed/changed/deprecated APIs)
 - Compatibility risk assessment (High/Medium/Low)
