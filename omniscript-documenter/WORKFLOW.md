@@ -7,9 +7,10 @@ This document describes the step-by-step process for using AI to document OMNISC
 The OMNISCRIPT Documentation Workflow transforms undocumented or poorly documented OMNISCRIPT programs into well-documented, maintainable codebases through a fully automated process by:
 1. Analyzing and chunking OMNISCRIPT program structure
 2. Performing static analysis to understand variable usage and program flow
-3. Iteratively documenting each component with AI-driven analysis
-4. Synthesizing comprehensive documentation with call graphs and cross-references
-5. Generating complete, production-ready documentation without requiring clarification
+3. Detecting current version (expected: 6.05) and assessing upgrade readiness to OmniScript 7.5
+4. Iteratively documenting each component with AI-driven analysis
+5. Synthesizing comprehensive documentation with call graphs and cross-references
+6. Generating complete, production-ready documentation without requiring clarification
 
 ## Documentation Directory
 
@@ -97,6 +98,259 @@ The OMNISCRIPT Documentation Workflow transforms undocumented or poorly document
 - Call Hierarchy: [Link to call graph]
 - File Operations Summary: [Link to I/O report]
 ```
+
+## Phase 1.5: OmniScript Version Quality Analysis and Upgrade Readiness Assessment
+
+**Context**: Files are expected to be OmniScript 6.05, but version detection will identify the actual version to ensure accuracy.
+
+### 1.5.1 Current Version Identification and Quality Assessment
+- **Objective**: Identify the current OmniScript version (expected: 6.05) and assess code quality specific to that version
+- **Actions**:
+  - **Detect OmniScript Version**: Analyze source code headers, comments, syntax patterns, and runtime directives to determine current version
+    - Check file headers for version declarations
+    - Analyze syntax patterns unique to specific versions
+    - Look for version-specific API calls or language constructs
+    - Check comments for version metadata
+    - If version cannot be determined, document as "Unknown" and list observed features
+  
+  **Version Detection Best Practices**:
+  - **Header Analysis**: Look for comments like `# OmniScript 6.05`, `Version: 5.2`, or copyright notices
+  - **Syntax Patterns**: Identify version-specific keywords, operators, or language constructs
+  - **API Calls**: Match function/method calls against version-specific API documentation
+  - **Confidence Levels**:
+    - **High**: Explicit version declaration found in headers/metadata
+    - **Medium**: Version inferred from multiple consistent syntax/API patterns
+    - **Low**: Version estimated from limited or conflicting indicators
+    - **Unable to Detect**: No reliable version indicators found
+  - **Conservative Approach**: When version is unknown, assume an older version for comprehensive upgrade analysis
+  
+  - **Version-Specific Feature Usage**: Document which version-specific features, syntax, or APIs are used
+  - **Deprecated Feature Detection**: Identify any features marked as deprecated in current version
+  - **Code Quality Metrics for Current Version**:
+    - Compliance with version-specific best practices
+    - Usage of outdated patterns available in current version
+    - Performance patterns specific to current version
+    - Security considerations for current version
+
+### 1.5.2 OmniScript Target Version Upgrade Readiness Assessment
+- **Objective**: Evaluate the program's readiness for upgrade from detected version (expected: 6.05) to OmniScript 7.5 and identify migration requirements
+- **Actions**:
+  - **Determine Upgrade Path**:
+    - Identify current version (expected: 6.05, but verify through detection)
+    - Identify target version: 7.5
+    - Document version gap (e.g., 6.05 → 7.5, or actual detected version → 7.5)
+    - If detected version differs from expected 6.05, note the discrepancy
+  
+  - **Breaking Changes Analysis**:
+    - Identify syntax changes between current and target versions
+    - Document removed features or deprecated APIs used in current code
+    - Flag incompatible language constructs
+    - Identify behavioral changes in existing features
+    - Note: If current version is unknown, identify all potentially problematic patterns
+  
+  - **API and Feature Mapping**:
+    - Map current version APIs to target version equivalents
+    - Identify new target version features that could replace current implementations
+    - Document API signature changes requiring code updates
+    - Note removed APIs requiring alternative implementations
+  
+  - **Compatibility Risk Assessment**:
+    - **High Risk**: Breaking changes requiring mandatory code modifications
+    - **Medium Risk**: Deprecated features still functional but requiring eventual updates
+    - **Low Risk**: Fully compatible code requiring no changes
+    - **Opportunity**: Areas where 7.5 features could improve code quality
+  
+  - **Data Structure Compatibility**:
+    - Assess data type changes between versions
+    - Identify serialization/deserialization impacts
+    - Document file format compatibility issues
+    - Evaluate database schema compatibility
+  
+  - **Performance Implications**:
+    - Identify performance improvements expected in 7.5
+    - Document performance regressions to watch for
+    - Note new optimization opportunities in 7.5
+    - Assess memory usage pattern changes
+
+### 1.5.3 Migration Impact Analysis
+- **Objective**: Quantify the effort and risk involved in upgrading to OmniScript 7.5
+- **Actions**:
+  - **Code Modification Assessment**:
+    - **Lines Requiring Changes**: Estimate lines of code requiring modification
+    - **Procedure Impact**: List procedures requiring updates with complexity ratings
+    - **Test Impact**: Identify test cases requiring updates or creation
+    - **Documentation Impact**: Document sections requiring version-specific updates
+  
+  - **Dependency Chain Analysis**:
+    - Identify external programs/modules requiring concurrent upgrades
+    - Document shared libraries requiring version compatibility
+    - Map integration points requiring version coordination
+    - Assess third-party dependency upgrade requirements
+  
+  - **Migration Effort Estimation**:
+    - **Trivial** (< 1 day): Cosmetic changes, simple syntax updates
+    - **Minor** (1-3 days): Limited API updates, straightforward replacements
+    - **Moderate** (1-2 weeks): Significant API changes, moderate refactoring
+    - **Major** (2+ weeks): Extensive refactoring, architectural changes
+  
+  - **Risk Categorization**:
+    - **Critical Risks**: Issues that could cause runtime failures
+    - **High Risks**: Potential data corruption or incorrect business logic
+    - **Medium Risks**: Performance degradation or usability issues
+    - **Low Risks**: Minor cosmetic or non-functional impacts
+
+### 1.5.4 Upgrade Roadmap and Recommendations
+- **Objective**: Provide actionable guidance for successful upgrade to OmniScript 7.5
+- **Actions**:
+  - **Pre-Migration Checklist**:
+    - Static analysis requirements before upgrade
+    - Backup and rollback procedures
+    - Test environment setup requirements
+    - Dependency version compatibility verification
+  
+  - **Migration Sequence**:
+    1. **Phase 1 - Preparation**: Backup, analysis, test environment setup
+    2. **Phase 2 - Non-Breaking Updates**: Address deprecation warnings
+    3. **Phase 3 - Breaking Changes**: Update incompatible code
+    4. **Phase 4 - Testing**: Comprehensive regression testing
+    5. **Phase 5 - Optimization**: Leverage new 7.5 features
+    6. **Phase 6 - Deployment**: Production rollout with monitoring
+  
+  - **Code Modification Priorities**:
+    - **Priority 1 - Critical**: Breaking changes causing compilation/runtime failures
+    - **Priority 2 - High**: Deprecated features with removal timeline
+    - **Priority 3 - Medium**: Performance or security improvements
+    - **Priority 4 - Low**: Optional enhancements and modernization
+  
+  - **Testing Strategy**:
+    - Unit tests for modified procedures
+    - Integration tests for external interfaces
+    - Regression tests for unchanged functionality
+    - Performance tests comparing 6.05 vs 7.5 behavior
+    - Security tests for new 7.5 security features
+  
+  - **Fallback Planning**:
+    - Rollback triggers and criteria
+    - Version coexistence strategy if needed
+    - Gradual migration approach for complex systems
+    - Parallel running considerations
+
+### 1.5.5 Generate Upgrade Assessment Document
+- **Objective**: Create comprehensive documentation of upgrade readiness and migration plan
+- **Actions**:
+  - **Create upgrade assessment document**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_UPGRADE_ASSESSMENT.md`
+  
+  **Document Structure**:
+  ```markdown
+  # [PROGRAM-NAME] OmniScript Upgrade Assessment
+  
+  ## Executive Summary
+  - Detected Version: [Version or "Unknown"]
+  - Expected Version: 6.05
+  - Target Version: 7.5
+  - Overall Risk Level: [Low/Medium/High]
+  - Estimated Migration Effort: [Trivial/Minor/Moderate/Major]
+  - Recommended Timeline: [Duration]
+  
+  ## Current Version Analysis
+  - Version-Specific Features Used
+  - Code Quality Assessment
+  - Known Issues in Current Version
+  
+  ## Upgrade Impact Analysis
+  ### Breaking Changes
+  - [List of breaking changes with line numbers and procedures]
+  
+  ### API Migrations Required
+  - [Old API → New API mappings with usage locations]
+  
+  ### Deprecated Feature Usage
+  - [List of deprecated features still in use]
+  
+  ### Compatibility Risks
+  - High Risk Items: [List]
+  - Medium Risk Items: [List]
+  - Low Risk Items: [List]
+  
+  ## Migration Effort Breakdown
+  - Lines of Code Requiring Changes: [Count]
+  - Procedures Requiring Updates: [List with complexity]
+  - Testing Requirements: [Test count and types]
+  - Estimated Total Effort: [Duration]
+  
+  ## Upgrade Roadmap
+  ### Pre-Migration Phase
+  - [Checklist items]
+  
+  ### Migration Phases
+  1. [Phase 1 details]
+  2. [Phase 2 details]
+  ...
+  
+  ### Post-Migration Validation
+  - [Validation checklist]
+  
+  ## Recommended Actions
+  - Immediate Actions: [List]
+  - Pre-Upgrade Actions: [List]
+  - Post-Upgrade Actions: [List]
+  
+  ## Benefits of Upgrading
+  - Performance Improvements: [List]
+  - New Features Available: [List]
+  - Security Enhancements: [List]
+  - Maintenance Improvements: [List]
+  
+  ## Risks of Not Upgrading
+  - Support Timeline: [6.05 end-of-life date if known]
+  - Security Vulnerabilities: [Known issues]
+  - Performance Limitations: [List]
+  - Feature Gaps: [List]
+  ```
+
+**AI Prompt Template for Upgrade Assessment**:
+```
+Analyze this OmniScript program for upgrade readiness to OmniScript 7.5:
+
+EXPECTED VERSION: 6.05 (but verify through detection)
+
+1. DETECT CURRENT VERSION:
+   - Analyze file headers, comments, and metadata for version information
+   - Identify version-specific syntax patterns and API usage
+   - Document detected version (expected: 6.05)
+   - If detected version differs from 6.05, note the discrepancy
+   - List evidence used for version detection
+
+2. IDENTIFY TARGET VERSION: 7.5
+
+3. ANALYZE UPGRADE PATH:
+   - If current version detected: Perform version-specific analysis
+   - If current version unknown: Perform conservative analysis assuming older version
+   - List all breaking changes between versions that affect this code
+   - Map current APIs to their target version equivalents
+
+4. Assess compatibility risks (High/Medium/Low)
+5. Estimate migration effort (lines changed, procedures affected)
+6. Recommend migration sequence and priorities
+7. Document testing requirements for upgrade validation
+8. List benefits of upgrading and risks of staying on current version
+
+Context provided:
+- Program source code: [Insert]
+- Static analysis from Phase 1: [Insert]
+- OmniScript migration guide for detected version path: [Insert or reference]
+- Note: If version cannot be detected, use conservative assumptions
+
+Generate a comprehensive upgrade assessment document following the template.
+```
+
+**Integration with Existing Documentation**:
+- Reference upgrade assessment in master index (`[PROGRAM-NAME]_INDEX.md`)
+- Link to upgrade assessment from comprehensive documentation
+- Update error handling analysis with version-specific considerations
+- Include upgrade roadmap in maintenance guide
+- Add version compatibility notes to integration guide
+- Document 7.5-specific features in performance analysis recommendations
 
 ## Phase 2: Iterative Documentation Generation
 
@@ -569,6 +823,7 @@ For each variable:
 2. **Generate comprehensive program documentation** that includes:
    - **Executive Summary**: High-level program purpose and functionality
    - **Business Context**: What business problem this program solves
+   - **Version Information**: Detected OmniScript version and upgrade readiness status
    - **Architecture Overview**: Major processing sections and their relationships
    - **Data Flow**: How data moves through the program from input to output
    - **Key Processing Logic**: Critical algorithms and business rules
@@ -586,16 +841,19 @@ For each variable:
 **AI Prompt for Synthesis**:
 ```
 Using all the component documentation we've created (data dictionary, procedure docs,
-call graphs, mutation analysis), synthesize a comprehensive program documentation that:
+call graphs, mutation analysis, upgrade assessment), synthesize a comprehensive program documentation that:
 
 1. Explains the program's purpose and business value
-2. Describes the overall architecture and major processing sections
-3. Documents the data flow from input to output
-4. Highlights critical business logic and algorithms
-5. References detailed component documentation for deep dives
-6. Provides maintenance guidance for future developers
+2. Identifies detected OmniScript version and upgrade readiness to target version
+3. Describes the overall architecture and major processing sections
+4. Documents the data flow from input to output
+5. Highlights critical business logic and algorithms
+6. Summarizes upgrade considerations and migration roadmap
+7. References detailed component documentation for deep dives
+8. Provides maintenance guidance for future developers
 
 Component documentation available:
+[Link to upgrade assessment]
 [Link to data dictionary]
 [Link to procedure documentation folder]
 [Link to call graphs]
@@ -977,6 +1235,7 @@ flowchart TD
 **Actions**:
 1. Update `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_INDEX.md` with links to:
    - Comprehensive program documentation
+   - **OmniScript Upgrade Assessment (detected version to 7.5)**
    - Data dictionary
    - Call graph
    - Variable mutations

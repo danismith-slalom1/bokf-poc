@@ -17,7 +17,7 @@ Use this exact template structure when creating OMNISCRIPT program analysis docu
 - **Date Written**: [From metadata if present]
 - **Date Modified**: [Most recent modification date if available]
 - **Source File**: [Full path to OMNISCRIPT source file]
-- **OMNISCRIPT Version**: [Interpreter version or dialect]
+- **OMNISCRIPT Version**: [Interpreter version or dialect - expected: 6.05, or detected version if different]
 
 ### Program Purpose
 [Brief description of what this program does, based on comments or metadata]
