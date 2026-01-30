@@ -145,9 +145,45 @@ generate a comprehensive data dictionary entry for each data item. Include:
    - Data dictionary entries for variables used
    - Call hierarchy showing callers and callees
    - Related static analysis (conditional logic, I/O operations)
+3. **Generate procedure documentation**:
+   - Purpose and function of the procedure
+   - Input requirements (expected state, parameters)
+   - Processing steps with business logic explanation
+   - Output and side effects (variables modified, files updated)
+   - Error handling mechanisms and recovery procedures
+   - Performance characteristics (loops, string operations, I/O)
+   - Edge cases and boundary conditions
+   - Security considerations (input validation, resource limits)
+   - Error handling and edge cases
+   - Dependencies on other procedures
+4. **Create individual procedure document**: `${OMNISCRIPT_DOCS_DIR}/procedures/[PROCEDURE-NAME].md`
 
-### 2.3 Document Error Handling and Risk Analysis
-**Critical Priority**: Document error handling mechanisms and identify risks
+**AI Prompt Template**:
+```
+Document this OMNISCRIPT procedure with the following context:
+- Data dictionary for variables used: [link]
+- Call hierarchy: [link to callers/callees]
+- Static analysis: [relevant analysis]
+
+Explain:
+1. What this procedure does (business purpose)
+2. Step-by-step processing logic
+3. Variables it reads and modifies
+4. How it fits into the overall program flow
+5. Any error conditions or special handling
+
+[Insert procedure source code]
+```
+
+**Chunking Guidance**:
+- Document 1-3 related procedures per AI interaction
+- Keep context window manageable (<4000 tokens per request)
+- Document called procedures before calling procedures when possible
+
+### 2.3 Document Code Quality and Risk Assessment
+**Critical Priority**: Comprehensive analysis of code quality, security and operational risks.
+
+#### A. Error Handling Analysis
 
 **Error Handling Documentation Requirements**:
 1. **Error Status Analysis**:
@@ -199,44 +235,184 @@ Analyze this OMNISCRIPT program for error handling and risks:
 [Insert program source]
 [Insert file I/O procedures]
 ```
-   
-3. **Generate procedure documentation**:
-   - Purpose and function of the procedure
-   - Input requirements (expected state, parameters)
-   - Processing steps with business logic explanation
-   - Output and side effects (variables modified, files updated)
-   - Error handling mechanisms and recovery procedures
-   - Performance characteristics (loops, string operations, I/O)
-   - Edge cases and boundary conditions
-   - Security considerations (input validation, resource limits)
-   - Error handling and edge cases
-   - Dependencies on other procedures
 
-4. **Create individual procedure document**: `${OMNISCRIPT_DOCS_DIR}/procedures/[PROCEDURE-NAME].md`
+#### B. OmniScript/COBOL Best Practices Assessment (NEW)
 
-**AI Prompt Template**:
-```
-Document this OMNISCRIPT procedure with the following context:
-- Data dictionary for variables used: [link]
-- Call hierarchy: [link to callers/callees]
-- Static analysis: [relevant analysis]
+**OmniScript-Specific Quality Checks**:
+1. **API Usage Patterns**:
+   - Proper use of OmniScript APIs
+   - Deprecated API usage
+   - Performance-optimal API calls
+   - Error handling for API failures
 
-Explain:
-1. What this procedure does (business purpose)
-2. Step-by-step processing logic
-3. Variables it reads and modifies
-4. How it fits into the overall program flow
-5. Any error conditions or special handling
+2. **Integration Patterns**:
+   - Proper external program calling conventions
+   - Parameter passing best practices
+   - Return code handling
+   - Transaction boundaries
 
-[Insert procedure source code]
-```
+3. **Performance Patterns**:
+   - Efficient loop structures
+   - String operation optimization
+   - File I/O efficiency
+   - Memory usage patterns
 
-**Chunking Guidance**:
-- Document 1-3 related procedures per AI interaction
-- Keep context window manageable (<4000 tokens per request)
-- Document called procedures before calling procedures when possible
+**COBOL-Specific Quality Checks** (if applicable):
+1. **GOTO Usage**: Flag excessive GOTO statements (anti-pattern)
+2. **PERFORM Best Practices**: Proper paragraph structure
+3. **Data Division Organization**: Logical grouping and naming
+4. **File Handling**: Proper OPEN/CLOSE sequences
+5. **WORKING-STORAGE Efficiency**: Minimize memory footprint
 
-### 2.3 Create Call Graphs (Call Relationships)
+#### C. Security and Safety Assessment (NEW)
+
+**Security Risk Categories**:
+
+🔴 **CRITICAL SECURITY RISKS**:
+- Hardcoded credentials or API keys
+- SQL injection vulnerabilities
+- Command injection risks
+- Insecure file path handling
+- Authentication/authorization bypasses
+- Sensitive data exposure in logs
+
+🟠 **HIGH SECURITY RISKS**:
+- Missing input validation
+- Insufficient error information disclosure
+- Insecure temporary file handling
+- Race conditions in file operations
+- Inadequate access controls
+
+🟡 **MEDIUM SECURITY RISKS**:
+- Weak input sanitization
+- Missing bounds checking
+- Insufficient logging for audit
+- Deprecated cryptographic functions
+
+#### D. Operational Risk Assessment (NEW)
+
+**Risk Ranking System**:
+
+🔴 **CRITICAL RISK** (Immediate Action Required):
+- Data corruption potential
+- System crash scenarios
+- Unrecoverable errors
+- Silent data loss
+- Security vulnerabilities
+
+🟠 **HIGH RISK** (Address Before Production):
+- Performance degradation under load
+- Resource exhaustion (memory leaks, file handles)
+- Incomplete error recovery
+- Data inconsistency potential
+- Integration failures
+
+🟡 **MEDIUM RISK** (Address in Next Cycle):
+- Suboptimal performance patterns
+- Minor resource leaks
+- Inconsistent error handling
+- Maintainability issues
+- Technical debt accumulation
+
+🟢 **LOW RISK** (Nice to Have):
+- Code style inconsistencies
+- Minor inefficiencies
+- Documentation gaps
+- Non-critical warnings
+
+⚪ **INFORMATIONAL** (No Action Required):
+- Best practice suggestions
+- Optimization opportunities
+- Refactoring recommendations
+
+#### E. Code Quality Scoring (NEW)
+
+For each code section, generate:
+
+**Quality Assessment Card**:
+```markdown
+## Quality Assessment: [Procedure/Section Name]
+
+### Overall Risk Level: 🟠 HIGH RISK
+
+### Risk Breakdown:
+- Security: 🔴 CRITICAL (1 issue)
+- Operational: 🟠 HIGH (2 issues)
+- Performance: 🟡 MEDIUM (3 issues)
+- Maintainability: 🟢 LOW (5 issues)
+
+### Critical Findings:
+
+#### 🔴 CRITICAL: Hardcoded Database Password
+- **Location**: Line 145
+- **Issue**: Database password stored in plain text
+- **Impact**: Complete database compromise if code is exposed
+- **Recommendation**: Use environment variables or secure credential store
+- **Effort**: 2 hours
+- **Priority**: IMMEDIATE
+
+#### 🟠 HIGH: Unhandled File Not Found
+- **Location**: Lines 203-210
+- **Issue**: No error handling for missing input file
+- **Impact**: Program crash, data processing failure
+- **Recommendation**: Add try-catch with graceful degradation
+- **Effort**: 4 hours
+- **Priority**: Before Production
+
+[... continue for all findings ...]
+
+### Best Practice Violations:
+
+#### OmniScript-Specific:
+- ❌ Using deprecated API `OLD_FUNCTION` (Line 89)
+  - **Recommendation**: Migrate to `NEW_FUNCTION`
+- ❌ Inefficient loop pattern (Lines 145-167)
+  - **Recommendation**: Use bulk operations
+
+#### COBOL-Specific (if applicable):
+- ❌ Excessive GOTO usage (12 instances)
+  - **Recommendation**: Refactor to structured programming
+- ❌ WORKING-STORAGE not optimized (Lines 45-89)
+  - **Recommendation**: Reorder for memory alignment
+
+### Performance Impact:
+- **Current**: O(n²) complexity in main loop
+- **Potential**: O(n) with recommended changes
+- **Estimated Improvement**: 80% faster for large datasets
+
+### Security Posture:
+- **Authentication**: ❌ Missing
+- **Input Validation**: ⚠️ Partial
+- **Error Disclosure**: ❌ Too verbose (exposes internals)
+- **Audit Logging**: ✅ Present
+
+### Recommended Actions (Prioritized):
+1. **IMMEDIATE**: Remove hardcoded credentials (Line 145)
+2. **Before Production**: Add file error handling (Lines 203-210)
+3. **Next Sprint**: Optimize loop performance (Lines 145-167)
+4. **Technical Debt**: Refactor GOTO statements (12 instances)
+
+#### F. Automated Quality Gate Checks (NEW)
+
+**Quality Gates** (Pass/Fail Criteria):
+
+✅ **PASS Criteria**:
+- No CRITICAL security risks
+- No CRITICAL operational risks
+- All HIGH risks have mitigation plans
+- Error handling present for all I/O operations
+- Input validation for all external data
+
+❌ **FAIL Criteria**:
+- Any CRITICAL security risk present
+- Hardcoded credentials detected
+- No error handling for file operations
+- SQL injection vulnerabilities present
+- Missing input validation on user data
+
+**Create quality assessment document**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_QUALITY_ASSESSMENT.md`
+
+### 2.4 Create Call Graphs (Call Relationships)
 **Third Documentation Priority**: Map program control flow
 
 **Process**:
@@ -275,7 +451,7 @@ Explain:
 - ARRAY-PROCESSING: Loop over array elements
 ```
 
-### 2.4 Identify Global Variable Mutation Patterns
+### 2.5 Identify Global Variable Mutation Patterns
 **Fourth Documentation Priority**: Track state changes across the program
 
 **Process**:
