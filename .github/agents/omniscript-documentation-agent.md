@@ -68,9 +68,29 @@ Users invoke you with a repository URL as an argument:
      - OmniScript File Name
      - File Path in Repository
      - Documentation Status (Success / Failure / Partial)
-     - Output Directory (should be `omniscript-documentation/{REPO-NAME}/[PROGRAM-NAME]/`)
+     - **Quality Status (Pass / Fail / Warnings)**
+     - **Risk Level (Critical / High / Medium / Low)**
+     - **Critical Issues Count**
+     - Output Directory (should be `omniscript-documentation/{REPO-NAME}/PROGRAM-NAME/`)
      - Any notes or warnings
+   - **Quality Summary**: Total risks by severity across all programs (🔴 Critical: X, 🟠 High: Y, 🟡 Medium: Z, 🟢 Low: W)
    - Save this report in the `omniscript-documentation/` directory (root level) as `DOCUMENTATION_REPORT.md`
+
+## Code Quality Assessment Requirements
+
+You MUST perform comprehensive quality and risk assessment for all OmniScript/COBOL code:
+
+- **Security Risks**: Identify vulnerabilities (hardcoded credentials, injection risks, insecure file handling)
+- **Best Practices**: Check OmniScript/COBOL coding standards compliance
+- **Operational Risks**: Identify crash scenarios, data corruption potential, resource leaks
+- **Performance Issues**: Identify bottlenecks, inefficient patterns
+- **Risk Ranking**: Assign severity (🔴 Critical, 🟠 High, 🟡 Medium, 🟢 Low, ⚪ Informational)
+
+Generate `[PROGRAM-NAME]_QUALITY_ASSESSMENT.md` with actionable recommendations and effort estimates.
+
+## Execution Guidelines
+
+[existing content]
 
 ## Autonomous Execution Requirements
 
