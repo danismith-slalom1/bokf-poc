@@ -6,7 +6,7 @@ If you're looking to invoke the module, please proceed to [INITIALIZER_PROMPT.md
 
 Transform undocumented or poorly documented OMNISCRIPT programs into comprehensive, production-ready documentation using AI assistance with expert human oversight.
 
-**🎯 Now includes**: Error handling analysis, performance optimization, testing guides, integration docs, business rules extraction, and **OmniScript version detection (expected: 6.05) with upgrade readiness assessment to target version 7.5**.
+**🎯 Now includes**: Error handling analysis, performance optimization, testing guides, integration docs, business rules extraction,OmniScript version detection (expected: 6.05) with upgrade readiness assessment to target version 7.5, and code quality & risk assessment. 
 
 ## Usage Instructions
 
@@ -61,6 +61,12 @@ After documenting an OMNISCRIPT program, you will have:
 
 ### Enhanced Documentation (Automatically Generated)
 - **Error Handling Analysis** ⭐ documenting error status handling, risks, and recovery procedures
+- **Code Quality & Risk Assessment** ⭐ comprehensive security, best practices, and operational risk analysis with severity rankings
+  - Security vulnerabilities (hardcoded credentials, injection risks, insecure file handling)
+  - Best practices compliance (OmniScript/COBOL standards, deprecated APIs, performance patterns)
+  - Operational risks (crash scenarios, data corruption, resource leaks, error recovery gaps)
+  - Risk categorization (🔴 Critical, 🟠 High, 🟡 Medium, 🟢 Low, ⚪ Informational)
+  - Quality gate determination (Pass/Fail/Warnings) with actionable remediation roadmap
 - **Performance Analysis** ⭐ identifying bottlenecks, costs, and optimization opportunities
 - **Testing Guide** ⭐ with standard tests, edge cases, error scenarios, and integration tests
 - **Integration Guide** ⭐ documenting interfaces, deployment, and system requirements
