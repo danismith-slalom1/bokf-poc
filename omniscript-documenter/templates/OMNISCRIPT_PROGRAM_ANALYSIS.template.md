@@ -17,9 +17,8 @@ Use this exact template structure when creating OMNISCRIPT program analysis docu
 - **Date Written**: [From metadata if present]
 - **Date Modified**: [Most recent modification date if available]
 - **Source File**: [Full path to OMNISCRIPT source file]
-- **OMNISCRIPT Version**: [Interpreter version or dialect - expected: 6.05, or detected version if different]
+- **OMNISCRIPT Version**: [Interpreter version or dialect]
 - **Runtime Environment**: [Interpreter characteristics, platform requirements]
-- **Upgrade Status**: [Version compatibility and upgrade readiness if applicable; note if version detection was unsuccessful]
 
 ### Program Purpose
 [Brief description of what this program does, based on comments or metadata]
@@ -149,42 +148,11 @@ Use this exact template structure when creating OMNISCRIPT program analysis docu
 - **I/O Frequency**: [High/Medium/Low]
 - **Memory Usage Pattern**: [Large data structures noted]
 
-### Version-Specific Considerations
-- **OmniScript Version Features Used**: [List version-specific features, APIs, or syntax]
-- **Version Compatibility Concerns**: [Any known issues with current version]
-- **Upgrade Considerations**: [If applicable - readiness for version upgrade]
-
 ### Documentation Challenges
 [Anticipated difficulties in documenting this program]
 
 ### Expert Review Requirements
 [Areas that will need close expert review]
-
-## Version Quality and Upgrade Assessment (If Applicable)
-
-### Current Version Analysis
-- **Detected Version**: [e.g., OmniScript 6.05, 5.x, or "Unknown"]
-- **Version Detection Method**: [How version was identified - headers, syntax, comments, or why detection failed]
-- **Detection Confidence**: [High/Medium/Low/Unable to Detect]
-- **Version-Specific Feature Usage**: [List features specific to detected version, or "Cannot assess without version"]
-- **Deprecated Features in Use**: [Any features marked deprecated in current version, or "Cannot assess without version"]
-
-### Upgrade Readiness (to Target Version)
-- **Target Version**: [Typically 7.5]
-- **Version Gap**: [e.g., 5.x → 7.5, 6.05 → 7.5, Unknown → 7.5]
-- **Upgrade Complexity**: [Simple/Moderate/Complex/Cannot Assess]
-- **Breaking Changes Impact**: [Summary of breaking changes affecting this program, or "Requires comprehensive review - version unknown"]
-- **Estimated Migration Effort**: [Trivial/Minor/Moderate/Major/Requires Version Detection]
-- **Critical Upgrade Blockers**: [Any show-stopping issues preventing upgrade]
-- **Recommended Upgrade Timeline**: [Suggested timeline for upgrade]
-
-### Version-Specific Risks
-- **High Risk Areas**: [Code sections with high upgrade risk]
-- **Medium Risk Areas**: [Code sections with medium upgrade risk]
-- **Low Risk Areas**: [Code sections with low upgrade risk]
-- **Unknown Risk Areas**: [If version unknown, list areas requiring careful review]
-
-**Note**: Detailed upgrade assessment will be documented in `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_UPGRADE_ASSESSMENT.md` during Phase 1.5.
 
 ## Summary
 
