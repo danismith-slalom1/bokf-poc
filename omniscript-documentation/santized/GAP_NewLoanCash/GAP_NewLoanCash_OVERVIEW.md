@@ -1,432 +1,280 @@
 # GAP_NewLoanCash Program Overview
 
-## Program Identification
-
-- **Program Name**: GAP_NewLoanCash
-- **Original Script**: NewLoanCash.txt
-- **Language**: OmniScript
-- **Program Type**: Batch processing / Cash reconciliation
-- **Business Domain**: Trust accounting / Retirement plan administration
-- **Source File**: GAP_NewLoanCash.cbl
+## Program: GAP_NewLoanCash
+**File**: GAP_NewLoanCash.cbl  
+**Type**: OMNISCRIPT Batch Process  
+**Last Updated**: 2026-02-03
 
 ---
 
 ## Executive Summary
 
-GAP_NewLoanCash is a batch reconciliation program that processes secondary market loan purchases for retirement plan positions. It reads Plan Position Accounts from the last 7 calendar days, identifies POOLLOAN3 (loan pool) securities, calculates net loan activity after accounting for reversals, and generates C1 activity records for cash reconciliation.
+### Program Identity
+- **Name**: GAP_NewLoanCash (NewLoanCash.txt)
+- **Language**: OMNISCRIPT
+- **Lines of Code**: 75
+- **Complexity**: Low-Medium (1 subroutine, 2 database objects, simple business logic)
 
-### Key Business Value
-- **Cash Reconciliation**: Ensures accurate tracking of cash requirements for loan purchases
-- **Reversal Recognition**: Properly nets buy and sell transactions to reflect true loan exposure
-- **Idempotency**: Prevents duplicate processing through UDF field tracking
-- **Audit Trail**: Generates fixed-format C1 activity records for downstream reconciliation
+### Business Purpose
+GAP_NewLoanCash generates C1 activity records for the cash reconciliation process by identifying new loan purchases in plan positions and creating offsetting cash entries. The program processes POOLLOAN3 security positions over a 7-day window, detects loan reversals, and outputs formatted C1 records to support the "right side" (AC) of cash reconciliation.
 
-### Processing Scope
-- **Date Range**: Last 7 calendar days (calculated from $RUN-DATE or current date)
-- **Security Type**: POOLLOAN3 (loan pool securities)
-- **Database Sources**: 
-  - POPP (Plan Position Accounts)
-  - SSSA (Secondary Market Activity)
-- **Output**: Timestamped C1 activity file in $XDAT directory
+### Business Value
+- **Financial Accuracy**: Ensures loan purchase activity is properly reflected in cash reconciliation
+- **Idempotency**: Prevents duplicate cash entries through UDF field tracking
+- **Reversal Handling**: Accurately nets buy and sell activity to reflect true cash impact
+- **Audit Trail**: Timestamped output files provide complete transaction history
+- **Automated Reconciliation**: Eliminates manual cash offset entry for loan activity
 
 ---
 
 ## Program History
 
-| Date | Author | Change Description | Reference |
-|------|--------|-------------------|-----------|
-| 12/21/2023 | Gary Matten | Initial OmniScript creation | Initial version |
-| 06/27/2024 | Gary Matten | Corrected position 92 from '1' to '2' | GPD-1704 |
-| 09/25/2024 | Gary Matten | Added logic to recognize loan reversal activity and net activity correctly when there are BUYS and SELLS | Enhancement |
-
----
-
-## Business Context
-
-### Problem Statement
-When retirement plans purchase loans on the secondary market, cash must be allocated to cover those purchases. The Secondary1Buys field in position records reflects the total loan purchase amount from trust transactions (loaded from TRUSTTRANS.P1). However, some loans may be reversed (sold back) after the initial purchase. Without accounting for these reversals, cash reconciliation overstates the required cash allocation.
-
-### Solution Approach
-1. **Query Position Records**: Find all POOLLOAN3 positions in the 7-day window
-2. **Check for Reversals**: For each non-zero loan purchase, query secondary activity (SSSA) to find offsetting sell transactions
-3. **Calculate Net Activity**: Sum buy transactions minus sell transactions to get true loan exposure
-4. **Generate Offsetting Entry**: Create C1 activity record with negative amount to offset the loan purchase
-5. **Mark Processed**: Update position record UDF1 field to prevent duplicate processing
-
-### Business Rules
-- Only process POOLLOAN3 securities (loan pool)
-- Only process records with non-zero Secondary1Buys amounts
-- Skip records already processed (PriorCashApplied = Secondary1Buys)
-- Use last business day as activity date in C1 records
-- Apply activity code 00339 for loan offset entries
-- Set position 92 to '2' in C1 records (per GPD-1704)
+| Date | Author | Change Description |
+|------|--------|-------------------|
+| 12/21/2023 | Gary Matten | Initial OmniScript creation |
+| 06/27/2024 | Gary Matten | GPD-1704: Corrected position 92 to value of 2 instead of 1 |
+| 09/25/2024 | Gary Matten | Enhanced to recognize loan reversal activity and net correctly when there are BUYS and SELLS |
 
 ---
 
 ## Program Structure
 
-### Overall Flow Diagram
+### Module Organization
 
-```mermaid
-flowchart TD
-    Start([Program Start]) --> Init[Initialize Variables<br/>sd080 = 99999999]
-    Init --> BuildFile[Construct Output Filename<br/>$XDAT/OTDALY.OMNISCRIPT.C1.NEWLOANOFFSET.DATE.TIME.DAT]
-    BuildFile --> OpenFile[Open Output File]
-    OpenFile --> GetRunDate[Get $RUN-DATE<br/>Environment Variable]
-    
-    GetRunDate --> ValidDate{Valid Date?}
-    ValidDate -->|Yes| CalcDate1[SevenDaysAgo = RunDate - 7<br/>LastBusiness = RunDate - 1 business day]
-    ValidDate -->|No| CalcDate2[SevenDaysAgo = Current - 7<br/>LastBusiness = Current - 1 business day]
-    
-    CalcDate1 --> ShowDates[Display Dates]
-    CalcDate2 --> ShowDates
-    ShowDates --> QueryPOPP[Query POPP: POOLLOAN3<br/>Date Range: SevenDaysAgo to LastBusiness]
-    
-    QueryPOPP --> LoopStart{More Records?}
-    LoopStart -->|No| EndProgram([End Program])
-    LoopStart -->|Yes| FetchFields[Fetch Position Fields:<br/>RKPlan, TradeDate,<br/>Secondary1Buys, PriorCashApplied]
-    
-    FetchFields --> CheckZero{Secondary1Buys<br/><> 0?}
-    CheckZero -->|No| LoopStart
-    CheckZero -->|Yes| CallCheck[PERFORM CHECK.SSSA]
-    
-    CallCheck --> ValidParams{RKPlan valid<br/>AND<br/>TradeDate <> 0?}
-    ValidParams -->|No| ReturnZero[GOBACK<br/>Secondary1Buys unchanged]
-    ValidParams -->|Yes| InitWK[WK001 = 0]
-    
-    InitWK --> QuerySSA[Query SSSA:<br/>Plan, POOLLOAN3, TradeDate]
-    QuerySSA --> SSALoop{More SSSA<br/>Records?}
-    
-    SSALoop -->|No| AssignNet[Secondary1Buys = WK001]
-    SSALoop -->|Yes| CheckXI{Activity Code<br/>= 'XI'?}
-    
-    CheckXI -->|No| SSALoop
-    CheckXI -->|Yes| CheckType{Transaction<br/>Type?}
-    
-    CheckType -->|'B' Buy| AddBuy[WK001 = WK001 + Amount]
-    CheckType -->|'S' Sell| SubSell[WK001 = WK001 - Amount]
-    CheckType -->|Other| SSALoop
-    
-    AddBuy --> SSALoop
-    SubSell --> SSALoop
-    AssignNet --> ReturnMain[GOBACK to Main]
-    ReturnZero --> CheckDup
-    
-    ReturnMain --> CheckDup{Already<br/>Processed?<br/>PriorCash =<br/>Secondary1Buys}
-    CheckDup -->|Yes| LoopStart
-    CheckDup -->|No| CheckStillNonZero{Secondary1Buys<br/><> 0?}
-    
-    CheckStillNonZero -->|No| LoopStart
-    CheckStillNonZero -->|Yes| RefetchFields[Re-fetch RKPlan,<br/>TradeDate, TrustAccount]
-    
-    RefetchFields --> CalcNeg[NewLoanUnits =<br/>0 - Secondary1Buys]
-    CalcNeg --> BuildC1[Build C1 Record:<br/>Fixed-format 138 bytes]
-    
-    BuildC1 --> WriteC1[Write C1 Record to File]
-    WriteC1 --> UpdateUDF[Update Position UDF1<br/>= Secondary1Buys]
-    UpdateUDF --> CommitUpdate[Commit Position Update]
-    CommitUpdate --> LoopStart
-    
-    style Start fill:#90EE90
-    style EndProgram fill:#FFB6C1
-    style CallCheck fill:#87CEEB
-    style QuerySSA fill:#87CEEB
-    style WriteC1 fill:#FFD700
-    style UpdateUDF fill:#FFD700
+```
+GAP_NewLoanCash
+├── Initialization Section (Lines 13-19)
+│   ├── Error context setup
+│   ├── Variable definitions
+│   ├── Output filename construction
+│   └── File open
+│
+├── Date Calculation Section (Lines 21-29)
+│   ├── RunDate retrieval and validation
+│   ├── SevenDaysAgo calculation
+│   └── LastBusiness calculation
+│
+├── Main Processing Loop (Lines 31-57)
+│   ├── Position query (poppobj)
+│   ├── Data extraction
+│   ├── Reversal check (conditional)
+│   ├── Idempotency validation
+│   ├── C1 record construction
+│   ├── File output
+│   └── Database update
+│
+└── CHECK.SSSA Subroutine (Lines 59-75)
+    ├── Parameter validation
+    ├── Activity query (sssaobj)
+    ├── Buy/Sell netting logic
+    └── Result return
 ```
 
-### Program Sections
+### Procedure Index
 
-#### Section 1: Initialization (Lines 13-19)
-- Set return code (sd080 = 99999999)
-- Define global variables
-- Construct output filename with timestamp
-- Display filename
-- Open output file
-
-#### Section 2: Date Calculation (Lines 21-29)
-- Retrieve $RUN-DATE environment variable
-- Validate date or fallback to current date
-- Calculate SevenDaysAgo (7 calendar days back)
-- Calculate LastBusiness (1 business day back)
-- Display calculated dates
-
-#### Section 3: Main Processing Loop (Lines 31-57)
-- Query plan positions for POOLLOAN3 in date range
-- For each position record:
-  - Fetch RKPlan, TradeDate, Secondary1Buys, PriorCashApplied
-  - If Secondary1Buys > 0: Call CHECK.SSSA to calculate net activity
-  - If not already processed and amount still non-zero:
-    - Build C1 record with offset amount
-    - Write C1 record to file
-    - Update position UDF1 field
-    - Commit position update
-
-#### Section 4: CHECK.SSSA Routine (Lines 59-75)
-- Validate entry parameters (RKPlan, TradeDate)
-- Initialize accumulator (WK001 = 0)
-- Query SSSA for matching plan/security/date records
-- For each 'XI' (External In) activity:
-  - Add buy ('B') amounts to accumulator
-  - Subtract sell ('S') amounts from accumulator
-- Assign net amount to Secondary1Buys
-- Return to main program
+| Procedure | Lines | Purpose | Called By |
+|-----------|-------|---------|-----------|
+| Main Program | 13-57 | Process positions and generate C1 records | Entry point |
+| CHECK.SSSA | 59-75 | Detect reversals and calculate net loan activity | Main program (line 38) |
 
 ---
 
-## Data Flow
+## Business Logic Overview
 
-### Input Data Sources
+### Core Processing Flow
 
-#### 1. Environment Variables
-- **$RUN-DATE**: Processing date (optional; falls back to current date)
-- **$XDAT**: Output directory path (required)
+1. **Initialization**
+   - Set OMNISCRIPT error context (`sd080 = 99999999`)
+   - Build unique output filename with timestamp
+   - Open output file for C1 activity records
 
-#### 2. POPP Database (Plan Position)
-- **Query Filter**: 
-  - Security ID = 'POOLLOAN3'
-  - Trade Date >= SevenDaysAgo
-  - Trade Date <= LastBusiness
-- **Fields Retrieved**:
-  - DE 008: TradeDate
-  - DE 030: RKPlan (Plan ID)
-  - DE 741: Secondary1Buys (loan purchase amount)
-  - DE 877: UDF1 / PriorCashApplied (processing flag)
-  - DE 01510: TrustAccount
+2. **Date Window Calculation**
+   - Retrieve `RunDate` from environment (`$RUN-DATE`)
+   - Calculate 7-day lookback: `SevenDaysAgo = RunDate - 7 calendar days`
+   - Calculate effective date: `LastBusiness = RunDate - 1 business day`
+   - Fallback to current date if RunDate invalid
 
-#### 3. SSSA Database (Secondary Activity)
-- **Query Filter**:
-  - Plan = RKPlan
-  - Security ID = 'POOLLOAN3'
-  - Date = TradeDate
-- **Fields Retrieved**:
-  - DE 009: Transaction Type (B/S)
-  - DE 011: Activity Code (XI)
-  - DE 235: Transaction Amount
+3. **Position Record Processing**
+   - Query all POOLLOAN3 positions within [SevenDaysAgo, LastBusiness]
+   - For each position record:
+     - **Extract**: Plan ID, trade date, loan amounts, trust account
+     - **Check Reversals**: Call CHECK.SSSA if Secondary1Buys > 0
+     - **Validate Idempotency**: Skip if PriorCashApplied = Secondary1Buys
+     - **Generate C1 Record**: Build fixed-format transaction record
+     - **Output**: Write C1 record to file
+     - **Mark Processed**: Update position field 877 with applied amount
 
-### Output Data
+4. **Reversal Detection (CHECK.SSSA)**
+   - Query security activity (sssaobj) for matching plan/security/date
+   - Filter for transaction source 'XI'
+   - Net calculation:
+     - **Buys ('B')**: Add to accumulator
+     - **Sells ('S')**: Subtract from accumulator (reversal)
+   - Return net amount as adjusted Secondary1Buys
 
-#### C1 Activity File
-- **Location**: `$XDAT/OTDALY.OMNISCRIPT.C1.NEWLOANOFFSET.YYYYMMDD.HHMMSS.DAT`
-- **Format**: Fixed-width, 138 bytes per record
-- **Contents**: Loan offset activity records for cash reconciliation
+### Business Rules
 
-**Record Structure**:
-```
-Pos 1-4:    'C100'                        (Record Type)
-Pos 5-10:   RKPlan                        (Plan ID)
-Pos 31-38:  LastBusiness (YYYYMMDD)      (Activity Date)
-Pos 40-71:  TrustAccount                  (Trust Account)
-Pos 73-92:  '000000000000000    2'       (Type/Position)
-Pos 115:    '0'                           (Sign Flag)
-Pos 116-130: NewLoanUnits (Z,12V2-)      (Negative Amount)
-Pos 134-138: '00339'                      (Activity Code)
-```
+#### BR-001: Position Selection
+- **Rule**: Only POOLLOAN3 security positions are processed
+- **Rationale**: Program specifically handles pool loan cash reconciliation
+- **Implementation**: `poppobj_view(securityid:'POOLLOAN3' ...)`
 
-#### Database Updates
-- **POPP DE 877 (UDF1)**: Updated with Secondary1Buys amount to mark record as processed
+#### BR-002: Date Range Window
+- **Rule**: Process positions from last 7 calendar days
+- **Rationale**: Captures recent activity for timely reconciliation
+- **Implementation**: `datelo:SevenDaysAgo datehi:LastBusiness`
 
-### Data Transformations
+#### BR-003: Idempotency Control
+- **Rule**: Skip processing if UDF1 (field 877) equals Secondary1Buys
+- **Rationale**: Prevents duplicate cash entries for same position
+- **Implementation**: `IF (PriorCashApplied <> Secondary1Buys)`
+- **Impact**: Safe to re-run program without generating duplicates
 
-1. **Date Calculations**:
-   - Input: RunDate or Current Date
-   - Transform: Subtract 7 days (calendar), subtract 1 business day
-   - Output: SevenDaysAgo, LastBusiness
+#### BR-004: Reversal Netting
+- **Rule**: Net loan buys and sells for same plan/security/date
+- **Rationale**: Cash impact should reflect net activity, not gross
+- **Implementation**: CHECK.SSSA routine with buy/sell accumulation
+- **Example**: $100K buy + $30K sell = $70K net loan activity
 
-2. **Net Activity Calculation**:
-   - Input: SSSA buy/sell transactions
-   - Transform: Sum(Buys) - Sum(Sells)
-   - Output: Net Secondary1Buys amount
+#### BR-005: C1 Record Format
+- **Rule**: Fixed-length C1 record with specific field positions
+- **Fields**:
+  - Record type: 'C100' (positions 1-4)
+  - Plan ID: 6 characters (positions 5-10)
+  - Effective date: LastBusiness (positions 31-38)
+  - Trust account: 32 characters (positions 40-71)
+  - Transaction code: '000000000000000    2' (positions 73-92)
+  - Sign: '0' (position 115)
+  - Amount: Negative loan amount, formatted (positions 116-130)
+  - Activity code: '00339' (positions 134-138)
 
-3. **Amount Negation**:
-   - Input: Secondary1Buys (positive amount)
-   - Transform: 0 - Secondary1Buys
-   - Output: NewLoanUnits (negative offset)
-
-4. **Record Formatting**:
-   - Input: Plan ID, dates, accounts, amounts
-   - Transform: Fixed-width text positioning
-   - Output: 138-byte C1 record
-
----
-
-## Database Interactions
-
-### POPP (Plan Position Object)
-
-**Purpose**: Retrieve and update plan position records for loan securities
-
-**Query Pattern**:
-```omniscript
-poppobj_view(securityid:'POOLLOAN3' datelo:SevenDaysAgo datehi:LastBusiness);
-loop while poppobj_next();
-   RKPlan = poppobj_de(030);
-   TradeDate = poppobj_numde(008);
-   Secondary1Buys = poppobj_numde(741);
-   PriorCashApplied = poppobj_numde(877);
-   TrustAccount = poppobj_de(01510);
-   ...
-   poppobj_setde(denum:877 value:Secondary1Buys);
-   poppobj_update();
-endloop;
-```
-
-**Access Pattern**: Sequential scan within date range  
-**Read Operations**: 5 field retrievals per record  
-**Write Operations**: 1 field update per qualifying record  
-**Transaction Model**: Auto-commit per update (no explicit transaction management)
-
-**Fields Used**:
-| Data Element | Field Name | Type | Usage |
-|--------------|------------|------|-------|
-| DE 008 | TradeDate | Numeric | Query filter, reversal lookup |
-| DE 030 | RKPlan | String | Plan identifier |
-| DE 741 | Secondary1Buys | Numeric | Loan purchase amount |
-| DE 877 | UDF1 / PriorCashApplied | Numeric | Processing flag (read & write) |
-| DE 01510 | TrustAccount | String | Trust account number |
+#### BR-006: Amount Sign Convention
+- **Rule**: Loan purchases are recorded as negative amounts in C1
+- **Rationale**: Offset cash for asset purchases in reconciliation
+- **Implementation**: `NewLoanUnits = 0 - Secondary1Buys`
 
 ---
 
-### SSSA (Secondary Activity Object)
+## Data Architecture
 
-**Purpose**: Retrieve detailed buy/sell transactions for reversal calculation
+### Input Sources
 
-**Query Pattern**:
-```omniscript
-sssaobj_view(PLAN:RKPlan SECURITYID:'POOLLOAN3' DATE:TradeDate);
-loop while sssaobj_next();
-   if sssaobj_de(011) = 'XI';
-      if sssaobj_de(009) = 'B';
-         WK001 = WK001 + sssaobj_numde(235);
-      end;
-      if sssaobj_de(009) = 'S';
-         WK001 = WK001 - sssaobj_numde(235);
-      end;
-   end;
-endloop;
-```
+#### Environment Variables
+- **$XDAT**: Directory path for output file placement
+- **$RUN-DATE**: Batch processing date (YYYYMMDD format)
 
-**Access Pattern**: Lookup by plan/security/date (exact match)  
-**Read Operations**: 3 field retrievals per record  
-**Write Operations**: None (read-only)  
-**Typical Record Count**: 1-3 per position (buy + potential sells)
+#### Database Objects
 
-**Fields Used**:
-| Data Element | Field Name | Type | Usage |
-|--------------|------------|------|-------|
-| DE 009 | Transaction Type | String | Distinguish buy ('B') vs sell ('S') |
-| DE 011 | Activity Code | String | Filter for 'XI' (External In) |
-| DE 235 | Transaction Amount | Numeric | Dollar amount to add/subtract |
+**poppobj (Plan Position Object)**
+- **Table**: POPP (Plan Position Accounts)
+- **Filter**: POOLLOAN3 security, date range [SevenDaysAgo, LastBusiness]
+- **Fields Read**:
+  - 008: TradeDate
+  - 030: RKPlan (Plan ID)
+  - 741: Secondary1Buys (custom UDF field)
+  - 877: PriorCashApplied (UDF1 field)
+  - 1510: TrustAccount
+- **Fields Updated**:
+  - 877: Set to Secondary1Buys after processing
 
----
+**sssaobj (Security Activity Object)**
+- **Table**: SSSA (TRUSTTRANS.P1)
+- **Filter**: Matching plan, POOLLOAN3 security, specific trade date
+- **Fields Read**:
+  - 009: Transaction type (B=Buy, S=Sell)
+  - 011: Transaction source (filter for 'XI')
+  - 235: Transaction amount
 
-## Key Algorithms
+### Output Files
 
-### Algorithm 1: Net Activity Calculation (CHECK.SSSA)
-
-**Purpose**: Calculate net loan exposure after accounting for reversals
-
-**Input**: 
-- RKPlan (Plan ID)
-- TradeDate (Date of original transaction)
-- SSSA records (buy/sell transactions)
-
-**Output**: 
-- Secondary1Buys (net amount = buys - sells)
-
-**Logic**:
-```
-1. Validate inputs (RKPlan non-empty, TradeDate non-zero)
-2. Initialize accumulator (WK001 = 0)
-3. Query SSSA for plan/security/date combination
-4. For each SSSA record:
-   a. Check if activity code = 'XI' (External In)
-   b. If transaction type = 'B' (Buy): Add amount to WK001
-   c. If transaction type = 'S' (Sell): Subtract amount from WK001
-5. Assign final WK001 value to Secondary1Buys
-6. Return to caller
-```
-
-**Example**:
-- Original buy: $10,000 (Secondary1Buys from DE 741)
-- SSSA records: Buy $10,000, Sell $3,000
-- WK001 calculation: 0 + 10,000 - 3,000 = $7,000
-- Result: Secondary1Buys updated to $7,000
-
-**Edge Cases**:
-- No SSSA records: WK001 = 0; Secondary1Buys becomes 0 (may skip C1 generation)
-- Full reversal: Buys = Sells; WK001 = 0; no C1 record generated
-- Partial reversal: Buys > Sells; net calculated correctly
-- Invalid inputs: Early exit; Secondary1Buys unchanged
+**C1 Activity File**
+- **Naming Pattern**: `OTDALY.OMNISCRIPT.C1.NEWLOANOFFSET.{DATE}.{TIME}.DAT`
+- **Format**: Fixed-length text records (134+ bytes)
+- **Purpose**: Input to cash reconciliation system
+- **Record Type**: C1 activity records (type 'C100')
+- **Contents**: One record per unprocessed loan position
+- **Location**: `$XDAT` directory
 
 ---
 
-### Algorithm 2: Duplicate Prevention
+## Error Handling and Risk Analysis
 
-**Purpose**: Prevent reprocessing of position records already handled
+### Error Handling Mechanisms
 
-**Input**:
-- Secondary1Buys (current loan amount, possibly adjusted by CHECK.SSSA)
-- PriorCashApplied (previously stored amount from DE 877)
+#### Date Validation
+- **Check**: `OcDate_Valid(RunDate)` at line 22
+- **Recovery**: Fall back to current date if RunDate invalid
+- **Risk**: Low - Graceful degradation ensures processing continues
 
-**Logic**:
-```
-1. Fetch PriorCashApplied from position record (DE 877)
-2. Compare with Secondary1Buys
-3. If match: Skip C1 generation and database update
-4. If no match: Proceed with C1 generation
-5. After successful C1 write: Update DE 877 with Secondary1Buys
-```
+#### Parameter Validation (CHECK.SSSA)
+- **Check**: `IF (RKPlan <> '') and (TradeDate <> 0)` at line 60
+- **Recovery**: Early exit from routine if invalid
+- **Risk**: Low - Prevents database query with incomplete parameters
 
-**Idempotency Guarantee**:
-- First run: PriorCashApplied = 0 (or different); C1 generated; UDF1 = Secondary1Buys
-- Second run: PriorCashApplied = Secondary1Buys (match); skip processing
-- Third run: Same as second (remains idempotent)
+#### Idempotency Protection
+- **Check**: Compare PriorCashApplied to Secondary1Buys at line 40
+- **Recovery**: Skip record if already processed
+- **Risk**: Low - Prevents duplicate entries
 
-**Scenario Handling**:
-- New record: No UDF1 value → process
-- Already processed: UDF1 matches amount → skip
-- Amount changed: UDF1 doesn't match → reprocess (is this intended?)
+### Potential Runtime Errors
 
-**Limitation**: If Secondary1Buys changes (data correction), UDF1 check fails and record reprocesses. This may be intentional for data correction scenarios or a bug.
+#### High-Risk Scenarios
 
----
+**1. File Access Errors**
+- **Cause**: `$XDAT` directory doesn't exist or lacks write permissions
+- **Impact**: Program termination, no C1 records generated
+- **Mitigation**: Pre-validate directory existence and permissions
+- **Error Handling**: None in code - would cause runtime failure
 
-### Algorithm 3: C1 Record Construction
+**2. Database Connection Errors**
+- **Cause**: Database unavailable, connection timeout
+- **Impact**: Cannot query poppobj or sssaobj
+- **Mitigation**: Run during scheduled maintenance windows
+- **Error Handling**: None in code - would cause runtime failure
 
-**Purpose**: Build fixed-format cash activity record for reconciliation
+**3. Environment Variable Missing**
+- **Cause**: `$XDAT` or `$RUN-DATE` not set
+- **Impact**: Invalid file path or date processing errors
+- **Mitigation**: Date has fallback to current; XDAT would fail
+- **Error Handling**: Partial (date only)
 
-**Input**:
-- RKPlan (Plan ID)
-- LastBusiness (Activity date)
-- TrustAccount (Trust account number)
-- NewLoanUnits (Negative offset amount)
+#### Medium-Risk Scenarios
 
-**Output**: 138-byte fixed-width text record
+**4. Invalid Date Format**
+- **Cause**: `$RUN-DATE` contains non-numeric or invalid date
+- **Impact**: Falls back to current date
+- **Mitigation**: Built-in validation with fallback
+- **Error Handling**: ✓ Implemented
 
-**Logic**:
-```
-1. Initialize empty string variable (Line)
-2. Set position 1-4: 'C100' (record type)
-3. Set position 5-10: RKPlan (6 characters)
-4. Set position 31-38: LastBusiness formatted as Z8 (YYYYMMDD)
-5. Set position 40-71: TrustAccount (32 characters)
-6. Set position 73-92: '000000000000000    2' (20 characters)
-7. Set position 115: '0' (sign flag)
-8. Set position 116-130: NewLoanUnits formatted as Z,12V2- (15 characters)
-9. Set position 134-138: '00339' (activity code)
-10. Write Line to output file
-```
+**5. Database Field Access Errors**
+- **Cause**: Field numbers don't exist or have changed
+- **Impact**: Runtime error or incorrect data extraction
+- **Mitigation**: Verify database schema matches expectations
+- **Error Handling**: None - assumes valid schema
 
-**Formatting Rules**:
-- Z8: Zero-filled, 8 digits (dates)
-- Z,12V2-: Zero-filled, 12 digits, 2 decimals, with sign (amounts)
-- Fixed positions: No delimiters; byte position matters
+#### Low-Risk Scenarios
 
-**Example Record**:
-```
-C100ABC123                  20260203TRUST12345678901234567890123456000000000000000    20              -10000.0000339
-```
+**6. Zero Records Found**
+- **Cause**: No POOLLOAN3 positions in date range
+- **Impact**: Empty output file (valid scenario)
+- **Mitigation**: Not needed - normal business case
+- **Error Handling**: Handled naturally by loop logic
+
+**7. All Records Already Processed**
+- **Cause**: Program re-run without new activity
+- **Impact**: No new C1 records generated
+- **Mitigation**: Not needed - idempotency working correctly
+- **Error Handling**: ✓ Built-in via field 877 check
+
+### Resource Limitations
+
+| Resource | Limit/Consideration | Risk |
+|----------|---------------------|------|
+| File Size | Unbounded growth based on position volume | Medium - Monitor disk space |
+| Memory | Minimal (processes one record at a time) | Low |
+| Database Connections | 2 concurrent queries (poppobj, sssaobj) | Low |
+| Processing Time | Proportional to position count | Low-Medium |
+| Network I/O | Database query latency | Low |
 
 ---
 
@@ -434,251 +282,230 @@ C100ABC123                  20260203TRUST123456789012345678901234560000000000000
 
 ### Upstream Dependencies
 
-#### 1. TRUSTTRANS.P1 Load
-- **Description**: Trust transaction data loaded into POPP Secondary1Buys field (DE 741)
-- **Timing**: Must complete before GAP_NewLoanCash runs
-- **Impact**: Missing data results in zero Secondary1Buys amounts; no processing
+1. **POPP Table Updates**
+   - **Source**: Position management system
+   - **Timing**: Daily position loads
+   - **Critical Fields**: 741 (Secondary1Buys), 877 (PriorCashApplied)
+   - **Impact**: Missing or delayed updates prevent cash reconciliation
 
-#### 2. SSSA Load
-- **Description**: Secondary market buy/sell activity loaded into SSSA database
-- **Timing**: Must be complete and synchronized with POPP data
-- **Impact**: Incomplete SSSA data causes incorrect net calculations
+2. **SSSA Table Updates (TRUSTTRANS.P1)**
+   - **Source**: Trust transaction processing
+   - **Timing**: Real-time or batch
+   - **Critical Fields**: Transaction type, source, amounts
+   - **Impact**: Incomplete data causes inaccurate reversal netting
 
-#### 3. Business Day Calendar
-- **Description**: OmniScript business day function requires holiday calendar
-- **Timing**: Must be maintained with current holidays
-- **Impact**: Incorrect LastBusiness calculation; wrong activity dates
+3. **Environment Configuration**
+   - **Variables**: `$XDAT`, `$RUN-DATE`
+   - **Set By**: Batch scheduler or shell wrapper
+   - **Impact**: Missing variables cause program failure
+
+### Downstream Consumers
+
+1. **Cash Reconciliation System**
+   - **Consumes**: C1 activity file (OTDALY.OMNISCRIPT.C1.NEWLOANOFFSET.*.DAT)
+   - **Frequency**: Daily batch processing
+   - **Format Dependency**: Fixed-length C1 record structure
+   - **Impact**: Format changes break reconciliation process
+
+2. **Audit and Reporting**
+   - **Uses**: Output files for transaction history
+   - **Retention**: Per regulatory requirements
+   - **Impact**: File naming pattern must remain consistent
 
 ---
 
-### Downstream Dependencies
+## Deployment and Operations
 
-#### 1. C1 Activity Processing
-- **Description**: Downstream system reads C1 file and posts to cash accounts
-- **Format Dependency**: Fixed 138-byte format; activity code 00339
-- **Timing**: Expects daily file; processes after GAP_NewLoanCash completes
-- **Impact**: Cash reconciliation uses these offset entries
+### Execution Requirements
 
-#### 2. Reporting and Reconciliation
-- **Description**: Finance uses C1 activity for daily cash reconciliation reports
-- **Data Dependency**: UDF1 updates must persist for audit trail
-- **Timing**: Reports run after C1 processing completes
-- **Impact**: Incorrect amounts cause reconciliation breaks
+**Prerequisites**:
+- OMNISCRIPT runtime environment
+- Database connectivity (POPP, SSSA tables)
+- Write access to `$XDAT` directory
+- Environment variables configured
+
+**Scheduling**:
+- **Frequency**: Daily (typically overnight batch)
+- **Timing**: After position and transaction loads complete
+- **Duration**: Minutes (depends on 7-day position volume)
+- **Dependencies**: Position updates must be complete
+
+**Resource Requirements**:
+- **CPU**: Low (I/O bound)
+- **Memory**: Minimal (single-record processing)
+- **Disk**: Output file size ~200 bytes per position
+- **Network**: Database query bandwidth
+
+### Operational Monitoring
+
+**Success Indicators**:
+- ✓ Output file created with timestamp
+- ✓ Record count matches unprocessed positions
+- ✓ All Secondary1Buys ≠ 0 positions processed
+- ✓ Field 877 updated in database
+
+**Failure Indicators**:
+- ✗ No output file created
+- ✗ Zero-length output file with expected positions
+- ✗ Runtime error messages
+- ✗ Position records not updated (field 877)
+
+**Validation Queries**:
+```sql
+-- Check for unprocessed positions
+SELECT COUNT(*) FROM POPP
+WHERE SECURITYID = 'POOLLOAN3'
+  AND TRADEDATE BETWEEN {SevenDaysAgo} AND {LastBusiness}
+  AND FIELD741 <> 0
+  AND FIELD877 <> FIELD741;
+
+-- Verify output record count matches
+wc -l $XDAT/OTDALY.OMNISCRIPT.C1.NEWLOANOFFSET.*.DAT
+```
 
 ---
 
-### Configuration Dependencies
+## Testing Guidance
 
-#### 1. Environment Variables
-- **$XDAT**: Output directory (required)
-- **$RUN-DATE**: Processing date (optional; defaults to current date)
+### Test Scenarios
 
-#### 2. Database Connections
-- **POPP**: Plan position database (required)
-- **SSSA**: Secondary activity database (required)
+#### Scenario 1: Normal Processing
+- **Setup**: 10 POOLLOAN3 positions with Secondary1Buys > 0, none processed
+- **Expected**: 10 C1 records written, all field 877 updated
+- **Validation**: Compare output record count to query result
 
-#### 3. File System
-- **$XDAT directory**: Must exist with write permissions
-- **Sufficient disk space**: Required for output file
+#### Scenario 2: Idempotency
+- **Setup**: Re-run program without new positions
+- **Expected**: Zero C1 records written (all already processed)
+- **Validation**: Empty or non-existent output file
+
+#### Scenario 3: Reversal Netting
+- **Setup**: Position with $100K buy + $30K sell on same date
+- **Expected**: C1 record with $70K net amount
+- **Validation**: CHECK.SSSA routine called, amount netted correctly
+
+#### Scenario 4: Date Range Edge Cases
+- **Setup**: Positions on boundary dates (SevenDaysAgo, LastBusiness)
+- **Expected**: Both boundary dates included in processing
+- **Validation**: Verify inclusive date range logic
+
+#### Scenario 5: Invalid RunDate
+- **Setup**: Set `$RUN-DATE` to invalid value
+- **Expected**: Program uses current date, continues processing
+- **Validation**: Check log output for date fallback message
+
+### Test Data Requirements
+
+**Database Setup**:
+- Position records with varied trade dates
+- Mix of processed (field 877 = field 741) and unprocessed
+- Activity records with buys and sells for reversal testing
+- Edge cases: zero amounts, large amounts, negative amounts
+
+**Environment Setup**:
+- Valid `$XDAT` directory with write permissions
+- Valid `$RUN-DATE` (YYYYMMDD format)
+- Database connectivity
 
 ---
 
 ## Performance Characteristics
 
-### Typical Processing Volume
-- **Date Range**: 7 calendar days
-- **Estimated Position Records**: 50-500 (varies by plan activity)
-- **POOLLOAN3 Records**: 10-20% of total positions
-- **Records with Secondary1Buys > 0**: 50-80% of POOLLOAN3 records
-- **Records Already Processed (skipped)**: 0-50% (depends on reruns)
-- **SSSA Records per Position**: 1-3 (buy + potential reversals)
-
-### Execution Time Estimates
-- **Initialization**: <1 second
-- **Per Position Record**: ~10-50ms (database fetch + processing)
-- **Per CHECK.SSSA Call**: ~20-100ms (SSSA query + calculation)
-- **Per C1 Write**: ~5ms (file I/O)
-- **Total Execution**: 1-5 minutes (for typical volume)
-
-### Database Query Performance
-- **POPP View**: Sequential scan with date range filter
-  - Index on (SecurityID, TradeDate) recommended
-  - Expected: <500ms for 7-day window
-- **SSSA View**: Point lookup by Plan/SecurityID/Date
-  - Index on (Plan, SecurityID, Date) recommended
-  - Expected: <50ms per query
-- **POPP Update**: Single record update
-  - Expected: <20ms per update
-
-### File I/O Performance
-- **File Open**: Single operation at startup (~10ms)
-- **Record Write**: Buffered writes (~5ms each)
-- **Expected File Size**: 10-50 KB (100-500 records)
+### Processing Volume
+- **Typical**: 50-200 positions per 7-day window
+- **Peak**: 500+ positions (month-end, quarter-end)
+- **Duration**: 2-5 minutes typical, 10-15 minutes peak
 
 ### Optimization Opportunities
-1. **Batch Database Updates**: Group position updates instead of one-by-one commits
-2. **SSSA Caching**: Cache SSSA query results if same plan/date queried multiple times
-3. **Eliminate Redundant Fetches**: Lines 41-42 re-fetch fields already retrieved at lines 33-34
-4. **Index Tuning**: Ensure proper indexes on query fields
+
+1. **Database Query Tuning**
+   - Ensure indexes on: SECURITYID, TRADEDATE (POPP table)
+   - Ensure indexes on: PLAN, SECURITYID, DATE (SSSA table)
+
+2. **Reversal Check Optimization**
+   - CHECK.SSSA only called when Secondary1Buys ≠ 0
+   - Consider caching results if same plan/date queried multiple times
+
+3. **Batch Size Considerations**
+   - Currently processes all records in single run
+   - Could batch for very large volumes (thousands of positions)
 
 ---
 
-## Error Handling and Data Quality
+## Maintenance Notes
 
-### Explicit Error Handling
-- ✓ Date validation with fallback (Lines 22-28)
-- ✓ Zero check before CHECK.SSSA (Line 37)
-- ✓ Duplicate prevention (Line 40)
-- ✓ Null/zero guard in CHECK.SSSA (Line 60)
+### Code Change Impact Areas
 
-### Implicit Error Handling
-- ✗ No database connection error handling
-- ✗ No file operation error handling
-- ✗ No validation for negative amounts
-- ✗ No check for SSSA data completeness
+**Adding New Fields to C1 Record**:
+- Update `OcText_Set()` calls (lines 45-52)
+- Verify positions and lengths don't overlap
+- Update downstream C1 parser
 
-### Known Limitations
-- Silent failure on database errors
-- No operational logging or counters
-- No transaction management (updates committed immediately)
-- No validation of amount ranges
+**Changing Date Window**:
+- Modify `OcDate_AddDays()` parameter (line 23, 26)
+- Currently: 7 days lookback
+- Update comments to reflect new window
 
-**See**: [GAP_NewLoanCash Error Handling Analysis](GAP_NewLoanCash_ERROR_HANDLING.md) for comprehensive error handling documentation.
+**Adding Reversal Logic**:
+- Extend CHECK.SSSA to handle new transaction types
+- Currently: handles B (Buy) and S (Sell) with source XI
+- Add new conditionals in lines 64-71
 
----
+### Common Issues
 
-## Testing Considerations
+**Issue**: Duplicate C1 records generated  
+**Cause**: Field 877 not updating properly  
+**Fix**: Verify `poppobj_update()` succeeds after `poppobj_setde()`
 
-### Unit Test Scenarios
+**Issue**: Incorrect amounts in C1 records  
+**Cause**: Reversal logic not netting correctly  
+**Fix**: Verify CHECK.SSSA accumulation logic (WK001 calculation)
 
-#### 1. Date Calculation
-- **Test**: Valid $RUN-DATE
-- **Expected**: SevenDaysAgo = RunDate - 7, LastBusiness = RunDate - 1 business day
-- **Test**: Invalid $RUN-DATE
-- **Expected**: Fallback to current date calculations
-
-#### 2. CHECK.SSSA Net Calculation
-- **Test**: Buy only ($10,000 buy, no sells)
-- **Expected**: Secondary1Buys = $10,000
-- **Test**: Partial reversal ($10,000 buy, $3,000 sell)
-- **Expected**: Secondary1Buys = $7,000
-- **Test**: Full reversal ($10,000 buy, $10,000 sell)
-- **Expected**: Secondary1Buys = $0
-- **Test**: Multiple transactions ($10,000 + $5,000 buys, $2,000 + $3,000 sells)
-- **Expected**: Secondary1Buys = $10,000
-
-#### 3. Duplicate Prevention
-- **Test**: First run (PriorCashApplied = 0, Secondary1Buys = $10,000)
-- **Expected**: C1 generated, UDF1 updated to $10,000
-- **Test**: Second run (PriorCashApplied = $10,000, Secondary1Buys = $10,000)
-- **Expected**: Skip processing, no C1 generated
-
-#### 4. C1 Record Format
-- **Test**: Validate positions 1-4, 5-10, 31-38, 40-71, 73-92, 115, 116-130, 134-138
-- **Expected**: Exact byte positions match specification
-
-### Integration Test Scenarios
-
-#### 1. End-to-End Processing
-- **Setup**: Load test POPP and SSSA data
-- **Execute**: Run GAP_NewLoanCash
-- **Validate**: 
-  - C1 file exists and has correct record count
-  - UDF1 fields updated in POPP
-  - Amounts net correctly
-  - File format valid
-
-#### 2. Idempotency Test
-- **Setup**: Run program twice with same data
-- **Validate**: Second run produces no output; UDF1 unchanged
-
-#### 3. Reversal Handling
-- **Setup**: Position with buy + sell in SSSA
-- **Validate**: Net amount calculated correctly; C1 shows net
-
-### Edge Case Tests
-
-- Empty result set (no POOLLOAN3 positions)
-- All records already processed
-- Negative net activity (sells exceed buys)
-- Missing SSSA data (position has Secondary1Buys but no SSSA records)
-- Invalid RKPlan or TradeDate in CHECK.SSSA
-
----
-
-## Operational Considerations
-
-### Scheduling Requirements
-- **Frequency**: Daily (batch processing)
-- **Timing**: After TRUSTTRANS.P1 and SSSA loads complete
-- **Duration**: 1-5 minutes (typical volume)
-- **Dependencies**: 
-  - POPP database available
-  - SSSA database available
-  - $XDAT directory accessible
-
-### Monitoring and Alerting
-- **Success Criteria**: Return code sd080 = 99999999 (or 0 if changed)
-- **Output Validation**: C1 file exists and non-empty (unless no activity)
-- **Alerts**:
-  - Program failure (non-zero return code)
-  - Empty output when activity expected
-  - Execution time exceeds threshold
-
-### Maintenance Procedures
-
-#### Regular Maintenance
-- Monitor disk space in $XDAT directory
-- Archive or purge old C1 files (retention policy)
-- Review skip counts (high skip rate may indicate issues)
-
-#### Troubleshooting Steps
-1. **No Output Generated**:
-   - Check POPP for POOLLOAN3 positions in date range
-   - Verify $XDAT directory exists and is writable
-   - Check for database connectivity
-   
-2. **Incorrect Amounts**:
-   - Verify SSSA data loaded completely
-   - Check for missing reversals in SSSA
-   - Review CHECK.SSSA logic for transaction type handling
-   
-3. **Duplicate C1 Records**:
-   - Check UDF1 field updates (should prevent duplicates)
-   - Verify rerun detected already-processed records
+**Issue**: Missing positions in output  
+**Cause**: Date range calculation error  
+**Fix**: Verify `OcDate_AddDays()` vs `OcDate_AddBusDays()` usage
 
 ---
 
 ## Related Documentation
 
-### Program Documentation
-- [GAP_NewLoanCash Data Dictionary](GAP_NewLoanCash_DATA_DICTIONARY.md) - Complete variable definitions with mutation analysis
-- [GAP_NewLoanCash Call Graph](GAP_NewLoanCash_CALL_GRAPH.md) - Function call hierarchy and database operations
-- [GAP_NewLoanCash Error Handling](GAP_NewLoanCash_ERROR_HANDLING.md) - Error handling analysis and recommendations
-- [GAP_NewLoanCash Diagrams](GAP_NewLoanCash_DIAGRAMS.md) - Additional Mermaid visualizations
-
-### Procedure Documentation
-- [CHECK.SSSA Procedure](procedures/CHECK.SSSA.md) - Detailed reversal calculation logic
-
-### External References
-- GPD-1704: Position 92 correction ticket
-- TRUSTTRANS.P1 specification
-- SSSA data model documentation
-- C1 activity file format specification
+- [Data Dictionary](./GAP_NewLoanCash_DATA_DICTIONARY.md) - Complete variable reference
+- [Call Graph](./GAP_NewLoanCash_CALL_GRAPH.md) - Program flow and call hierarchy
+- [Error Handling](./GAP_NewLoanCash_ERROR_HANDLING.md) - Risk assessment and error scenarios
+- [Integration Guide](./GAP_NewLoanCash_INTEGRATION_GUIDE.md) - Deployment and integration details
+- [Business Rules](./GAP_NewLoanCash_BUSINESS_RULES.md) - Detailed business logic documentation
+- [Diagrams](./GAP_NewLoanCash_DIAGRAMS.md) - Visual flowcharts and state diagrams
 
 ---
 
-## Glossary
+## Quick Reference
 
-- **C1 Activity**: Cash activity record format for reconciliation
-- **DE**: Data Element (database field identifier)
-- **POOLLOAN3**: Security type identifier for loan pool investments
-- **POPP**: Plan Position database object
-- **Secondary1Buys**: Field tracking secondary market loan purchases
-- **SSSA**: Secondary market activity database object
-- **UDF1**: User-Defined Field 1 (DE 877); used as processing flag
-- **XI**: Activity code for "External In" transactions
-- **OmniScript**: Proprietary scripting language for trust/retirement systems
-- **GAP**: Likely acronym for business process or system name
-- **$XDAT**: Environment variable for data file directory
-- **$RUN-DATE**: Environment variable for processing date
+### Key Variables
+- **FileName**: Output C1 file path
+- **RunDate**: Batch processing date
+- **SevenDaysAgo**: Start of 7-day window
+- **LastBusiness**: Effective date for C1 records
+- **Secondary1Buys**: Loan purchase amount (may be netted)
+- **PriorCashApplied**: Idempotency check value
+- **NewLoanUnits**: Negated loan amount for C1
+
+### Key Database Fields
+- **poppobj.008**: TradeDate
+- **poppobj.030**: RKPlan
+- **poppobj.741**: Secondary1Buys
+- **poppobj.877**: PriorCashApplied (UDF1)
+- **poppobj.1510**: TrustAccount
+- **sssaobj.009**: Transaction type
+- **sssaobj.235**: Transaction amount
+
+### Key Business Logic
+1. Query POOLLOAN3 positions for 7-day window
+2. Check for reversals if loan amount > 0
+3. Skip if already processed (idempotency)
+4. Build and write C1 record
+5. Mark as processed in database
+
+---
+
+*This documentation was generated using the OMNISCRIPT Grammar Parser and comprehensive program analysis.*
+*Last Generated*: 2026-02-03

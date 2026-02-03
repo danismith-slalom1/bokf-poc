@@ -1,551 +1,522 @@
-# GAP_NewLoanCash Diagrams
+# GAP_NewLoanCash Diagrams and Visualizations
 
-## Data Flow Diagram
+## Program: GAP_NewLoanCash
+**Purpose**: Visual representations of program flow, data flow, and architecture  
+**Last Updated**: 2026-02-03
+
+---
+
+## 1. High-Level Process Flow
+
+```mermaid
+flowchart TD
+    Start([Program Start]) --> Init[Initialize Environment<br/>- Set error context<br/>- Build output filename<br/>- Open file]
+    Init --> GetDates[Calculate Date Range<br/>- Get RunDate from env<br/>- Calculate SevenDaysAgo<br/>- Calculate LastBusiness]
+    GetDates --> QueryPos[Query POOLLOAN3 Positions<br/>Date Range: SevenDaysAgo to LastBusiness]
+    QueryPos --> HasRec{More<br/>Records?}
+    
+    HasRec -->|No| EndProg([Program End])
+    HasRec -->|Yes| Extract[Extract Position Data<br/>- RKPlan<br/>- TradeDate<br/>- Secondary1Buys<br/>- PriorCashApplied<br/>- TrustAccount]
+    
+    Extract --> CheckAmt{Secondary1Buys<br/>> 0?}
+    CheckAmt -->|Yes| CallRev[Call CHECK.SSSA<br/>Reversal Detection]
+    CheckAmt -->|No| CheckIdem
+    CallRev --> CheckIdem{PriorCashApplied<br/>≠<br/>Secondary1Buys?}
+    
+    CheckIdem -->|No - Already Processed| HasRec
+    CheckIdem -->|Yes - New Record| BuildC1[Build C1 Activity Record<br/>- Format fields<br/>- Negate amount]
+    
+    BuildC1 --> WriteFile[Write Record to File]
+    WriteFile --> UpdateDB[Update Position<br/>Field 877 = Secondary1Buys]
+    UpdateDB --> HasRec
+    
+    style Start fill:#e1f5e1
+    style EndProg fill:#ffe1e1
+    style CallRev fill:#fff4e1
+    style CheckIdem fill:#e1f0ff
+    style WriteFile fill:#f0e1ff
+```
+
+---
+
+## 2. CHECK.SSSA Reversal Detection Flow
+
+```mermaid
+flowchart TD
+    Entry([CHECK.SSSA Called]) --> ValidateParams{RKPlan ≠ ''<br/>AND<br/>TradeDate ≠ 0?}
+    
+    ValidateParams -->|No| ReturnEarly([GOBACK<br/>No Changes])
+    ValidateParams -->|Yes| InitWK[Initialize WK001 = 0]
+    
+    InitWK --> QueryActivity[Query SSSA Activity<br/>Plan, Security, Date]
+    QueryActivity --> NextRec{More<br/>Activity<br/>Records?}
+    
+    NextRec -->|No| AssignResult[Secondary1Buys = WK001]
+    NextRec -->|Yes| CheckSource{Transaction<br/>Source = 'XI'?}
+    
+    CheckSource -->|No| NextRec
+    CheckSource -->|Yes| CheckType{Transaction<br/>Type?}
+    
+    CheckType -->|'B' - Buy| AddAmount[WK001 += Amount<br/>Accumulate Buy]
+    CheckType -->|'S' - Sell| SubAmount[WK001 -= Amount<br/>Reversal/Offset]
+    CheckType -->|Other| NextRec
+    
+    AddAmount --> NextRec
+    SubAmount --> NextRec
+    
+    AssignResult --> Return([GOBACK<br/>Secondary1Buys Updated])
+    
+    style Entry fill:#e1f5e1
+    style Return fill:#ffe1e1
+    style ReturnEarly fill:#ffe1e1
+    style AddAmount fill:#d4edda
+    style SubAmount fill:#f8d7da
+```
+
+---
+
+## 3. Data Flow Diagram
 
 ```mermaid
 flowchart LR
-    subgraph Inputs
-        ENV1[$RUN-DATE<br/>Environment]
-        ENV2[$XDAT<br/>Environment]
-        POPP[(POPP<br/>Database)]
-        SSSA[(SSSA<br/>Database)]
+    subgraph Environment
+        XDAT[($XDAT Directory)]
+        RUNDATE[($RUN-DATE Variable)]
     end
     
-    subgraph Program["GAP_NewLoanCash"]
-        Init[Initialize<br/>Variables]
-        DateCalc[Calculate<br/>Date Range]
-        Query[Query<br/>POPP]
-        Process[Process<br/>Records]
-        CheckSSA[CHECK.SSSA<br/>Net Calc]
-        BuildC1[Build<br/>C1 Record]
-        Update[Update<br/>UDF1]
+    subgraph "Database Sources"
+        POPP[(POPP Table<br/>Position Accounts)]
+        SSSA[(SSSA Table<br/>Trust Transactions)]
+    end
+    
+    subgraph "Program Processing"
+        Main[Main Program<br/>Lines 13-57]
+        CheckSSA[CHECK.SSSA<br/>Lines 59-75]
     end
     
     subgraph Outputs
-        C1File[C1 Activity<br/>File]
-        POPPOut[(POPP<br/>Updated)]
+        C1File[(C1 Activity File<br/>NEWLOANOFFSET.*.DAT)]
     end
     
-    ENV1 -->|Run Date| DateCalc
-    ENV2 -->|Output Path| Init
-    POPP -->|Position Records| Query
-    Query --> Process
-    SSSA -->|Buy/Sell Trans| CheckSSA
-    Process -->|Non-zero Buys| CheckSSA
-    CheckSSA -->|Net Amount| BuildC1
-    BuildC1 -->|C1 Record| C1File
-    Process -->|Mark Processed| Update
-    Update -->|UDF1 Updated| POPPOut
+    RUNDATE -->|RunDate| Main
+    XDAT -->|File Path| Main
+    POPP -->|Read Fields:<br/>030, 008, 741, 877, 1510| Main
     
-    style Program fill:#E8F4F8
-    style Inputs fill:#FFF4E6
-    style Outputs fill:#E8F5E9
+    Main -->|RKPlan, TradeDate| CheckSSA
+    SSSA -->|Transaction Data<br/>Fields 009, 011, 235| CheckSSA
+    CheckSSA -->|Adjusted<br/>Secondary1Buys| Main
+    
+    Main -->|C1 Records| C1File
+    Main -->|Update Field 877| POPP
+    
+    style Main fill:#e1f0ff
+    style CheckSSA fill:#fff4e1
+    style C1File fill:#d4edda
+    style POPP fill:#f8d7da
+    style SSSA fill:#f8d7da
 ```
 
 ---
 
-## State Transition Diagram
+## 4. State Machine: Record Processing States
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Initializing: Program Start
+    [*] --> Unprocessed: Position Record Found
     
-    Initializing --> QueryingRecords: File Opened,<br/>Dates Calculated
+    Unprocessed --> CheckingAmount: Extract Data
+    CheckingAmount --> SkipZero: Secondary1Buys = 0
+    CheckingAmount --> CheckingReversal: Secondary1Buys ≠ 0
     
-    QueryingRecords --> ProcessingRecord: Record Found
-    QueryingRecords --> Complete: No More Records
+    CheckingReversal --> NetCalculated: CHECK.SSSA Returns
     
-    ProcessingRecord --> CheckingReversal: Secondary1Buys > 0
-    ProcessingRecord --> ProcessingRecord: Secondary1Buys = 0<br/>(Skip to Next)
+    NetCalculated --> CheckingIdempotency: Compare to Prior
+    CheckingIdempotency --> AlreadyProcessed: PriorCashApplied = Secondary1Buys
+    CheckingIdempotency --> BuildingRecord: PriorCashApplied ≠ Secondary1Buys
     
-    CheckingReversal --> CalculatingNet: Valid Plan/Date
-    CheckingReversal --> CheckingDuplicate: Invalid Plan/Date<br/>(Amount Unchanged)
+    BuildingRecord --> WritingOutput: C1 Record Built
+    WritingOutput --> UpdatingDatabase: File Written
+    UpdatingDatabase --> Processed: Field 877 Updated
     
-    CalculatingNet --> CheckingDuplicate: Net Calculated
-    
-    CheckingDuplicate --> ProcessingRecord: Already Processed<br/>(Skip to Next)
-    CheckingDuplicate --> GeneratingC1: Not Processed<br/>AND Amount > 0
-    CheckingDuplicate --> ProcessingRecord: Amount = 0<br/>(Full Reversal)
-    
-    GeneratingC1 --> UpdatingDatabase: C1 Written
-    
-    UpdatingDatabase --> ProcessingRecord: UDF1 Updated<br/>(Next Record)
-    
-    Complete --> [*]: Program End
+    SkipZero --> [*]: No Action
+    AlreadyProcessed --> [*]: No Action
+    Processed --> [*]: Complete
     
     note right of CheckingReversal
-        CHECK.SSSA queries
-        SSSA for buy/sell
-        transactions
+        Queries SSSA for
+        Buy/Sell Activity
     end note
     
-    note right of CheckingDuplicate
-        Compare PriorCashApplied
-        with Secondary1Buys
-    end note
-    
-    note right of GeneratingC1
-        Build 138-byte
-        fixed-format record
+    note right of CheckingIdempotency
+        Prevents duplicate
+        C1 records
     end note
 ```
 
 ---
 
-## Sequence Diagram: Main Processing Flow
+## 5. Sequence Diagram: Complete Processing Flow
 
 ```mermaid
 sequenceDiagram
+    participant Env as Environment
     participant Main as Main Program
     participant POPP as POPP Database
     participant CheckSSA as CHECK.SSSA
     participant SSSA as SSSA Database
-    participant File as C1 Output File
+    participant File as Output File
     
-    Main->>Main: Initialize Variables
-    Main->>File: Open Output File
-    Main->>Main: Calculate Date Range
+    Env->>Main: $RUN-DATE, $XDAT
+    Main->>Main: Calculate Dates (SevenDaysAgo, LastBusiness)
+    Main->>File: Open (FileName)
     
-    Main->>POPP: Query POOLLOAN3<br/>(SevenDaysAgo to LastBusiness)
+    Main->>POPP: Query Positions (POOLLOAN3, Date Range)
     
-    loop For Each Position Record
-        POPP-->>Main: Return Record
-        Main->>POPP: Fetch Fields<br/>(RKPlan, TradeDate,<br/>Secondary1Buys, PriorCashApplied)
+    loop For Each Position
+        POPP-->>Main: Position Record
+        Main->>Main: Extract Fields (RKPlan, TradeDate, etc.)
         
         alt Secondary1Buys > 0
-            Main->>CheckSSA: PERFORM CHECK.SSSA
+            Main->>CheckSSA: PERFORM (RKPlan, TradeDate)
+            CheckSSA->>SSSA: Query Activity (Plan, Security, Date)
             
-            alt Valid RKPlan and TradeDate
-                CheckSSA->>SSSA: Query SSSA<br/>(Plan, POOLLOAN3, Date)
-                
-                loop For Each SSSA Record
-                    SSSA-->>CheckSSA: Return Transaction
-                    
-                    alt Activity = 'XI' AND Type = 'B'
-                        CheckSSA->>CheckSSA: WK001 += Amount
-                    else Activity = 'XI' AND Type = 'S'
-                        CheckSSA->>CheckSSA: WK001 -= Amount
-                    end
-                end
-                
-                CheckSSA->>CheckSSA: Secondary1Buys = WK001
+            loop For Each Activity
+                SSSA-->>CheckSSA: Activity Record
+                CheckSSA->>CheckSSA: Accumulate Buys/Sells
             end
             
-            CheckSSA-->>Main: GOBACK (Net Calculated)
+            CheckSSA-->>Main: GOBACK (Adjusted Secondary1Buys)
         end
         
-        alt PriorCashApplied ≠ Secondary1Buys<br/>AND Secondary1Buys > 0
+        alt PriorCashApplied ≠ Secondary1Buys
             Main->>Main: Build C1 Record
             Main->>File: Write C1 Record
-            Main->>POPP: Update UDF1 = Secondary1Buys
-            POPP-->>Main: Update Confirmed
-        else Already Processed or Zero Amount
-            Note over Main: Skip to Next Record
+            Main->>POPP: Update Field 877
+        else Already Processed
+            Main->>Main: Skip Record
         end
     end
     
-    Main->>Main: End Program
+    Main->>File: Close (implicit)
+    Main-->>Env: Exit
 ```
 
 ---
 
-## Entity Relationship Diagram
+## 6. Entity Relationship: Database Schema
 
 ```mermaid
 erDiagram
-    POPP ||--o{ SSSA : "has activity"
     POPP {
-        string DE008_TradeDate
-        string DE030_RKPlan PK
-        numeric DE741_Secondary1Buys
-        numeric DE877_UDF1_PriorCashApplied
-        string DE01510_TrustAccount
+        string Field_030 "RKPlan (Plan ID)"
+        numeric Field_008 "TradeDate"
+        numeric Field_741 "Secondary1Buys (UDF)"
+        numeric Field_877 "PriorCashApplied (UDF1)"
+        string Field_1510 "TrustAccount"
+        string SecurityID "POOLLOAN3"
     }
     
     SSSA {
-        string Plan FK
-        string SecurityID
-        date Date
-        string DE009_TransactionType
-        string DE011_ActivityCode
-        numeric DE235_Amount
+        string Plan "Plan ID"
+        string SecurityID "POOLLOAN3"
+        numeric Date "Trade Date"
+        string Field_009 "Transaction Type (B/S)"
+        string Field_011 "Transaction Source (XI)"
+        numeric Field_235 "Transaction Amount"
     }
     
-    C1_OUTPUT {
-        string RecordType
-        string RKPlan
-        date ActivityDate
-        string TrustAccount
-        numeric NewLoanUnits
-        string ActivityCode
+    C1_Activity {
+        string RecordType "C100"
+        string PlanID "From POPP.Field_030"
+        numeric EffectiveDate "LastBusiness"
+        string TrustAccount "From POPP.Field_1510"
+        string TransactionCode "000000000000000    2"
+        numeric Amount "Negated Secondary1Buys"
+        string ActivityCode "00339"
     }
     
-    POPP ||--o{ C1_OUTPUT : "generates"
-    
-    ENVIRONMENT {
-        string RUN_DATE
-        string XDAT
-    }
-    
-    ENVIRONMENT ||--|| POPP : "controls query"
-    ENVIRONMENT ||--|| C1_OUTPUT : "defines path"
+    POPP ||--o{ SSSA : "matched by Plan+Security+Date"
+    POPP ||--o{ C1_Activity : "generates when unprocessed"
+    SSSA ||--o{ C1_Activity : "influences via reversal netting"
 ```
 
 ---
 
-## Decision Tree: Record Processing Logic
-
-```mermaid
-flowchart TD
-    Start([Fetch Position Record]) --> CheckZero{Secondary1Buys<br/><> 0?}
-    
-    CheckZero -->|No| Skip1[Skip Record]
-    CheckZero -->|Yes| CallCheck[Call CHECK.SSSA]
-    
-    CallCheck --> ValidParams{Valid RKPlan<br/>AND<br/>TradeDate <> 0?}
-    
-    ValidParams -->|No| CheckDup1{PriorCash =<br/>Secondary1Buys?}
-    ValidParams -->|Yes| QuerySSA[Query SSSA<br/>Calculate Net]
-    
-    QuerySSA --> CheckDup2{PriorCash =<br/>Secondary1Buys?}
-    
-    CheckDup1 -->|Yes| Skip2[Skip Record<br/>Already Processed]
-    CheckDup1 -->|No| CheckStillNonZero1{Secondary1Buys<br/><> 0?}
-    
-    CheckDup2 -->|Yes| Skip3[Skip Record<br/>Already Processed]
-    CheckDup2 -->|No| CheckStillNonZero2{Secondary1Buys<br/><> 0?}
-    
-    CheckStillNonZero1 -->|No| Skip4[Skip Record<br/>Zero Amount]
-    CheckStillNonZero1 -->|Yes| Generate1[Generate C1<br/>Update UDF1]
-    
-    CheckStillNonZero2 -->|No| Skip5[Skip Record<br/>Full Reversal]
-    CheckStillNonZero2 -->|Yes| Generate2[Generate C1<br/>Update UDF1]
-    
-    Skip1 --> Next([Next Record])
-    Skip2 --> Next
-    Skip3 --> Next
-    Skip4 --> Next
-    Skip5 --> Next
-    Generate1 --> Next
-    Generate2 --> Next
-    
-    style Generate1 fill:#90EE90
-    style Generate2 fill:#90EE90
-    style Skip1 fill:#FFE4B5
-    style Skip2 fill:#FFE4B5
-    style Skip3 fill:#FFE4B5
-    style Skip4 fill:#FFE4B5
-    style Skip5 fill:#FFE4B5
-```
-
----
-
-## Component Interaction Diagram
+## 7. Component Interaction Diagram
 
 ```mermaid
 graph TB
-    subgraph External Systems
-        ENV[Environment<br/>Variables]
-        POPP_DB[(POPP<br/>Database)]
-        SSSA_DB[(SSSA<br/>Database)]
-        FileSystem[File System<br/>$XDAT]
+    subgraph "Runtime Environment"
+        ENV[Environment Variables<br/>$XDAT, $RUN-DATE]
     end
     
-    subgraph GAP_NewLoanCash Program
-        Init[Initialization<br/>Module]
-        DateCalc[Date<br/>Calculator]
-        MainLoop[Main<br/>Loop]
-        CheckSSA[CHECK.SSSA<br/>Routine]
-        C1Builder[C1 Record<br/>Builder]
-        DBUpdate[Database<br/>Updater]
+    subgraph "GAP_NewLoanCash Program"
+        INIT[Initialization<br/>Lines 13-19]
+        DATE[Date Calculation<br/>Lines 21-29]
+        MAIN[Main Loop<br/>Lines 31-57]
+        ROUT[CHECK.SSSA Routine<br/>Lines 59-75]
     end
     
-    subgraph OmniScript Runtime
-        DateFuncs[Date<br/>Functions]
-        FileFuncs[File I/O<br/>Functions]
-        TextFuncs[Text<br/>Functions]
-        DBFuncs[Database<br/>Functions]
+    subgraph "Data Sources"
+        POPPDB[(POPP Database)]
+        SSSADB[(SSSA Database)]
     end
     
-    ENV -->|$RUN-DATE| Init
-    ENV -->|$XDAT| Init
+    subgraph "Output Systems"
+        OUTFILE[C1 Activity File]
+        RECON[Cash Reconciliation<br/>System]
+    end
     
-    Init -->|Calculate Dates| DateCalc
-    DateCalc -->|Use| DateFuncs
-    DateCalc -->|SevenDaysAgo,<br/>LastBusiness| MainLoop
+    ENV --> INIT
+    ENV --> DATE
+    INIT --> MAIN
+    DATE --> MAIN
     
-    Init -->|Open File| FileFuncs
-    FileFuncs -->|Access| FileSystem
+    POPPDB <-->|Read/Update| MAIN
+    MAIN -->|Call| ROUT
+    ROUT <-->|Query| SSSADB
+    ROUT -->|Return| MAIN
     
-    MainLoop -->|Query| DBFuncs
-    DBFuncs -->|Read| POPP_DB
+    MAIN -->|Write| OUTFILE
+    OUTFILE -->|Consume| RECON
     
-    MainLoop -->|Call| CheckSSA
-    CheckSSA -->|Query| DBFuncs
-    DBFuncs -->|Read| SSSA_DB
-    CheckSSA -->|Net Amount| MainLoop
-    
-    MainLoop -->|Build Record| C1Builder
-    C1Builder -->|Format| TextFuncs
-    C1Builder -->|Write| FileFuncs
-    
-    MainLoop -->|Update UDF1| DBUpdate
-    DBUpdate -->|Update| DBFuncs
-    DBFuncs -->|Write| POPP_DB
-    
-    style GAP_NewLoanCash Program fill:#E8F4F8
-    style OmniScript Runtime fill:#FFF4E6
-    style External Systems fill:#FFE4E1
+    style MAIN fill:#e1f0ff
+    style ROUT fill:#fff4e1
+    style OUTFILE fill:#d4edda
 ```
 
 ---
 
-## Timeline: Processing Sequence
+## 8. C1 Record Layout Diagram
 
 ```mermaid
-gantt
+block-beta
+    columns 10
+    
+    block:header
+        columns 1
+        H["C1 Activity Record Layout<br/>(Fixed Length)"]
+    end
+    
+    space
+    
+    block:RecType
+        RT["Positions 1-4<br/>Record Type<br/>'C100'"]
+    end
+    
+    block:Plan
+        PL["Positions 5-10<br/>Plan ID<br/>(RKPlan)"]
+    end
+    
+    block:Spacer1
+        SP1["Positions 11-30<br/>Unused<br/>(20 bytes)"]
+    end
+    
+    block:Date
+        DT["Positions 31-38<br/>Effective Date<br/>(LastBusiness)"]
+    end
+    
+    block:Spacer2
+        SP2["Position 39<br/>Unused"]
+    end
+    
+    block:Account
+        AC["Positions 40-71<br/>Trust Account<br/>(32 bytes)"]
+    end
+    
+    block:TxCode
+        TX["Positions 73-92<br/>Transaction Code<br/>'000000000000000    2'"]
+    end
+    
+    block:Spacer3
+        SP3["Positions 93-114<br/>Unused<br/>(22 bytes)"]
+    end
+    
+    block:Sign
+        SG["Position 115<br/>Sign<br/>'0'"]
+    end
+    
+    block:Amount
+        AM["Positions 116-130<br/>Amount<br/>(NewLoanUnits)<br/>Format: Z,12V2-"]
+    end
+    
+    block:Spacer4
+        SP4["Positions 131-133<br/>Unused"]
+    end
+    
+    block:ActCode
+        CD["Positions 134-138<br/>Activity Code<br/>'00339'"]
+    end
+    
+    style RT fill:#d4edda
+    style PL fill:#d4edda
+    style DT fill:#d4edda
+    style AC fill:#d4edda
+    style TX fill:#d4edda
+    style AM fill:#f8d7da
+    style CD fill:#d4edda
+```
+
+---
+
+## 9. Timeline: Processing Sequence
+
+```mermaid
+timeline
     title GAP_NewLoanCash Execution Timeline
-    dateFormat X
-    axisFormat %L ms
     
     section Initialization
-    Set Variables           :0, 10
-    Build Filename          :10, 20
-    Open Output File        :20, 30
+        Line 13 : Set sd080 error context
+        Line 14 : Define local variables
+        Line 16-17 : Build filename with timestamp
+        Line 19 : Open output file
     
-    section Date Calc
-    Get Run Date            :30, 40
-    Validate Date           :40, 50
-    Calculate Ranges        :50, 80
+    section Date Setup
+        Line 21 : Get RunDate from environment
+        Line 22 : Validate date
+        Line 23-27 : Calculate SevenDaysAgo and LastBusiness
+        Line 29 : Display date values
     
-    section Main Loop
-    Query POPP              :80, 100
-    
-    Record 1 Processing     :100, 150
-    CHECK.SSSA Call 1       :120, 140
-    C1 Write 1              :145, 150
-    UDF1 Update 1           :150, 155
-    
-    Record 2 Processing     :155, 180
-    CHECK.SSSA Call 2       :165, 175
-    Skip (Duplicate)        :180, 180
-    
-    Record 3 Processing     :180, 230
-    CHECK.SSSA Call 3       :190, 220
-    C1 Write 3              :225, 230
-    UDF1 Update 3           :230, 235
+    section Data Processing
+        Line 31 : Query poppobj for POOLLOAN3 positions
+        Line 32-57 : Loop through position records
+        Line 33-36 : Extract position data
+        Line 37-39 : Call CHECK.SSSA if Secondary1Buys > 0
+        Line 40-56 : Process unprocessed records
+        Line 53 : Write C1 record to file
+        Line 54-55 : Update position field 877
     
     section Completion
-    End Loop                :235, 240
-    Close Resources         :240, 250
+        Line 57 : End loop
+        Implicit : Close file and exit
 ```
 
 ---
 
-## Activity Diagram: CHECK.SSSA Routine
+## 10. Decision Tree: Processing Logic
 
 ```mermaid
-stateDiagram-v2
-    [*] --> ValidateParams: PERFORM CHECK.SSSA
+graph TD
+    Start([Position Record]) --> Q1{Secondary1Buys<br/>= 0?}
     
-    ValidateParams --> InitAccumulator: RKPlan valid AND<br/>TradeDate <> 0
-    ValidateParams --> ReturnZero: Invalid params
+    Q1 -->|Yes| Skip1[Skip Record<br/>No loan activity]
+    Q1 -->|No| CallCheck[Call CHECK.SSSA<br/>Calculate Net Activity]
     
-    InitAccumulator --> QuerySSA: WK001 = 0
+    CallCheck --> Q2{PriorCashApplied<br/>= Secondary1Buys?}
     
-    QuerySSA --> FetchRecord: sssaobj_view()
+    Q2 -->|Yes| Skip2[Skip Record<br/>Already Processed]
+    Q2 -->|No| Process[Process Record]
     
-    FetchRecord --> CheckMore: sssaobj_next()
+    Process --> ExtractData[Extract Trust Account<br/>and Other Fields]
+    ExtractData --> CalcAmount[Calculate NewLoanUnits<br/>= 0 - Secondary1Buys]
+    CalcAmount --> BuildRecord[Build C1 Record<br/>Using OcText_Set]
+    BuildRecord --> WriteOutput[Write to Output File]
+    WriteOutput --> UpdateField[Update Field 877<br/>= Secondary1Buys]
+    UpdateField --> Complete([Record Complete])
     
-    CheckMore --> CheckActivity: Record Found
-    CheckMore --> AssignResult: No More Records
+    Skip1 --> End([Continue to Next])
+    Skip2 --> End
+    Complete --> End
     
-    CheckActivity --> CheckType: Activity = 'XI'
-    CheckActivity --> FetchRecord: Activity <> 'XI'
-    
-    CheckType --> AddAmount: Type = 'B'
-    CheckType --> SubAmount: Type = 'S'
-    CheckType --> FetchRecord: Type = Other
-    
-    AddAmount --> FetchRecord: WK001 += Amount
-    SubAmount --> FetchRecord: WK001 -= Amount
-    
-    AssignResult --> ReturnNet: Secondary1Buys = WK001
-    
-    ReturnZero --> [*]: GOBACK
-    ReturnNet --> [*]: GOBACK
-    
-    note right of ValidateParams
-        Guard against
-        invalid queries
-    end note
-    
-    note right of CheckActivity
-        Filter for
-        'XI' = External In
-    end note
-    
-    note right of CheckType
-        'B' = Buy: Add<br/>'S' = Sell: Subtract
-    end note
+    style Process fill:#d4edda
+    style Skip1 fill:#f8d7da
+    style Skip2 fill:#f8d7da
+    style Complete fill:#e1f5e1
 ```
 
 ---
 
-## Data Transformation Flow
+## 11. System Context Diagram
 
 ```mermaid
-flowchart LR
-    subgraph Input Data
-        RD[$RUN-DATE<br/>or Current Date]
-        PF[POPP Fields:<br/>DE 008, 030, 741,<br/>877, 01510]
-        SF[SSSA Fields:<br/>DE 009, 011, 235]
-    end
+C4Context
+    title System Context - GAP_NewLoanCash in Cash Reconciliation Ecosystem
     
-    subgraph Transformations
-        T1[Date Arithmetic:<br/>-7 days<br/>-1 bus day]
-        T2[Net Calculation:<br/>Buys - Sells]
-        T3[Negation:<br/>0 - Amount]
-        T4[Formatting:<br/>Fixed-width<br/>positions]
-    end
+    Person(ops, "Batch Operator", "Initiates nightly processing")
     
-    subgraph Output Data
-        DR[SevenDaysAgo<br/>LastBusiness]
-        NA[Net<br/>Secondary1Buys]
-        C1[138-byte<br/>C1 Record]
-        U1[Updated<br/>UDF1 Field]
-    end
+    System(gap, "GAP_NewLoanCash", "Generates C1 activity for loan purchases")
     
-    RD --> T1
-    T1 --> DR
+    System_Ext(positionsys, "Position Management System", "Maintains POPP table with daily positions")
+    System_Ext(trustsys, "Trust Transaction System", "Maintains SSSA table with activity")
+    System_Ext(reconcile, "Cash Reconciliation System", "Consumes C1 activity files")
+    System_Ext(audit, "Audit System", "Archives transaction files")
     
-    PF --> T2
-    SF --> T2
-    T2 --> NA
+    Rel(ops, gap, "Executes via batch scheduler", "Shell/Cron")
+    Rel(gap, positionsys, "Queries and updates", "Database API")
+    Rel(gap, trustsys, "Queries for reversals", "Database API")
+    Rel(gap, reconcile, "Generates C1 files", "File System")
+    Rel(gap, audit, "Archives output", "File System")
     
-    NA --> T3
-    T3 --> T4
-    PF --> T4
-    DR --> T4
-    T4 --> C1
-    
-    NA --> U1
-    
-    style Transformations fill:#FFE4E6
-    style Input Data fill:#E8F5E9
-    style Output Data fill:#FFF9C4
+    UpdateLayoutConfig($c4ShapeInRow="3", $c4BoundaryInRow="1")
 ```
 
 ---
 
-## Error Handling Flow
+## 12. Deployment Diagram
 
 ```mermaid
-flowchart TD
-    Start([Program Start]) --> CheckEnv{$XDAT<br/>exists?}
-    
-    CheckEnv -->|No| Error1[ERROR:<br/>Invalid Environment]
-    CheckEnv -->|Yes| OpenFile{File Open<br/>Success?}
-    
-    OpenFile -->|No| Error2[ERROR:<br/>File Open Failed]
-    OpenFile -->|Yes| ValidateDate{$RUN-DATE<br/>Valid?}
-    
-    ValidateDate -->|No| Fallback1[Fallback to<br/>Current Date]
-    ValidateDate -->|Yes| CalcDates1[Calculate<br/>Date Range]
-    
-    Fallback1 --> CalcDates2[Calculate<br/>Date Range]
-    CalcDates1 --> QueryDB{Database<br/>Connection?}
-    CalcDates2 --> QueryDB
-    
-    QueryDB -->|No| Error3[ERROR:<br/>DB Connection Failed]
-    QueryDB -->|Yes| ProcessLoop[Process Records]
-    
-    ProcessLoop --> CheckZero{Secondary1Buys<br/><> 0?}
-    
-    CheckZero -->|No| Skip1[Skip Record]
-    CheckZero -->|Yes| CheckValid{Valid<br/>Plan/Date?}
-    
-    CheckValid -->|No| UseOriginal[Use Original<br/>Amount]
-    CheckValid -->|Yes| QuerySSA{SSSA Query<br/>Success?}
-    
-    QuerySSA -->|No| Error4[ERROR:<br/>SSSA Query Failed]
-    QuerySSA -->|Yes| CalcNet[Calculate<br/>Net Amount]
-    
-    CalcNet --> CheckDup{Already<br/>Processed?}
-    UseOriginal --> CheckDup
-    
-    CheckDup -->|Yes| Skip2[Skip Record]
-    CheckDup -->|No| WriteFile{File Write<br/>Success?}
-    
-    WriteFile -->|No| Error5[ERROR:<br/>Write Failed]
-    WriteFile -->|Yes| UpdateDB{DB Update<br/>Success?}
-    
-    UpdateDB -->|No| Error6[ERROR:<br/>Update Failed]
-    UpdateDB -->|Yes| NextRecord{More<br/>Records?}
-    
-    Skip1 --> NextRecord
-    Skip2 --> NextRecord
-    
-    NextRecord -->|Yes| ProcessLoop
-    NextRecord -->|No| Complete([Complete])
-    
-    Error1 --> Abort([Abort])
-    Error2 --> Abort
-    Error3 --> Abort
-    Error4 --> HandleError[Log Error,<br/>Continue?]
-    Error5 --> HandleError
-    Error6 --> HandleError
-    
-    HandleError --> NextRecord
-    
-    style Error1 fill:#FF6B6B
-    style Error2 fill:#FF6B6B
-    style Error3 fill:#FF6B6B
-    style Error4 fill:#FFA07A
-    style Error5 fill:#FFA07A
-    style Error6 fill:#FFA07A
-    style Complete fill:#90EE90
-    style Abort fill:#FF4444
-```
-
----
-
-## C1 Record Format Diagram
-
-```mermaid
-graph LR
-    subgraph C1 Record Structure - 138 Bytes
-        direction TB
+graph TB
+    subgraph "Batch Server Environment"
+        subgraph "OMNISCRIPT Runtime"
+            PROG[GAP_NewLoanCash.cbl<br/>OMNISCRIPT Program]
+        end
         
-        P1["Pos 1-4<br/>'C100'<br/>(Type)"]
-        P2["Pos 5-10<br/>RKPlan<br/>(6 chars)"]
-        P3["Pos 11-30<br/>(Unused)"]
-        P4["Pos 31-38<br/>Date<br/>(YYYYMMDD)"]
-        P5["Pos 39<br/>(Unused)"]
-        P6["Pos 40-71<br/>TrustAccount<br/>(32 chars)"]
-        P7["Pos 72<br/>(Unused)"]
-        P8["Pos 73-92<br/>Type/Pos<br/>'...2'<br/>(20 chars)"]
-        P9["Pos 93-114<br/>(Unused)"]
-        P10["Pos 115<br/>Sign<br/>'0'"]
-        P11["Pos 116-130<br/>Amount<br/>Z,12V2-<br/>(15 chars)"]
-        P12["Pos 131-133<br/>(Unused)"]
-        P13["Pos 134-138<br/>Activity<br/>'00339'<br/>(5 chars)"]
+        subgraph "File System"
+            XDAT[/$XDAT Directory<br/>Output Files/]
+            LOGS[/Log Files/]
+        end
+        
+        subgraph "Environment Config"
+            ENV[Environment Variables<br/>$RUN-DATE, $XDAT]
+        end
     end
     
-    style P1 fill:#FFE4E6
-    style P2 fill:#E8F5E9
-    style P4 fill:#E8F5E9
-    style P6 fill:#E8F5E9
-    style P8 fill:#FFF9C4
-    style P10 fill:#FFE4E6
-    style P11 fill:#E8F5E9
-    style P13 fill:#FFF9C4
+    subgraph "Database Server"
+        DBMS[(Database System)]
+        POPP_TBL[(POPP Table)]
+        SSSA_TBL[(SSSA Table)]
+    end
+    
+    subgraph "Downstream Systems"
+        RECON[Cash Reconciliation<br/>Application]
+        ARCHIVE[Archive Storage]
+    end
+    
+    ENV --> PROG
+    PROG -->|Query/Update| DBMS
+    DBMS --- POPP_TBL
+    DBMS --- SSSA_TBL
+    PROG -->|Write| XDAT
+    PROG -->|Write| LOGS
+    XDAT -->|Read| RECON
+    XDAT -->|Copy| ARCHIVE
+    
+    style PROG fill:#e1f0ff
+    style XDAT fill:#d4edda
 ```
 
 ---
 
-## Related Documentation
-- [GAP_NewLoanCash Overview](GAP_NewLoanCash_OVERVIEW.md)
-- [GAP_NewLoanCash Call Graph](GAP_NewLoanCash_CALL_GRAPH.md)
-- [GAP_NewLoanCash Data Dictionary](GAP_NewLoanCash_DATA_DICTIONARY.md)
-- [CHECK.SSSA Procedure](procedures/CHECK.SSSA.md)
+## Diagram Usage Guide
+
+### Quick Reference
+
+| Diagram | Best For | Use Case |
+|---------|----------|----------|
+| 1. Process Flow | Understanding overall logic | Initial code review, training |
+| 2. Reversal Detection | Understanding CHECK.SSSA | Debugging reversal issues |
+| 3. Data Flow | Understanding data movement | Integration analysis |
+| 4. State Machine | Understanding record states | Troubleshooting status issues |
+| 5. Sequence Diagram | Understanding timing/order | Performance analysis |
+| 6. Entity Relationship | Understanding data structure | Database schema review |
+| 7. Component Interaction | Understanding system integration | Architecture documentation |
+| 8. Record Layout | Understanding C1 format | File format debugging |
+| 9. Timeline | Understanding execution order | Step-by-step debugging |
+| 10. Decision Tree | Understanding conditional logic | Business rule validation |
+| 11. System Context | Understanding ecosystem | System architecture |
+| 12. Deployment | Understanding infrastructure | Operations setup |
+
+---
+
+*These diagrams were created using Mermaid syntax and can be rendered in any Mermaid-compatible viewer.*  
+*Last Generated*: 2026-02-03

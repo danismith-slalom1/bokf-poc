@@ -30,14 +30,16 @@ This is a configuration file to aid with the automation of the OMNISCRIPT docume
 
 - **Documentation Depth by Program Type**:
   - **Mission-critical**: Comprehensive documentation (all phases + all supplemental docs)
-    - Includes: Overview, Data dictionary (with mutations), procedures, call graphs, diagrams
-    - **Plus**: Error handling analysis, performance analysis, testing guide, integration guide, business rules
+    - **REQUIRED FILES**: Overview, Data dictionary (with mutations), Call graph, Diagrams, Error handling, Integration guide, Business rules, Cross reference, Validation report, Procedures (all)
+    - **OPTIONAL**: Performance analysis
   - **Standard business logic**: Standard documentation (overview + data dictionary + procedures + call graph + essentials)
-    - Includes: Overview, Data dictionary (with mutations), key procedures, call graph, core diagrams
-    - **Plus**: Error handling analysis, testing guide (basic)
+    - **REQUIRED FILES**: Overview, Data dictionary (with mutations), Call graph, Diagrams, Error handling, Integration guide, Business rules, Cross reference, Validation report, Procedures (key)
+    - **OPTIONAL**: Performance analysis, Testing guide (basic)
   - **Simple utilities**: Minimal documentation (overview + key sections)
-    - Includes: Overview (with embedded flow diagram), key procedures
-    - **Plus**: Error handling assessment (if file I/O present)
+    - **REQUIRED FILES**: Overview (with embedded flow diagram), Data dictionary, Procedures (key)
+    - **OPTIONAL**: Error handling assessment (if file I/O present)
+
+**DEFAULT DOCUMENTATION LEVEL**: If not specified, use **Standard business logic** level for all programs.
 
 ## Output Directory Structure
 
@@ -47,15 +49,15 @@ This is a configuration file to aid with the automation of the OMNISCRIPT docume
 omniscript-documentation/
 └── {REPO-NAME}/
     └── {PROGRAM-NAME}/
-        ├── {PROGRAM}_OVERVIEW.md                  [Merged: INDEX + COMPREHENSIVE_DOC]
-        ├── {PROGRAM}_DATA_DICTIONARY.md           [Includes: Variable Mutations section]
-        ├── {PROGRAM}_CALL_GRAPH.md
-        ├── {PROGRAM}_DIAGRAMS.md                  [Complex visualizations only]
-        ├── {PROGRAM}_ERROR_HANDLING.md
-        ├── {PROGRAM}_INTEGRATION_GUIDE.md
-        ├── {PROGRAM}_BUSINESS_RULES.md
-        ├── {PROGRAM}_CROSS_REFERENCE.md
-        ├── {PROGRAM}_VALIDATION_REPORT.md
+        ├── {PROGRAM}_OVERVIEW.md                  [REQUIRED: Merged INDEX + COMPREHENSIVE_DOC]
+        ├── {PROGRAM}_DATA_DICTIONARY.md           [REQUIRED: Includes Variable Mutations section]
+        ├── {PROGRAM}_CALL_GRAPH.md                [REQUIRED]
+        ├── {PROGRAM}_DIAGRAMS.md                  [REQUIRED: Complex visualizations + Mermaid diagrams]
+        ├── {PROGRAM}_ERROR_HANDLING.md            [REQUIRED: See Phase 3.1 in WORKFLOW.md]
+        ├── {PROGRAM}_INTEGRATION_GUIDE.md         [REQUIRED: See Phase 4.3 in WORKFLOW.md]
+        ├── {PROGRAM}_BUSINESS_RULES.md            [REQUIRED: See Phase 4.4 in WORKFLOW.md]
+        ├── {PROGRAM}_CROSS_REFERENCE.md           [REQUIRED: See Phase 4.2 in WORKFLOW.md]
+        ├── {PROGRAM}_VALIDATION_REPORT.md         [REQUIRED: See Phase 3.1 in WORKFLOW.md]
         └── procedures/
             ├── PROCEDURE-1.md
             ├── PROCEDURE-2.md
@@ -79,40 +81,67 @@ omniscript-documentation/
 
 ## Documentation Enhancement Settings
 
-### Error Handling Documentation (HIGH PRIORITY)
-- **Always document**: Yes/No [RECOMMENDED: Yes - critical for risk management]
-- **Risk assessment required**: Yes/No [RECOMMENDED: Yes]
-- **Error status analysis depth**: Basic/Comprehensive
-- **Recovery procedure documentation**: Yes/No
+### Error Handling Documentation (MANDATORY)
+- **Always document**: **YES** (REQUIRED for all programs)
+- **Risk assessment required**: **YES** (REQUIRED)
+- **Error status analysis depth**: Comprehensive
+- **Recovery procedure documentation**: YES
+- **Output file**: `{PROGRAM}_ERROR_HANDLING.md`
+- **See**: WORKFLOW.md Phase 3.1 for validation process
 
-### Performance Analysis (MEDIUM PRIORITY)
-- **Document for critical programs**: Yes/No [RECOMMENDED: Yes for mission-critical]
-- **String operation analysis**: Yes/No [RECOMMENDED: Yes - can be expensive]
-- **Memory usage analysis**: Yes/No
-- **Optimization recommendations**: Yes/No
+### Integration Documentation (MANDATORY)
+- **Document all external calls**: **YES** (REQUIRED)
+- **Entry point contract**: **Always** (REQUIRED)
+- **Deployment guide**: Full (for mission-critical), Basic (for standard)
+- **System requirements**: Detailed
+- **Output file**: `{PROGRAM}_INTEGRATION_GUIDE.md`
+- **See**: WORKFLOW.md Phase 4.3 for requirements
 
-### Testing Guide Creation (HIGH PRIORITY)
-- **Always generate**: Yes/No [RECOMMENDED: Yes]
-- **Edge case identification**: Automatic/Manual review
-- **Sample test data**: Include/Reference only
-- **Integration test scenarios**: Yes/No
+### Business Rules Extraction (MANDATORY)
+- **Extract explicit rules**: **YES** (REQUIRED)
+- **Infer implicit rules**: **YES** (REQUIRED)
+- **Security requirements**: **Document** (REQUIRED)
+- **Compliance documentation**: YES (if applicable)
+- **Output file**: `{PROGRAM}_BUSINESS_RULES.md`
+- **See**: WORKFLOW.md Phase 4.4 for extraction process
 
-### Integration Documentation (MEDIUM PRIORITY)
-- **Document all external calls**: Yes/No [RECOMMENDED: Yes]
-- **Entry point contract**: Always/Critical only
-- **Deployment guide**: Full/Basic/None
-- **System requirements**: Detailed/Summary
+### Cross-Reference Documentation (MANDATORY)
+- **Variable index**: **YES** (REQUIRED)
+- **Procedure index**: **YES** (REQUIRED)
+- **File operations index**: **YES** (REQUIRED)
+- **Business rule index**: **YES** (REQUIRED)
+- **Error handling index**: **YES** (REQUIRED)
+- **Output file**: `{PROGRAM}_CROSS_REFERENCE.md`
+- **See**: WORKFLOW.md Phase 4.2 for generation
 
-### Business Rules Extraction (MEDIUM PRIORITY)
-- **Extract explicit rules**: Yes/No [RECOMMENDED: Yes]
-- **Infer implicit rules**: Yes/No [RECOMMENDED: Yes for critical programs]
-- **Security requirements**: Document/Skip
-- **Compliance documentation**: Yes/No/If applicable
+### Validation Report (MANDATORY)
+- **Self-validation**: **YES** (REQUIRED)
+- **Confidence scores**: **YES** (REQUIRED)
+- **Assumption documentation**: **YES** (REQUIRED)
+- **Alternative interpretations**: YES (where applicable)
+- **Output file**: `{PROGRAM}_VALIDATION_REPORT.md`
+- **See**: WORKFLOW.md Phase 3.1 for validation process
 
-### Data Flow Diagrams (LOW PRIORITY - but valuable)
-- **Generate for all programs**: Yes/No
-- **Variable lifecycle diagrams**: Critical variables only/All major variables
-- **Transformation examples**: Yes/No
+### Data Flow Diagrams (MANDATORY)
+- **Generate for all programs**: **YES** (REQUIRED)
+- **Variable lifecycle diagrams**: All major variables (REQUIRED)
+- **Transformation examples**: **YES** (REQUIRED)
+- **Mermaid diagrams**: **YES** (MANDATORY - see MERMAID_GUIDE.md)
+- **Output file**: `{PROGRAM}_DIAGRAMS.md`
+
+### Performance Analysis (OPTIONAL)
+- **Document for critical programs**: YES (for mission-critical only)
+- **String operation analysis**: YES (if applicable)
+- **Memory usage analysis**: YES (if applicable)
+- **Optimization recommendations**: YES (if applicable)
+- **Output file**: `{PROGRAM}_PERFORMANCE_ANALYSIS.md` (optional)
+
+### Testing Guide Creation (OPTIONAL)
+- **Always generate**: NO (optional for standard programs)
+- **Edge case identification**: Automatic (when generated)
+- **Sample test data**: Include (when generated)
+- **Integration test scenarios**: YES (when generated)
+- **Output file**: `{PROGRAM}_TESTING_GUIDE.md` (optional)
 
 ## AI Tool Configuration
 
