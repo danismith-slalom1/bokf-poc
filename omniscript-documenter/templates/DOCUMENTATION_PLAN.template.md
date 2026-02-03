@@ -33,7 +33,7 @@ Use this exact template structure when creating OMNISCRIPT documentation plan do
 4. Expert review of data dictionary entries
 5. Corrections and iterations as needed
 
-**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_DATA_DICTIONARY.md`
+**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_DATA_DICTIONARY.md` [Includes Variable Mutations section]
 
 **Timeline**: [Estimated hours/days]
 
@@ -61,7 +61,7 @@ Use this exact template structure when creating OMNISCRIPT documentation plan do
 - Provide data dictionary context for each session
 - Include call hierarchy for context
 
-**Deliverables**: `${OMNISCRIPT_DOCS_DIR}/procedures/[PROCEDURE-NAME].md` (one file per procedure or procedure group)
+**Deliverables**: `${OMNISCRIPT_DOCS_DIR}/procedures/{PROCEDURE-NAME}.md` (one file per procedure or procedure group)
 
 **Timeline**: [Estimated hours/days]
 
@@ -81,7 +81,7 @@ Use this exact template structure when creating OMNISCRIPT documentation plan do
 4. Expert review of control flow accuracy
 5. Create Mermaid or PlantUML diagrams
 
-**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_CALL_GRAPH.md`
+**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_CALL_GRAPH.md`
 
 **Timeline**: [Estimated hours/days]
 
@@ -100,7 +100,7 @@ Use this exact template structure when creating OMNISCRIPT documentation plan do
 4. Expert review of state transition logic
 5. Document recommendations for refactoring if needed
 
-**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_VARIABLE_MUTATIONS.md`
+**Deliverable**: Variable Mutations section within `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_DATA_DICTIONARY.md`
 
 **Timeline**: [Estimated hours/days]
 
@@ -125,7 +125,7 @@ Use this exact template structure when creating OMNISCRIPT documentation plan do
    - Reviewers: [Names]
    - Focus: State transitions, business logic
 
-**Review Deliverable**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_REVIEW_LOG.md`
+**Review Deliverable**: `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_REVIEW_LOG.md`
 
 ### 3.2 Correction Iterations
 
@@ -149,21 +149,23 @@ Use this exact template structure when creating OMNISCRIPT documentation plan do
 
 ## Phase 4: Synthesis - Detailed Plan
 
-### 4.1 Comprehensive Program Documentation
+### 4.1 Program Overview Documentation
 
-**Objective**: Synthesize all component docs into master documentation
+**Objective**: Create consolidated overview merging program index with comprehensive documentation
 
 **Sections to Include**:
 1. Executive Summary
-2. Business Context
-3. Architecture Overview
-4. Data Flow
-5. Key Processing Logic
-6. Dependencies
-7. Error Handling
-8. Maintenance Notes
+2. Program Structure and Index
+3. Business Context
+4. Architecture Overview
+5. Core Flow Diagrams (embedded)
+6. Data Flow
+7. Key Processing Logic
+8. Dependencies
+9. Error Handling
+10. Maintenance Notes
 
-**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_COMPREHENSIVE_DOC.md`
+**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_OVERVIEW.md` [Consolidates INDEX + COMPREHENSIVE_DOC]
 
 **Timeline**: [Estimated hours/days]
 
@@ -176,22 +178,29 @@ Use this exact template structure when creating OMNISCRIPT documentation plan do
 - Business Rule Index
 - Error Handling Index
 
-**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_CROSS_REFERENCE.md`
+**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_CROSS_REFERENCE.md`
 
 **Timeline**: [Estimated hours/days]
 
 ### 4.3 Visual Diagrams
 
-**Diagrams to Create**:
+**Core Diagrams** (embedded in OVERVIEW.md):
 1. **Program Flow Diagram** - High-level processing flow
-2. **Data Flow Diagram** - Data transformations
-3. **Call Hierarchy Tree** - Call graph visualization
-4. **File I/O Flow** - File operations in sequence
+2. **Call Hierarchy Tree** - Primary call relationships
+3. **Data Flow Overview** - Input/output transformation
+
+**Complex Diagrams** (separate DIAGRAMS.md):
+1. **Detailed Data Flow** - Variable transformations
+2. **File I/O Sequence** - File operations timeline
+3. **State Machines** - Variable lifecycle diagrams
+4. **Module Dependencies** - Integration visualization
 5. [Additional diagrams as needed]
 
-**Tools**: Mermaid, PlantUML, or hand-drawn with photographs
+**Tools**: Mermaid syntax for all diagrams
 
-**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_DIAGRAMS.md`
+**Deliverables**: 
+- Core diagrams in `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_OVERVIEW.md`
+- Complex diagrams in `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_DIAGRAMS.md`
 
 **Timeline**: [Estimated hours/days]
 
@@ -202,7 +211,7 @@ Use this exact template structure when creating OMNISCRIPT documentation plan do
 - Links to all documentation artifacts
 - Quick reference sections
 
-**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_INDEX.md` (updated)
+**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_INDEX.md` (updated)
 
 **Timeline**: [Estimated hours]
 
@@ -237,7 +246,7 @@ Use this exact template structure when creating OMNISCRIPT documentation plan do
 **Repository Structure**:
 ```
 omniscript-documentation/
-├── [PROGRAM-NAME]/
+├── {PROGRAM-NAME}/
 │   ├── [All program docs]
 │   └── procedures/
 ├── standards/
@@ -291,22 +300,7 @@ omniscript-documentation/
 
 ## Success Criteria
 
-### Phase Completion Criteria
-- [ ] All variables documented
-- [ ] All procedures individually documented
-- [ ] Call graph created and verified
-- [ ] Variable mutations analyzed
-- [ ] Expert reviews completed with approval
-- [ ] Comprehensive documentation synthesized
-- [ ] Cross-references created
-- [ ] Visual diagrams generated
-- [ ] Maintenance process established
-
-### Quality Criteria
-- [ ] OMNISCRIPT experts approve all documentation
-- [ ] New developers can understand program from docs
-- [ ] Documentation integrated into workflow
-- [ ] Metrics tracking in place
+For complete success criteria and quality gates, see [WORKFLOW.md](../WORKFLOW.md#success-criteria) in the omniscript-documenter module.
 
 ---
 **IMPORTANT**: This plan must be reviewed and confirmed by project stakeholders before execution.
@@ -334,7 +328,7 @@ omniscript-documentation/
 
 ### File Naming Convention
 Save documentation plan documents as:
-`${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_DOCUMENTATION_PLAN.md`
+`${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_DOCUMENTATION_PLAN.md`
 
 ## Mandatory Compliance
 

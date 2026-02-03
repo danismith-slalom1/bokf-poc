@@ -99,7 +99,7 @@ Recognizes:
 - `*obj_setde()` field updates
 - `*obj_update()` commits
 
-Supported objects: `poppobj`, `sssaobj`, `trustobj`, `planobj`
+For the complete list of supported database objects, see the `DB_OBJECTS` set in [omniscript_grammar_parser.py](./omniscript_grammar_parser.py#L128-130).
 
 ### Control Structures
 
@@ -123,13 +123,7 @@ Tracks:
 
 ### Built-in Functions
 
-Recognizes 15+ built-in functions including:
-- Date/Time: `OcDate_Current()`, `OcTime_Current()`, `OcDate_AddDays()`, `OcDate_AddBusDays()`, `OcDate_Valid()`
-- String: `OcText_string()`, `OCTEXT_GETENV()`, `OcText_Set()`
-- Formatting: `OCFMT()`, `OcFMT()`
-- File I/O: `OcFile1_Open()`, `OcFile1_Write()`, `OcFile1_Close()`
-- Conversion: `octext_tonum()`
-- Debug: `OcShow()`
+Recognizes 15+ built-in functions including date/time operations, string manipulation, formatting, file I/O, conversion, and debugging functions. For the complete list of recognized functions, see the `BUILTIN_FUNCTIONS` set in [omniscript_grammar_parser.py](./omniscript_grammar_parser.py#L120-125).
 
 ### PERFORM Statements
 
@@ -322,26 +316,11 @@ class DatabaseOperation:
 
 ### Adding New Built-in Functions
 
-Edit `BUILTIN_FUNCTIONS` set:
-
-```python
-BUILTIN_FUNCTIONS = {
-    'OcLVar_Define', 'OcText_string',
-    'YourNewFunction',  # Add here
-    # ...
-}
-```
+Edit the `BUILTIN_FUNCTIONS` set in [omniscript_grammar_parser.py](./omniscript_grammar_parser.py#L120-125) to add new function names.
 
 ### Adding New Database Objects
 
-Edit `DB_OBJECTS` set:
-
-```python
-DB_OBJECTS = {
-    'poppobj', 'sssaobj',
-    'yournewobj',  # Add here
-}
-```
+Edit the `DB_OBJECTS` set in [omniscript_grammar_parser.py](./omniscript_grammar_parser.py#L128-130) to add new database object prefixes.
 
 ### Custom Analysis
 

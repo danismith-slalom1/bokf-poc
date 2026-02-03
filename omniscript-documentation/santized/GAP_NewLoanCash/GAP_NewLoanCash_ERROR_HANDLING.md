@@ -2,619 +2,542 @@
 
 ## Executive Summary
 
-This document analyzes error handling mechanisms, identifies potential failure scenarios, assesses risks, and provides recommendations for the GAP_NewLoanCash OmniScript program.
+**Program**: GAP_NewLoanCash  
+**Analysis Date**: February 3, 2026  
+**Error Handling Maturity**: **Basic**  
+**Overall Risk Level**: **Medium**
 
-**Overall Risk Assessment**: **MEDIUM-HIGH**
-
-The program lacks explicit error handling for critical operations including database queries, file I/O, and data validation. While the OmniScript runtime provides some implicit error handling, the absence of explicit checks could lead to silent failures, data corruption, or incorrect cash reconciliation.
+The program employs minimal explicit error handling, relying primarily on defensive programming techniques (validation checks, null guards) and implicit OmniScript runtime behavior. While suitable for batch processing in a controlled environment, the lack of comprehensive error handling poses risks for production stability and troubleshooting.
 
 ---
 
 ## Error Handling Mechanisms
 
-### 1. Explicit Error Handling
+### Explicit Error Handling
 
-#### Input Validation in CHECK.SSSA (Lines 56)
-```omniscript
-if (RKPlan <> '') and (TradeDate <> 0);
-   /* Process SSSA verification */
-end;
-```
-
-**Mechanism**: Pre-condition check before database query
-**Error Prevented**: Invalid SSSA query with missing parameters
-**Handling Strategy**: Silent return (no processing if validation fails)
-**Effectiveness**: ✅ Prevents database errors, but no logging of validation failure
-
-**Risk**: **Low** - Prevents invalid queries
-**Recommendation**: Add logging when validation fails to track potential data issues
-
----
-
-### 2. Implicit Error Handling (OmniScript Runtime)
-
-The program relies on the OmniScript runtime for error handling in the following areas:
-
-#### Database Operations
-- `poppobj_view()` - POPP query initialization (Line 28)
-- `poppobj_next()` - POPP record iteration (Line 29)
-- `sssaobj_view()` - SSSA query initialization (Line 57)
-- `sssaobj_next()` - SSSA record iteration (Line 58)
-- `poppobj_update()` - POPP record commit (Line 51)
-
-**Assumption**: Runtime throws exceptions or terminates on database errors
-**Risk**: **High** - No graceful degradation or error recovery
-
-#### File Operations
-- `OcFile1_Open()` - Output file creation (Line 16)
-- `OcFile1_Write()` - C1 record write (Line 49)
-
-**Assumption**: Runtime throws exceptions on I/O errors
-**Risk**: **Medium-High** - Partial file writes could corrupt output
-
-#### Field Access
-- `poppobj_de()`, `poppobj_numde()` - Field retrieval from POPP (Lines 30-41)
-- `sssaobj_de()`, `sssaobj_numde()` - Field retrieval from SSSA (Lines 59-64)
-
-**Assumption**: Runtime handles missing/invalid fields gracefully
-**Risk**: **Medium** - Invalid field values could cause calculation errors
-
----
-
-## Runtime Error Scenarios
-
-### High Risk Scenarios
-
-#### 1. Database Connection Failure
-**Scenario**: POPP or SSSA database is unavailable when program runs
-**Location**: Lines 28 (POPP) or 57 (SSSA)
-**Current Behavior**: Likely program termination with runtime error
-**Impact**: 
-- No C1 records generated for the run
-- Cash reconciliation incomplete
-- POPP records not updated (could cause duplicate processing next run)
-**Risk Level**: ⚠️ **HIGH**
-
-**Recommended Handling**:
-```omniscript
-/* Before poppobj_view */
-if not OcDB_Available('POPP');
-   OcShow('ERROR: POPP database unavailable');
-   /* Log error and exit gracefully */
-   EXIT;
-end;
-```
-
----
-
-#### 2. Output File Write Failure
-**Scenario**: File system full, permissions denied, or disk I/O error during write
-**Location**: Line 49 (OcFile1_Write)
-**Current Behavior**: Likely program termination or silent failure
-**Impact**:
-- Incomplete or corrupted output file
-- POPP may be updated but C1 record not written
-- Data inconsistency between POPP and output file
-**Risk Level**: ⚠️ **HIGH**
-
-**Recommended Handling**:
-```omniscript
-/* Wrap OcFile1_Write in error check */
-WriteResult = OcFile1_Write(Line);
-if WriteResult <> SUCCESS;
-   OcShow('ERROR: Failed to write C1 record for Plan ' RKPlan);
-   /* Rollback POPP update or track for retry */
-end;
-```
-
----
-
-#### 3. POPP Update Failure
-**Scenario**: Database update fails after C1 record written
-**Location**: Lines 50-51 (poppobj_setde, poppobj_update)
-**Current Behavior**: Likely program termination
-**Impact**:
-- C1 record written but PriorCashApplied not updated
-- Next run will reprocess the same record (duplicate C1 generation)
-- Duplicate cash reconciliation entries
-**Risk Level**: ⚠️ **HIGH**
-
-**Recommended Handling**:
-```omniscript
-/* Check update success */
-poppobj_setde(denum:877 value:Secondary1Buys);
-UpdateResult = poppobj_update();
-if UpdateResult <> SUCCESS;
-   OcShow('ERROR: Failed to update POPP for Plan ' RKPlan);
-   /* Log error with details for manual intervention */
-   /* Consider compensating transaction to remove C1 record */
-end;
-```
-
----
-
-### Medium Risk Scenarios
-
-#### 4. Invalid Date from Environment Variable
-**Scenario**: $RUN-DATE environment variable contains invalid date value
-**Location**: Line 19 (OcDate_Valid check)
-**Current Behavior**: Fallback to OcDate_Current() (Lines 23-24)
-**Impact**:
-- Program uses current date instead of intended run date
-- May process wrong date range
-- Could miss or duplicate records
-**Risk Level**: ⚠️ **MEDIUM**
-
-**Handling Effectiveness**: ✅ Graceful fallback implemented
-**Recommended Improvement**: Log warning when fallback occurs
+#### 1. Date Validation (Lines 22-28)
 ```omniscript
 if OcDate_Valid(RunDate);
-   /* Use RunDate */
+   SevenDaysAgo = OcDate_AddDays(RunDate -7);
+   LastBusiness = OcDate_AddBusDays(RunDate -1);
 else;
-   OcShow('WARNING: Invalid RUN-DATE, using current date');
-   /* Use current date */
+   SevenDaysAgo = OcDate_AddDays(OcDate_Current() -7);
+   LastBusiness = OcDate_AddBusDays(OcDate_Current() -1);
 end;
 ```
 
+**Error Type**: Invalid date in $RUN-DATE environment variable  
+**Detection**: `OcDate_Valid()` function  
+**Recovery Strategy**: Fallback to current date  
+**Risk Mitigation**: Ensures program continues with valid dates  
+**Limitation**: No warning logged; silent failure may confuse operators
+
+**Recommendation**: Add OcShow() or logging to indicate fallback occurred
+
 ---
 
-#### 5. Missing SSSA Records When Secondary1Buys > 0
-**Scenario**: POPP shows loan activity but no matching SSSA records found
-**Location**: Lines 57-66 (CHECK.SSSA routine)
-**Current Behavior**: WK001 remains 0, Secondary1Buys set to 0
-**Impact**:
-- C1 record generated with zero amount (likely incorrect)
-- Indicates data inconsistency between POPP and SSSA
-- Cash reconciliation may be inaccurate
-**Risk Level**: ⚠️ **MEDIUM**
-
-**Recommended Handling**:
+#### 2. Zero Value Guard (Line 37)
 ```omniscript
-/* After SSSA loop in CHECK.SSSA */
-OriginalSecondary1Buys = poppobj_numde(741); /* Save original */
-Secondary1Buys = WK001;
-if (OriginalSecondary1Buys <> 0) and (WK001 = 0);
-   OcShow('WARNING: POPP shows activity but no SSSA records for Plan ' RKPlan);
-   /* Log discrepancy for investigation */
-end;
+If (Secondary1Buys <> 0);
+   PERFORM 'CHECK.SSSA';
+End;
 ```
 
+**Error Type**: Zero loan amount (no processing needed)  
+**Detection**: Explicit comparison  
+**Recovery Strategy**: Skip CHECK.SSSA routine (optimization)  
+**Risk Mitigation**: Avoids unnecessary database queries  
+**Assessment**: Appropriate guard; not truly an error condition
+
 ---
 
-#### 6. Numeric Field Contains Non-Numeric Data
-**Scenario**: POPP or SSSA numeric fields contain invalid data (null, text, etc.)
-**Location**: Lines 31-33, 39-40 (poppobj_numde), Lines 61, 64 (sssaobj_numde)
-**Current Behavior**: Depends on OmniScript runtime (may return 0, null, or error)
-**Impact**:
-- Incorrect calculations
-- C1 records with wrong amounts
-- Cash reconciliation errors
-**Risk Level**: ⚠️ **MEDIUM**
-
-**Recommended Handling**:
+#### 3. Duplicate Prevention (Line 40)
 ```omniscript
-/* Validate numeric fields after retrieval */
-Secondary1Buys = poppobj_numde(741);
-if OcNum_IsValid(Secondary1Buys) = FALSE;
-   OcShow('ERROR: Invalid Secondary1Buys field for Plan ' RKPlan);
-   /* Skip record or use default value with logging */
-end;
+if (PriorCashApplied <> Secondary1Buys) and (Secondary1Buys <> 0);
 ```
 
+**Error Type**: Record already processed (idempotency check)  
+**Detection**: Compare UDF1 field with current amount  
+**Recovery Strategy**: Skip C1 generation and database update  
+**Risk Mitigation**: Prevents duplicate reconciliation entries  
+**Limitation**: No logging of skipped records; silent skip
+
+**Recommendation**: Add counter and summary logging for skipped records
+
 ---
 
-### Low Risk Scenarios
-
-#### 7. Empty String Fields
-**Scenario**: RKPlan or TrustAccount fields are empty/null
-**Location**: Lines 30, 37, 41 (poppobj_de retrieval)
-**Current Behavior**: Empty values in CHECK.SSSA validation (Line 56) or written to C1 record
-**Impact**:
-- CHECK.SSSA skips processing if RKPlan empty (✅ good)
-- C1 record may have empty plan/account fields (invalid record format)
-**Risk Level**: ⚠️ **LOW-MEDIUM**
-
-**Recommended Handling**:
+#### 4. CHECK.SSSA Entry Validation (Line 60)
 ```omniscript
-/* Before C1 record generation */
-if (RKPlan = '') or (TrustAccount = '');
-   OcShow('WARNING: Missing required field (Plan or TrustAccount)');
-   /* Skip C1 generation for this record */
-   continue; /* or equivalent to next loop iteration */
-end;
+if (RKPlan <> '') and (TradeDate <> 0);
 ```
 
+**Error Type**: Missing plan ID or trade date  
+**Detection**: Explicit null/zero checks  
+**Recovery Strategy**: Skip SSSA query; return immediately via GOBACK  
+**Risk Mitigation**: Prevents invalid database queries  
+**Limitation**: Results in WK001=0, setting Secondary1Buys to 0 implicitly
+
+**Assessment**: Good defensive programming; prevents crashes
+
 ---
 
-#### 8. File Open Failure
-**Scenario**: Cannot create output file (permissions, path invalid, etc.)
-**Location**: Line 16 (OcFile1_Open)
-**Current Behavior**: Likely program termination
-**Impact**:
-- No output generated
-- Program stops before any processing
-**Risk Level**: ⚠️ **LOW** (caught early before processing)
+### Implicit Error Handling
 
-**Recommended Handling**:
+#### 1. Database Connection Failures
+**Scenario**: poppobj_view() or sssaobj_view() fails  
+**Current Handling**: None explicit; likely runtime error  
+**Expected Behavior**: Program terminates with OmniScript error  
+**Risk**: High - program fails silently with no output  
+**Recommendation**: Wrap database calls in error checking; log connection status
+
+---
+
+#### 2. File Operations
+**Scenario**: OcFile1_Open() fails (permissions, disk full, invalid path)  
+**Current Handling**: None explicit; likely runtime error  
+**Expected Behavior**: Program terminates with file error  
+**Risk**: High - no output generated; position records left unprocessed  
+**Recommendation**: Check OcFile1_Open() return status; log failure
+
+**Scenario**: OcFile1_Write() fails (disk full during execution)  
+**Current Handling**: None explicit; likely runtime error  
+**Expected Behavior**: Partial file written; program terminates  
+**Risk**: High - incomplete C1 activity; partial reconciliation  
+**Recommendation**: Check write status; implement transaction safety
+
+---
+
+#### 3. Environment Variable Missing
+**Scenario**: $XDAT not set  
+**Current Handling**: OcText_string() likely returns invalid path  
+**Expected Behavior**: File open fails downstream  
+**Risk**: Medium - caught at file open, but late  
+**Recommendation**: Validate $XDAT immediately after retrieval
+
+---
+
+#### 4. Invalid Data in Database Fields
+**Scenario**: Non-numeric data in numeric fields (DE 008, 741, 877, 235)  
+**Current Handling**: OmniScript numde() functions likely return 0 or error  
+**Expected Behavior**: Varies by OmniScript implementation  
+**Risk**: Medium - may process incorrect amounts  
+**Recommendation**: Add validation for critical numeric fields
+
+---
+
+#### 5. Loop Without Records
+**Scenario**: poppobj_view() returns no records  
+**Current Handling**: Loop never executes; program ends normally  
+**Expected Behavior**: Empty output file created  
+**Risk**: Low - legitimate scenario (no activity)  
+**Recommendation**: Log record count for operational visibility
+
+---
+
+## Error Scenarios and Impact Analysis
+
+### High-Severity Scenarios
+
+#### HS-1: Database Unavailable
+- **Trigger**: POPP or SSSA database connection failure
+- **Detection**: None (relies on runtime error)
+- **Impact**: Program termination; no output; no position updates
+- **Data Integrity**: Preserved (no partial updates)
+- **Recovery**: Manual rerun after database restored
+- **Frequency**: Rare (depends on infrastructure)
+- **Mitigation**: Add connection health check at program start
+
+---
+
+#### HS-2: Disk Full During Write
+- **Trigger**: Insufficient disk space during OcFile1_Write()
+- **Detection**: None (relies on runtime error)
+- **Impact**: Partial C1 file written; some positions updated, others not
+- **Data Integrity**: Corrupted (inconsistent state)
+- **Recovery**: Complex (identify last successful write, rollback updates)
+- **Frequency**: Rare (monitoring should prevent)
+- **Mitigation**: Pre-check disk space; implement transaction grouping
+
+---
+
+#### HS-3: $XDAT Invalid or Missing
+- **Trigger**: Environment variable not set or points to invalid directory
+- **Detection**: Delayed (at file open)
+- **Impact**: Program termination before any processing
+- **Data Integrity**: Preserved (no changes made)
+- **Recovery**: Set environment variable; rerun
+- **Frequency**: Low (configuration error)
+- **Mitigation**: Validate environment immediately; clear error message
+
+---
+
+### Medium-Severity Scenarios
+
+#### MS-1: Corrupt Date in $RUN-DATE
+- **Trigger**: Invalid date value in environment variable
+- **Detection**: OcDate_Valid() at line 22
+- **Impact**: Falls back to current date; may process wrong date range
+- **Data Integrity**: Preserved (but logically incorrect)
+- **Recovery**: Silent fallback; may go unnoticed
+- **Frequency**: Low (operator error)
+- **Mitigation**: Log fallback; validate environment at startup
+- **Current Mitigation**: ✓ Implemented (fallback logic)
+
+---
+
+#### MS-2: SSSA Records Missing
+- **Trigger**: Secondary activity not loaded or out of sync
+- **Detection**: None (WK001 remains 0)
+- **Impact**: Secondary1Buys set to 0; incorrect net calculation
+- **Data Integrity**: Corrupted (wrong amounts)
+- **Recovery**: Difficult (reprocess after SSSA load)
+- **Frequency**: Low (data pipeline dependency)
+- **Mitigation**: Add check for expected SSSA record count; alert if zero
+
+---
+
+#### MS-3: Negative Net Activity
+- **Trigger**: Sell amounts exceed buy amounts (data quality issue)
+- **Detection**: None (negative NewLoanUnits allowed)
+- **Impact**: Negative C1 offset; may indicate data error
+- **Data Integrity**: Uncertain (depends on business rules)
+- **Recovery**: Manual review of negative amounts
+- **Frequency**: Unknown (depends on data quality)
+- **Mitigation**: Add validation for negative net; flag for review
+
+---
+
+### Low-Severity Scenarios
+
+#### LS-1: No Records in Date Range
+- **Trigger**: No POOLLOAN3 positions in 7-day window
+- **Detection**: Loop never executes
+- **Impact**: Empty output file; no updates
+- **Data Integrity**: Preserved (correct behavior)
+- **Recovery**: None needed (legitimate scenario)
+- **Frequency**: Medium (depends on activity)
+- **Mitigation**: Log record count for operational visibility
+
+---
+
+#### LS-2: All Records Already Processed
+- **Trigger**: Rerun with no new activity
+- **Detection**: PriorCashApplied = Secondary1Buys for all records
+- **Impact**: Empty output file (all skipped)
+- **Data Integrity**: Preserved (idempotency working correctly)
+- **Recovery**: None needed (duplicate prevention working)
+- **Frequency**: Medium (reruns common in batch processing)
+- **Mitigation**: Log skip count for confirmation
+- **Current Mitigation**: ✓ Duplicate check implemented
+
+---
+
+## Data Integrity Risks
+
+### Risk 1: Partial Position Updates
+**Scenario**: Program fails mid-loop after updating some position records  
+**Root Cause**: No transaction management; updates committed immediately  
+**Impact**: Some positions marked processed (UDF1 updated), others not  
+**Detection**: Manual (compare output file line count with updated records)  
+**Recovery**: Rerun will skip already-processed records (idempotency helps)  
+**Severity**: Medium  
+**Mitigation**: Current duplicate check provides some protection  
+**Recommendation**: Implement transaction batching or checkpoint/restart logic
+
+---
+
+### Risk 2: C1 File / Database Mismatch
+**Scenario**: C1 record written but poppobj_update() fails  
+**Root Cause**: No transaction linking file write and database update  
+**Impact**: C1 record exists but position not marked processed  
+**Detection**: Rerun will regenerate same C1 record (duplicate)  
+**Recovery**: Downstream C1 processing must handle duplicates  
+**Severity**: Medium  
+**Mitigation**: Order of operations (write then update) minimizes risk  
+**Recommendation**: Consider database-first approach (update then write)
+
+---
+
+### Risk 3: Incorrect Net Calculation
+**Scenario**: CHECK.SSSA finds incomplete SSSA data  
+**Root Cause**: Timing issue (position loaded before SSSA transactions)  
+**Impact**: Net activity understated; incorrect C1 amounts  
+**Detection**: Manual reconciliation (compare C1 totals with expected)  
+**Recovery**: Reprocess after SSSA fully loaded  
+**Severity**: High (business impact)  
+**Mitigation**: None in current code  
+**Recommendation**: Add SSSA completeness check; validate against expected record count
+
+---
+
+## Recommendations
+
+### High Priority (Implement Immediately)
+
+#### 1. Database Connection Validation
 ```omniscript
-/* Check file open success */
-OpenResult = OcFile1_Open(name:FileName mode:'OUTPUT');
-if OpenResult <> SUCCESS;
-   OcShow('ERROR: Cannot open output file ' FileName);
-   /* Log error and exit */
+* Add at program start:
+if NOT poppobj_connection_valid();
+   OcShow('ERROR: Cannot connect to POPP database');
+   sd080 = 8;  /* Set error return code */
    EXIT;
 end;
 ```
 
----
-
-## Resource Limit Analysis
-
-### Buffer Sizes and Overflow Risks
-
-#### Line Variable Buffer (C1 Record Construction)
-**Current Size**: Assumed 138+ characters based on field positions
-**Maximum Usage**: Position 138 (last field ends at 138)
-**Risk**: ⚠️ **LOW** - Fixed-format fields unlikely to overflow
-
-**Validation**:
-```omniscript
-/* After C1 record construction, before write */
-if OcText_Len(Line) < 138;
-   OcShow('ERROR: C1 record incomplete, length ' OcText_Len(Line));
-   /* Skip write to prevent corrupt record */
-end;
-```
+**Benefit**: Early failure detection; clear error message  
+**Effort**: Low  
+**Risk Reduction**: High
 
 ---
 
-#### FileName Variable Buffer
-**Construction**: Environment variable path + fixed suffix + date/time
-**Risk**: ⚠️ **LOW** - Depends on $XDAT path length
-**Potential Overflow**: Very long $XDAT paths could cause issues
-**Maximum Safe Length**: 256 characters (typical system limit)
-
-**Recommendation**: Validate path length
+#### 2. File Open Error Handling
 ```omniscript
-if OcText_Len(FileName) > 255;
-   OcShow('ERROR: Filename too long: ' FileName);
+* Replace line 19:
+FileStatus = OcFile1_Open(name:FileName mode:'OUTPUT');
+if FileStatus <> 0;
+   OcShow('ERROR: Cannot open output file: ' FileName ' Status: ' FileStatus);
+   OcShow('Check $XDAT directory exists and has write permissions');
+   sd080 = 12;
    EXIT;
 end;
 ```
 
+**Benefit**: Prevents silent failure; provides diagnostic information  
+**Effort**: Low  
+**Risk Reduction**: High
+
 ---
 
-#### WK001 Accumulator Overflow
-**Purpose**: Accumulates buy/sell amounts from SSSA
-**Risk**: ⚠️ **LOW** - OmniScript numeric types handle large values
-**Potential Issue**: Extremely large transactions or many records could overflow
-**Maximum Safe Value**: Depends on OmniScript numeric limits (typically 64-bit float/decimal)
-
-**Recommendation**: Validate accumulated value range
+#### 3. Operational Logging
 ```omniscript
-/* After each accumulation */
-if WK001 > 999999999 or WK001 < -999999999;
-   OcShow('WARNING: Unusually large accumulated amount: ' WK001);
-   /* Log for investigation, continue processing */
-end;
+* Add counters and summary logging:
+n.RecordsRead = 0;
+n.RecordsProcessed = 0;
+n.RecordsSkipped = 0;
+
+* In loop:
+RecordsRead = RecordsRead + 1;
+
+* After duplicate check (skip):
+RecordsSkipped = RecordsSkipped + 1;
+
+* After poppobj_update():
+RecordsProcessed = RecordsProcessed + 1;
+
+* At end:
+OcShow('Summary: Read=' RecordsRead ' Processed=' RecordsProcessed ' Skipped=' RecordsSkipped);
 ```
 
----
-
-### Loop Iteration Limits
-
-#### Main POPP Processing Loop (Lines 28-52)
-**Iteration Count**: Unlimited (processes all POPP records in date range)
-**Typical Count**: Varies (7 days of records for POOLLOAN3)
-**Risk**: ⚠️ **LOW** - Standard database iteration pattern
-**Memory Impact**: Minimal (streaming, one record at a time)
-
-**No specific risk** - standard pattern for OmniScript
+**Benefit**: Operational visibility; troubleshooting support; audit trail  
+**Effort**: Low  
+**Risk Reduction**: Medium
 
 ---
 
-#### SSSA Verification Loop (Lines 58-66)
-**Iteration Count**: Unlimited (processes all matching SSSA records)
-**Typical Count**: 1-10 per plan/date combination
-**Risk**: ⚠️ **LOW** - Localized query with indexed fields
-**Memory Impact**: Minimal (streaming iteration)
-
-**No specific risk** - standard pattern for OmniScript
-
----
-
-## Input Validation Assessment
-
-### Environment Variables
-| Variable | Validated | Sanitization | Risk |
-|----------|-----------|--------------|------|
-| $XDAT | ❌ No | ❌ No | **Medium** - Used in file path construction |
-| $RUN-DATE | ✅ Yes | ✅ Date validation | **Low** - Validated and fallback implemented |
-
-**Recommendation**: Validate $XDAT exists and is writable directory
+#### 4. Environment Variable Validation
 ```omniscript
-XDAT_Path = octext_getenv('$XDAT');
-if XDAT_Path = '';
+* Add after line 16:
+if OCTEXT_GETENV('$XDAT') = '';
    OcShow('ERROR: $XDAT environment variable not set');
+   sd080 = 16;
    EXIT;
 end;
-/* Optionally test write permissions */
 ```
+
+**Benefit**: Early detection; prevents cryptic file errors  
+**Effort**: Low  
+**Risk Reduction**: Medium
 
 ---
 
-### Database Field Values
-| Field | Type | Validated | Risk |
-|-------|------|-----------|------|
-| RKPlan (field 030) | String | ✅ Non-empty (Line 56) | **Low** |
-| TradeDate (field 008) | Numeric | ✅ Non-zero (Line 56) | **Low** |
-| Secondary1Buys (field 741) | Numeric | ❌ No | **Medium** |
-| TrustAccount (field 01510) | String | ❌ No | **Medium** |
-| SSSA Amount (field 235) | Numeric | ❌ No | **Medium** |
-| SSSA Activity (field 011) | String | ✅ Checked for 'XI' | **Low** |
-| SSSA Type (field 009) | String | ✅ Checked for 'B'/'S' | **Low** |
+### Medium Priority (Implement in Next Release)
 
-**Recommendation**: Validate all numeric fields before use
+#### 5. Data Validation Checks
 ```omniscript
-/* Example for Secondary1Buys */
-Secondary1Buys = poppobj_numde(741);
-if not OcNum_IsValid(Secondary1Buys);
-   OcShow('ERROR: Invalid numeric field 741 for Plan ' RKPlan);
-   continue; /* Skip to next record */
+* Add validation for critical amounts:
+if Secondary1Buys < 0;
+   OcShow('WARNING: Negative Secondary1Buys for Plan ' RKPlan ' Date ' TradeDate ': ' Secondary1Buys);
+   * Consider skipping or flagging for review
+end;
+
+if Secondary1Buys > 10000000;  /* Example threshold */
+   OcShow('WARNING: Unusually large Secondary1Buys for Plan ' RKPlan ': ' Secondary1Buys);
+   * Consider manual review
 end;
 ```
 
+**Benefit**: Data quality alerting; fraud detection  
+**Effort**: Medium (requires threshold tuning)  
+**Risk Reduction**: Medium
+
 ---
 
-## Error Recovery Mechanisms
-
-### Current Recovery Mechanisms
-**None implemented** - Program relies on OmniScript runtime error handling
-
-### Recommended Recovery Strategies
-
-#### 1. Transactional Processing
-**Goal**: Ensure atomicity of C1 write + POPP update
-
-**Implementation**:
+#### 6. SSSA Completeness Check
 ```omniscript
-/* Pseudo-code for transactional approach */
-TransactionSuccess = TRUE;
+* Add to CHECK.SSSA routine:
+n.SSACount = 0;
+loop while sssaobj_next();
+   SSACount = SSACount + 1;
+   * ... existing logic
+endloop;
 
-/* 1. Write C1 record */
-if not WriteC1Record(Line);
-   TransactionSuccess = FALSE;
-end;
-
-/* 2. Update POPP only if write succeeded */
-if TransactionSuccess;
-   if not UpdatePOPP(RKPlan Secondary1Buys);
-      TransactionSuccess = FALSE;
-      /* Compensate: Remove/flag C1 record as invalid */
-   end;
-end;
-
-/* 3. Log results */
-if not TransactionSuccess;
-   LogError('Transaction failed for Plan ' RKPlan);
+if SSACount = 0;
+   OcShow('WARNING: No SSSA records for Plan ' RKPlan ' Date ' TradeDate ' (expected activity)');
 end;
 ```
 
+**Benefit**: Detects missing reversal data; improves calculation accuracy  
+**Effort**: Low  
+**Risk Reduction**: Medium
+
 ---
 
-#### 2. Restart/Resume Capability
-**Goal**: Allow program to resume after failure without duplicate processing
-
-**Implementation**:
-- Use PriorCashApplied (field 877) as processing checkpoint
-- Current logic already implements idempotency (Line 36 check)
-- ✅ Already implemented (processing check before C1 generation)
-
-**Enhancement**: Log processed plans for additional audit trail
+#### 7. Return Code Standardization
 ```omniscript
-/* After successful processing */
-OcLog('Processed Plan: ' RKPlan ' TradeDate: ' TradeDate ' Amount: ' Secondary1Buys);
+* Establish standard return codes:
+* 0 = Success
+* 4 = Warning (processed with issues)
+* 8 = Database error
+* 12 = File I/O error
+* 16 = Configuration error (environment variables)
+* 20 = Data validation error
+
+* Set sd080 appropriately throughout program
 ```
 
----
-
-#### 3. Error Logging and Alerting
-**Goal**: Capture errors for analysis and alerting
-
-**Implementation**:
-```omniscript
-/* Define error logging procedure */
-ROUTINE 'LOG.ERROR';
-   ErrorMessage = 'ERROR: ' ErrorText;
-   OcShow(ErrorMessage);
-   /* Write to dedicated error log file */
-   OcErrorFile_Write(ErrorMessage);
-   /* Increment error counter for summary */
-   ErrorCount = ErrorCount + 1;
-GOBACK;
-
-/* Usage throughout program */
-if DatabaseError;
-   ErrorText = 'POPP database unavailable';
-   PERFORM 'LOG.ERROR';
-end;
-```
+**Benefit**: Enables downstream monitoring and alerting  
+**Effort**: Low  
+**Risk Reduction**: Low (operational improvement)
 
 ---
 
-## Risk Assessment Summary
+### Low Priority (Future Enhancement)
 
-### Overall Program Risk Matrix
-
-| Risk Category | Risk Level | Impact | Likelihood | Priority |
-|---------------|------------|--------|------------|----------|
-| Database connection failure | **HIGH** | Critical | Low | **P1** |
-| File write failure | **HIGH** | Critical | Low | **P1** |
-| POPP update failure | **HIGH** | Critical | Very Low | **P1** |
-| Invalid date handling | **MEDIUM** | Moderate | Low | **P2** |
-| Missing SSSA records | **MEDIUM** | Moderate | Low | **P2** |
-| Invalid numeric data | **MEDIUM** | Moderate | Very Low | **P2** |
-| Empty string fields | **LOW-MEDIUM** | Minor | Very Low | **P3** |
-| Buffer overflow | **LOW** | Minor | Very Low | **P3** |
+#### 8. Transaction Management
+**Approach**: Batch position updates; commit in groups  
+**Benefit**: Enables rollback on failure; improves data integrity  
+**Effort**: High (requires OmniScript transaction API)  
+**Risk Reduction**: High (for data integrity)
 
 ---
 
-### Critical Recommendations (Priority 1)
-
-1. **Add database operation error handling**
-   - Wrap poppobj_view, sssaobj_view, poppobj_update with error checks
-   - Implement graceful failure with logging
-
-2. **Add file I/O error handling**
-   - Check OcFile1_Open success
-   - Validate OcFile1_Write success before POPP update
-
-3. **Implement transactional processing**
-   - Ensure C1 write and POPP update are atomic
-   - Add compensation logic for partial failures
-
-4. **Add comprehensive error logging**
-   - Create centralized error logging routine
-   - Log all errors with context (plan, date, amount)
-   - Write error summary at program end
+#### 9. Checkpoint/Restart Logic
+**Approach**: Write progress file; resume from last successful position  
+**Benefit**: Enables recovery from mid-run failures  
+**Effort**: High (requires state management)  
+**Risk Reduction**: Medium (operational improvement)
 
 ---
 
-### Standard Recommendations (Priority 2)
-
-1. **Validate all numeric fields**
-   - Check Secondary1Buys, TradeDate, amounts before use
-   - Handle invalid values gracefully (skip or default with logging)
-
-2. **Log POPP/SSSA discrepancies**
-   - Warn when SSSA shows zero but POPP has activity
-   - Track discrepancies for data quality analysis
-
-3. **Validate environment variables**
-   - Check $XDAT is set and writable
-   - Improve $RUN-DATE fallback logging
-
-4. **Validate C1 record completeness**
-   - Check Line buffer length before write
-   - Validate all required fields populated
+#### 10. Enhanced Logging Framework
+**Approach**: Structured logging with timestamps, severity levels  
+**Benefit**: Better troubleshooting; audit trail; compliance  
+**Effort**: High (requires logging infrastructure)  
+**Risk Reduction**: Low (operational improvement)
 
 ---
 
-### Enhancements (Priority 3)
+## Error Handling Maturity Assessment
 
-1. **Add buffer size validations**
-   - Check FileName length
-   - Validate WK001 accumulation range
+### Current State: **Basic**
 
-2. **Implement empty field handling**
-   - Validate RKPlan and TrustAccount non-empty before C1 generation
-   - Skip records with missing required fields
+**Strengths**:
+- ✓ Date validation with fallback
+- ✓ Duplicate prevention (idempotency)
+- ✓ Defensive null/zero checks
+- ✓ Clear program structure
 
-3. **Add processing summary**
-   - Count records processed, skipped, errors
-   - Display summary at program end
+**Weaknesses**:
+- ✗ No database connection error handling
+- ✗ No file operation error handling
+- ✗ No operational logging or counters
+- ✗ No data validation (amount ranges)
+- ✗ No transaction management
+- ✗ Silent failures (no alerts)
 
----
-
-## Error Handling Best Practices for OmniScript
-
-### 1. Explicit Error Checks
-Always check return values of critical operations:
-- Database queries and updates
-- File operations
-- Environment variable retrieval
-
-### 2. Graceful Degradation
-Design for failure scenarios:
-- Validate inputs before processing
-- Skip invalid records rather than terminating
-- Log errors for later analysis
-
-### 3. Transactional Integrity
-Maintain data consistency:
-- Pair C1 writes with POPP updates
-- Implement compensation logic for partial failures
-- Use idempotency checks (already implemented)
-
-### 4. Comprehensive Logging
-Log all significant events:
-- Successful processing
-- Validation failures
-- Error conditions
-- Data discrepancies
-
-### 5. Testing Error Scenarios
-Test failure conditions:
-- Database unavailable
-- File system full
-- Invalid data values
-- Missing environment variables
+**Comparison to Industry Standards**:
+- **Mature Error Handling**: Comprehensive try/catch, logging, monitoring, transaction management
+- **Standard Error Handling**: Basic error checks, return codes, logging
+- **Basic Error Handling**: Minimal validation; relies on runtime ← **Current State**
+- **No Error Handling**: No checks; assumes perfect data
 
 ---
 
-## Testing Recommendations
+## Risk Mitigation Priority Matrix
 
-### Error Scenario Tests
-
-#### Test 1: Database Connection Failure
-**Setup**: Make POPP database unavailable
-**Expected**: Graceful error message and exit (after error handling added)
-**Current**: Likely runtime error termination
-
-#### Test 2: File Write Failure
-**Setup**: Set $XDAT to read-only directory or full disk
-**Expected**: Error message and graceful exit (after error handling added)
-**Current**: Likely runtime error termination
-
-#### Test 3: POPP Update Failure
-**Setup**: Make POPP database read-only after query succeeds
-**Expected**: Rollback or compensate (after error handling added)
-**Current**: Likely runtime error termination
-
-#### Test 4: Invalid Run Date
-**Setup**: Set $RUN-DATE to invalid value
-**Expected**: ✅ Fallback to current date (working, enhance with logging)
-**Current**: Working as designed
-
-#### Test 5: Missing SSSA Records
-**Setup**: POPP record with Secondary1Buys > 0 but no SSSA matches
-**Expected**: Warning log and zero amount C1 record (after error handling added)
-**Current**: Silent zero amount (no warning)
-
-#### Test 6: Invalid Numeric Fields
-**Setup**: Corrupt POPP field 741 with non-numeric data
-**Expected**: Validation error and skip record (after error handling added)
-**Current**: Undefined behavior (depends on runtime)
-
-#### Test 7: Empty Required Fields
-**Setup**: POPP record with empty RKPlan or TrustAccount
-**Expected**: Validation error and skip record (after error handling added)
-**Current**: Empty fields in C1 record or CHECK.SSSA skip (partial handling)
+| Risk Scenario | Likelihood | Impact | Current Mitigation | Priority | Recommendation |
+|---------------|------------|--------|-------------------|----------|----------------|
+| Database unavailable | Low | High | None | **HIGH** | Add connection check |
+| Disk full during write | Low | High | None | **HIGH** | Add disk space check |
+| $XDAT invalid | Low | High | None | **HIGH** | Add env validation |
+| File open failure | Low | High | None | **HIGH** | Add error handling |
+| Date validation | Low | Medium | ✓ Fallback logic | MEDIUM | Add logging |
+| SSSA incomplete | Medium | High | None | **MEDIUM** | Add completeness check |
+| Negative amounts | Low | Medium | None | MEDIUM | Add validation |
+| No records found | Medium | Low | None | LOW | Add logging |
+| Already processed | Medium | Low | ✓ Duplicate check | LOW | Add logging |
 
 ---
 
 ## Monitoring and Alerting Recommendations
 
-### Key Metrics to Monitor
-1. **Error Rate**: Number of errors per run / total records processed
-2. **Discrepancy Rate**: POPP/SSSA mismatches per run
-3. **Processing Rate**: Records processed per run (detect abnormal volumes)
-4. **Runtime Duration**: Detect performance degradation
+### Critical Alerts (Page Operator)
+1. **Program Failure**: Non-zero return code (sd080 <> 0)
+2. **No Output Generated**: Empty C1 file with non-zero date range
+3. **Disk Space Low**: <10% free on $XDAT filesystem
 
-### Alert Conditions
-1. **Critical**: Database connection failures, file write failures
-2. **Warning**: High discrepancy rate (>5%), invalid data detected
-3. **Info**: Run completion summary, records processed count
+### Warning Alerts (Email Operations)
+1. **Negative Amounts**: Any Secondary1Buys < 0 after CHECK.SSSA
+2. **High Skip Rate**: >50% of records skipped (already processed)
+3. **SSSA Missing**: CHECK.SSSA finds no records (expected activity)
+4. **Date Fallback**: $RUN-DATE invalid; using current date
 
-### Audit Trail Requirements
-1. **Log all processed plans** with amounts for audit
-2. **Log all skipped records** with reasons
-3. **Log all errors** with full context
-4. **Generate run summary** with counts and status
+### Informational Logging
+1. **Processing Summary**: Record counts (read, processed, skipped)
+2. **Execution Time**: Start/end timestamps
+3. **Date Range Used**: SevenDaysAgo to LastBusiness
+4. **Output File**: Full path and line count
 
 ---
 
-**AI-Generated Documentation Notice**: This error handling analysis was generated using AI and should be reviewed by OmniScript experts and system architects for accuracy and completeness.
+## Testing Recommendations
 
-**Last Updated**: 2026-01-23
-**Program Version**: GAP_NewLoanCash with GPD-1704 correction and reversal handling (09/25/2024)
+### Error Handling Test Cases
+
+1. **Test: Database Unavailable**
+   - Simulate: Disconnect POPP database
+   - Expected: Clear error message; non-zero return code
+   - Current: Likely runtime error
+
+2. **Test: Invalid $XDAT**
+   - Simulate: Unset or invalid path
+   - Expected: Early detection with clear message
+   - Current: File open error (late detection)
+
+3. **Test: Disk Full**
+   - Simulate: Fill filesystem during execution
+   - Expected: Graceful failure with partial rollback
+   - Current: Likely runtime error; partial updates
+
+4. **Test: Negative Net Activity**
+   - Simulate: SSSA with sell > buy
+   - Expected: Warning logged; proceed or skip based on policy
+   - Current: No validation; negative C1 record written
+
+5. **Test: All Records Skipped**
+   - Simulate: Rerun with no changes
+   - Expected: Summary shows 100% skip rate
+   - Current: Silent completion; no feedback
+
+6. **Test: Invalid Date**
+   - Simulate: $RUN-DATE = 'INVALID'
+   - Expected: Fallback to current date with warning
+   - Current: Fallback working; no warning ✓
+
+---
+
+## Related Documentation
+- [GAP_NewLoanCash Data Dictionary](GAP_NewLoanCash_DATA_DICTIONARY.md)
+- [GAP_NewLoanCash Call Graph](GAP_NewLoanCash_CALL_GRAPH.md)
+- [GAP_NewLoanCash Comprehensive Documentation](GAP_NewLoanCash_OVERVIEW.md)
+- [CHECK.SSSA Procedure](procedures/CHECK.SSSA.md)

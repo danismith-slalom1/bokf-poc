@@ -30,14 +30,52 @@ This is a configuration file to aid with the automation of the OMNISCRIPT docume
 
 - **Documentation Depth by Program Type**:
   - **Mission-critical**: Comprehensive documentation (all phases + all supplemental docs)
-    - Includes: Data dictionary, procedures, call graphs, mutations, comprehensive doc, Mermaid diagrams
+    - Includes: Overview, Data dictionary (with mutations), procedures, call graphs, diagrams
     - **Plus**: Error handling analysis, performance analysis, testing guide, integration guide, business rules
-  - **Standard business logic**: Standard documentation (data dictionary + procedures + call graph + essentials)
-    - Includes: Data dictionary, key procedures, call graph, Mermaid diagrams
+  - **Standard business logic**: Standard documentation (overview + data dictionary + procedures + call graph + essentials)
+    - Includes: Overview, Data dictionary (with mutations), key procedures, call graph, core diagrams
     - **Plus**: Error handling analysis, testing guide (basic)
   - **Simple utilities**: Minimal documentation (overview + key sections)
-    - Includes: Overview, key procedures, basic Mermaid diagram
+    - Includes: Overview (with embedded flow diagram), key procedures
     - **Plus**: Error handling assessment (if file I/O present)
+
+## Output Directory Structure
+
+**Standard documentation location**: All OMNISCRIPT documentation must follow this directory structure:
+
+```
+omniscript-documentation/
+└── {REPO-NAME}/
+    └── {PROGRAM-NAME}/
+        ├── {PROGRAM}_OVERVIEW.md                  [Merged: INDEX + COMPREHENSIVE_DOC]
+        ├── {PROGRAM}_DATA_DICTIONARY.md           [Includes: Variable Mutations section]
+        ├── {PROGRAM}_CALL_GRAPH.md
+        ├── {PROGRAM}_DIAGRAMS.md                  [Complex visualizations only]
+        ├── {PROGRAM}_ERROR_HANDLING.md
+        ├── {PROGRAM}_INTEGRATION_GUIDE.md
+        ├── {PROGRAM}_BUSINESS_RULES.md
+        ├── {PROGRAM}_CROSS_REFERENCE.md
+        ├── {PROGRAM}_VALIDATION_REPORT.md
+        └── procedures/
+            ├── PROCEDURE-1.md
+            ├── PROCEDURE-2.md
+            └── ...
+```
+
+**Path Naming Conventions**:
+- Repository name: Extract from repository or project folder name
+- Program name: Extract from OmniScript file name without extension (e.g., `PAYROLL.os` → `PAYROLL`)
+- Use uppercase for program names in directory paths
+- Use underscores to separate program name from document type
+
+**For complete file naming conventions and documentation standards**, see [templates/DOCUMENTATION_STANDARDS.template.md](./templates/DOCUMENTATION_STANDARDS.template.md#naming-conventions).
+
+**Example paths**:
+- Overview: `omniscript-documentation/my-repo/PAYROLL/PAYROLL_OVERVIEW.md`
+- Data dictionary: `omniscript-documentation/my-repo/PAYROLL/PAYROLL_DATA_DICTIONARY.md`
+- Call graph: `omniscript-documentation/my-repo/PAYROLL/PAYROLL_CALL_GRAPH.md`
+- Diagrams: `omniscript-documentation/my-repo/PAYROLL/PAYROLL_DIAGRAMS.md`
+- Procedure: `omniscript-documentation/my-repo/PAYROLL/procedures/CALCULATE-TAX.md`
 
 ## Documentation Enhancement Settings
 

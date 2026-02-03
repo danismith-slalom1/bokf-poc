@@ -1,367 +1,463 @@
 # GAP_NewLoanCash Call Graph
 
-## Program Overview
-- **Program Name**: GAP_NewLoanCash
-- **Purpose**: Process new loan cash offset activity for C1 reconciliation
-- **Main Entry Point**: Program initialization (line 11)
-- **Primary Loop**: POPP record processing (lines 28-51)
-- **Subroutines**: 1 (CHECK.SSSA)
+## Program Call Hierarchy
 
----
-
-## Call Hierarchy Diagram
-
+### Call Tree Structure
 ```
-Program Start (Line 11)
-│
-├─ Variable Initialization (Lines 11-14)
-│  ├─ OcText_string() - Construct filename
-│  ├─ OCTEXT_GETENV('$XDAT') - Get environment variable
-│  ├─ OcFMT() - Format date/time
-│  ├─ OcDate_Current() - Get current date
-│  └─ OcTime_Current() - Get current time
-│
-├─ OcShow(FileName) - Display filename (Line 15)
-│
-├─ OcFile1_Open() - Open output file (Line 16)
-│
-├─ Date Calculation (Lines 18-26)
-│  ├─ octext_tonum() - Convert environment variable
-│  ├─ octext_getenv('$RUN-DATE') - Get run date
-│  ├─ OcDate_Valid() - Validate date (Line 19)
-│  ├─ OcDate_AddDays() - Calculate 7 days ago (Lines 20, 23)
-│  ├─ OcDate_AddBusDays() - Calculate last business day (Lines 21, 24)
-│  └─ OcShow() - Display dates (Line 26)
-│
-├─ Main Processing Loop (Lines 28-51)
-│  │
-│  ├─ poppobj_view() - Query POPP records (Line 28)
-│  │
-│  └─ loop while poppobj_next() (Line 29)
-│     │
-│     ├─ poppobj_de(030) - Get RKPlan (Line 30)
-│     ├─ poppobj_numde(008) - Get TradeDate (Line 31)
-│     ├─ poppobj_numde(741) - Get Secondary1Buys (Line 32)
-│     ├─ poppobj_numde(877) - Get PriorCashApplied (Line 33)
-│     │
-│     ├─ IF Secondary1Buys <> 0 (Line 33)
-│     │  └─ PERFORM 'CHECK.SSSA' ────┐ (Line 34)
-│     │                               │
-│     ├─ IF (PriorCashApplied <> Secondary1Buys) and (Secondary1Buys <> 0) (Line 36)
-│     │  │
-│     │  ├─ poppobj_de(030) - Get RKPlan again (Line 37)
-│     │  ├─ poppobj_numde(008) - Get TradeDate again (Line 38)
-│     │  ├─ Calculate NewLoanUnits (Line 39)
-│     │  ├─ poppobj_de(01510) - Get TrustAccount (Line 40)
-│     │  │
-│     │  ├─ Format C1 Record (Lines 41-47)
-│     │  │  ├─ OcText_Set() - Set record type (Line 41)
-│     │  │  ├─ OcText_Set() - Set RKPlan (Line 42)
-│     │  │  ├─ OcText_Set() - Set LastBusiness date (Line 43)
-│     │  │  │  └─ OcFmt() - Format date
-│     │  │  ├─ OcText_Set() - Set TrustAccount (Line 44)
-│     │  │  ├─ OcText_Set() - Set position indicator (Line 45)
-│     │  │  ├─ OcText_Set() - Set flag (Line 46)
-│     │  │  ├─ OcText_Set() - Set NewLoanUnits (Line 47)
-│     │  │  │  └─ OcFmt() - Format amount
-│     │  │  └─ OcText_Set() - Set activity code (Line 48)
-│     │  │
-│     │  ├─ OcFile1_Write(Line) - Write C1 record (Line 49)
-│     │  ├─ poppobj_setde(877, Secondary1Buys) - Update UDF1 (Line 50)
-│     │  └─ poppobj_update() - Commit POPP update (Line 51)
-│     │
-│     └─ endloop (Line 52)
-│
-└─ Program End (Line 70 - implicit)
-│
-│
-┌───────────────────────────────────────────────────────────┐
-│                                                           │
-│  SUBROUTINE: CHECK.SSSA (Lines 55-69)                   │
-│  Called from: Line 34                                     │
-│  Call condition: Secondary1Buys <> 0                     │
-│                                                           │
-│  ├─ IF (RKPlan <> '') and (TradeDate <> 0) (Line 56)    │
-│  │  │                                                     │
-│  │  ├─ WK001 = 0 - Initialize accumulator (Line 56)     │
-│  │  │                                                     │
-│  │  ├─ sssaobj_view() - Query SSSA (Line 57)            │
-│  │  │  Parameters: PLAN, SECURITYID:'POOLLOAN3', DATE   │
-│  │  │                                                     │
-│  │  └─ loop while sssaobj_next() (Line 58)              │
-│  │     │                                                  │
-│  │     ├─ sssaobj_de(011) - Get activity code           │
-│  │     │                                                  │
-│  │     ├─ IF activity code = 'XI' (Line 59)             │
-│  │     │  │                                               │
-│  │     │  ├─ IF sssaobj_de(009) = 'B' (Line 60)         │
-│  │     │  │  └─ WK001 = WK001 + sssaobj_numde(235)      │
-│  │     │  │     (Add buy transactions)                   │
-│  │     │  │                                               │
-│  │     │  └─ IF sssaobj_de(009) = 'S' (Line 63)         │
-│  │     │     └─ WK001 = WK001 - sssaobj_numde(235)      │
-│  │     │        (Subtract sell/reversal transactions)    │
-│  │     │                                                  │
-│  │     └─ endloop (Line 66)                              │
-│  │                                                        │
-│  ├─ Secondary1Buys = WK001 - Update result (Line 68)    │
-│  │                                                        │
-│  └─ GOBACK - Return to caller (Line 69)                 │
-│                                                           │
-└───────────────────────────────────────────────────────────┘
+GAP_NewLoanCash (Main Program)
+├── OcText_string() - Line 16
+├── OCTEXT_GETENV() - Line 16
+├── OcFmt() - Lines 16, 17, 47
+├── OcDate_Current() - Lines 17, 26, 27
+├── OcTime_Current() - Line 17
+├── OcShow() - Lines 18, 29
+├── OcFile1_Open() - Line 19
+├── OcDate_Valid() - Line 22
+├── OcDate_AddDays() - Lines 23, 26
+├── OcDate_AddBusDays() - Lines 24, 27
+├── poppobj_view() - Line 31
+├── poppobj_next() - Line 32
+├── poppobj_de() - Lines 33, 41, 44
+├── poppobj_numde() - Lines 34, 35, 36, 42
+├── PERFORM 'CHECK.SSSA' - Line 38
+│   └── CHECK.SSSA (Routine)
+│       ├── sssaobj_view() - Line 62
+│       ├── sssaobj_next() - Line 63
+│       ├── sssaobj_de() - Lines 64, 65, 68
+│       └── sssaobj_numde() - Lines 66, 69
+├── OcText_Set() - Lines 45-52
+├── OcFile1_Write() - Line 53
+├── poppobj_setde() - Line 54
+└── poppobj_update() - Line 55
 ```
 
 ---
 
-## Execution Flow Summary
+## Detailed Call Analysis
 
-### Phase 1: Initialization (Lines 11-16)
-1. Set system variable `sd080 = 99999999`
-2. Define all program variables with OcLVar_Define
-3. Construct output filename using environment variables and current date/time
-4. Display filename
-5. Open output file for writing
+### Main Program Flow
 
-### Phase 2: Date Range Calculation (Lines 18-26)
-1. Retrieve run date from `$RUN-DATE` environment variable
-2. Validate run date
-3. Calculate date range:
-   - **Valid run date**: Use RunDate for calculations
-   - **Invalid run date**: Use current date as fallback
-4. Calculate `SevenDaysAgo` (7 calendar days before run date)
-5. Calculate `LastBusiness` (1 business day before run date)
-6. Display calculated dates
+#### Phase 1: Initialization and Setup (Lines 13-19)
+```
+sd080 = 99999999
+  ↓
+OcLVar_Define() - Define all global variables
+  ↓
+OcText_string() - Construct output filename
+  ├── OCTEXT_GETENV('$XDAT')
+  ├── OcFmt(OcDate_Current(), 'Z8')
+  └── OcFmt(OcTime_Current(), 'Z6')
+  ↓
+OcShow(FileName) - Display filename
+  ↓
+OcFile1_Open(name:FileName mode:'OUTPUT') - Open output file
+```
 
-### Phase 3: Main Processing Loop (Lines 28-51)
-1. Query POPP database for:
-   - Security: 'POOLLOAN3'
-   - Date range: SevenDaysAgo to LastBusiness
-2. For each POPP record:
-   a. Extract plan, trade date, and loan amounts
-   b. **IF Secondary1Buys > 0**: Call CHECK.SSSA to verify/adjust amount
-   c. **IF amount differs from prior processing AND amount > 0**:
-      - Construct formatted C1 activity record
-      - Write record to output file
-      - Update POPP field 877 with processed amount
-      - Commit POPP update
+**Dependencies**:
+- Environment variable: $XDAT
+- File system: Write access to output directory
+- System date/time functions
 
-### Phase 4: SSSA Verification (CHECK.SSSA Routine, Lines 55-69)
-1. Validate input parameters (RKPlan and TradeDate)
-2. Query SSSA database for matching plan/security/date
-3. Loop through SSSA records:
-   - Filter for 'XI' activity type
-   - Accumulate buy transactions (add amounts)
-   - Accumulate sell/reversal transactions (subtract amounts)
-4. Update Secondary1Buys with net amount
-5. Return to main processing loop
-
-### Phase 5: Program Termination (Implicit)
-- No explicit cleanup or file close operations
-- OmniScript runtime handles file closure
+**Purpose**: Set up output file for C1 activity records
 
 ---
 
-## Loop Structures
+#### Phase 2: Date Range Calculation (Lines 21-29)
+```
+OCTEXT_GETENV('$RUN-DATE')
+  ↓
+OcText_tonum() - Convert to numeric date
+  ↓
+OcDate_Valid(RunDate) - Validate date
+  ↓
+[If Valid]                              [If Invalid]
+  ↓                                       ↓
+OcDate_AddDays(RunDate, -7)           OcDate_AddDays(OcDate_Current(), -7)
+  ↓                                       ↓
+OcDate_AddBusDays(RunDate, -1)        OcDate_AddBusDays(OcDate_Current(), -1)
+  ↓                                       ↓
+  └──────────────── [Merge] ─────────────┘
+                      ↓
+            OcShow(RunDate, SevenDaysAgo, LastBusiness)
+```
 
-### Loop 1: Main POPP Processing (Lines 28-52)
-- **Type**: Database iterator loop
-- **Condition**: `while poppobj_next()`
-- **Iteration**: One iteration per POPP record in date range
-- **Typical Iterations**: Varies (7 days of position records)
-- **Termination**: When no more POPP records to process
-- **Exit Point**: Line 52 (endloop)
+**Dependencies**:
+- Environment variable: $RUN-DATE (optional)
+- System date functions
+- Business day calendar (for OcDate_AddBusDays)
 
-### Loop 2: SSSA Verification (Lines 58-66)
-- **Type**: Database iterator loop (nested within CHECK.SSSA routine)
-- **Condition**: `while sssaobj_next()`
-- **Iteration**: One iteration per matching SSSA record
-- **Typical Iterations**: 1-10 per plan/date combination
-- **Termination**: When no more SSSA records to process
-- **Exit Point**: Line 66 (endloop)
-- **Context**: Called conditionally from main loop
-
----
-
-## Conditional Execution Paths
-
-### Path 1: CHECK.SSSA Invocation (Line 33-34)
-**Condition**: `If (Secondary1Buys <> 0)`
-- **True Path**: Execute CHECK.SSSA routine to verify amount
-- **False Path**: Skip SSSA verification (no loan activity)
-- **Business Logic**: Only verify amounts when loan activity exists
-
-### Path 2: C1 Record Generation (Line 36-51)
-**Condition**: `if (PriorCashApplied <> Secondary1Buys) and (Secondary1Buys <> 0)`
-- **True Path**: Generate C1 record and update POPP
-- **False Path**: Skip processing (already processed or no activity)
-- **Business Logic**: Idempotency check - only process new or changed amounts
-
-### Path 3: Date Calculation (Lines 19-25)
-**Condition**: `if OcDate_Valid(RunDate)`
-- **True Path**: Use RunDate from environment for calculations
-- **False Path**: Use OcDate_Current() as fallback
-- **Business Logic**: Graceful fallback if environment variable missing or invalid
-
-### Path 4: SSSA Processing (Line 56)
-**Condition**: `if (RKPlan <> '') and (TradeDate <> 0)`
-- **True Path**: Query SSSA and process records
-- **False Path**: Return immediately without processing
-- **Business Logic**: Input validation for SSSA query
-
-### Path 5: Buy Transaction Accumulation (Lines 60-62)
-**Condition**: `if sssaobj_de(009) = 'B'`
-- **True Path**: Add transaction amount to accumulator
-- **False Path**: Check for sell transaction
-- **Business Logic**: Buy transactions increase loan amounts
-
-### Path 6: Sell Transaction Accumulation (Lines 63-65)
-**Condition**: `if sssaobj_de(009) = 'S'`
-- **True Path**: Subtract transaction amount from accumulator
-- **False Path**: Skip transaction
-- **Business Logic**: Sell transactions decrease loan amounts (reversals)
-
-### Path 7: Activity Type Filter (Line 59)
-**Condition**: `if sssaobj_de(011) = 'XI'`
-- **True Path**: Process buy/sell transactions
-- **False Path**: Skip non-XI activity types
-- **Business Logic**: Only 'XI' activity is relevant for loan cash reconciliation
+**Purpose**: Determine 7-day lookback window with business day boundaries
 
 ---
 
-## Database Operations Summary
+#### Phase 3: Main Processing Loop (Lines 31-57)
+```
+poppobj_view(securityid:'POOLLOAN3', datelo:SevenDaysAgo, datehi:LastBusiness)
+  ↓
+loop while poppobj_next()
+  ↓
+  ├── poppobj_de(030) → RKPlan
+  ├── poppobj_numde(008) → TradeDate
+  ├── poppobj_numde(741) → Secondary1Buys
+  └── poppobj_numde(877) → PriorCashApplied
+  ↓
+  [If Secondary1Buys <> 0]
+    ↓
+    PERFORM 'CHECK.SSSA' → Modifies Secondary1Buys
+  ↓
+  [If (PriorCashApplied <> Secondary1Buys) and (Secondary1Buys <> 0)]
+    ↓
+    ├── poppobj_de(030) → RKPlan (re-fetch)
+    ├── poppobj_numde(008) → TradeDate (re-fetch)
+    ├── 0 - Secondary1Buys → NewLoanUnits
+    └── poppobj_de(01510) → TrustAccount
+    ↓
+    Build C1 Record:
+    ├── OcText_Set(Line, 1, 'C100', 4)
+    ├── OcText_Set(Line, 5, RKPlan, 6)
+    ├── OcText_Set(Line, 31, OcFmt(LastBusiness, 'Z8'), 8)
+    ├── OcText_Set(Line, 40, TrustAccount, 32)
+    ├── OcText_Set(Line, 73, '000000000000000    2', 20)
+    ├── OcText_Set(Line, 115, '0', 1)
+    ├── OcText_Set(Line, 116, OcFmt(NewLoanUnits, 'Z,12V2-'), 15)
+    └── OcText_Set(Line, 134, '00339', 5)
+    ↓
+    OcFile1_Write(Line) - Write C1 record to file
+    ↓
+    poppobj_setde(denum:877, value:Secondary1Buys) - Mark as processed
+    ↓
+    poppobj_update() - Commit position record update
+  ↓
+endloop
+```
 
-### Read Operations
-1. **POPP Query** (Line 28): Retrieve position records for POOLLOAN3 in date range
-   - Fields Read: 030, 008, 741, 877, 01510
-2. **POPP Record Iteration** (Line 29): Fetch next record
-3. **SSSA Query** (Line 57): Retrieve settlement activity for plan/security/date
-   - Fields Read: 009, 011, 235
-4. **SSSA Record Iteration** (Line 58): Fetch next record
+**Dependencies**:
+- POPP database (Plan Position)
+- SSSA database (Secondary Activity)
+- Output file (C1 records)
 
-### Write Operations
-1. **File Write** (Line 49): Write formatted C1 record to output file
-2. **POPP Update** (Lines 50-51): Update field 877 with processed amount and commit
-
----
-
-## External Function Calls
-
-### OmniScript Framework Functions
-- **Date/Time Functions**: OcDate_Current, OcTime_Current, OcDate_Valid, OcDate_AddDays, OcDate_AddBusDays
-- **Text Functions**: OcText_string, OcText_Set, octext_tonum, octext_getenv
-- **Formatting Functions**: OcFmt, OCFMT
-- **Display Functions**: OcShow
-- **File Functions**: OcFile1_Open, OcFile1_Write
-- **Database Functions**: poppobj_view, poppobj_next, poppobj_de, poppobj_numde, poppobj_setde, poppobj_update
-- **SSSA Functions**: sssaobj_view, sssaobj_next, sssaobj_de, sssaobj_numde
-- **Variable Functions**: OcLVar_Define
-
----
-
-## Entry and Exit Points
-
-### Entry Point
-- **Line 11**: Program starts with `sd080 = 99999999` initialization
-- **Invocation**: Called by OmniScript scheduler or manually
-
-### Exit Points
-- **Implicit**: Program ends after main loop completion (Line 52)
-- **No explicit EXIT or STOP statements**
-- **CHECK.SSSA Exit**: Line 69 (GOBACK returns to caller)
-
----
-
-## Procedure Call Relationships
-
-### Main Program
-- **Calls**: CHECK.SSSA (conditionally, line 34)
-- **Called By**: System/Scheduler
-- **Execution Context**: Main program thread
-
-### CHECK.SSSA Routine
-- **Calls**: None (leaf procedure)
-- **Called By**: Main program loop (line 34)
-- **Execution Context**: Synchronous subroutine call
-- **Call Frequency**: Once per POPP record where Secondary1Buys > 0
+**Purpose**: Process position records, calculate net activity, generate C1 offsets
 
 ---
 
-## Nested Call Depth
+### CHECK.SSSA Routine (Lines 59-75)
 
-**Maximum Call Depth**: 2 levels
-- Level 0: System/Scheduler → GAP_NewLoanCash (Main Program)
-- Level 1: Main Program → CHECK.SSSA
+```
+ROUTINE 'CHECK.SSSA'
+  ↓
+  [If (RKPlan <> '') and (TradeDate <> 0)]
+    ↓
+    WK001 = 0
+    ↓
+    sssaobj_view(PLAN:RKPlan, SECURITYID:'POOLLOAN3', DATE:TradeDate)
+    ↓
+    loop while sssaobj_next()
+      ↓
+      [If sssaobj_de(011) = 'XI']
+        ↓
+        [If sssaobj_de(009) = 'B']
+          ↓
+          WK001 = WK001 + sssaobj_numde(235)
+        ↓
+        [If sssaobj_de(009) = 'S']
+          ↓
+          WK001 = WK001 - sssaobj_numde(235)
+    ↓
+    endloop
+    ↓
+    Secondary1Buys = WK001
+  ↓
+  GOBACK
+```
 
-**Call Graph Complexity**: Low (single subroutine, no recursion)
+**Dependencies**:
+- SSSA database (Secondary Activity)
+- Global variables: RKPlan, TradeDate, Secondary1Buys
 
----
-
-## Parallelization Opportunities
-
-### Not Parallelizable
-- **Main POPP Loop**: Must process sequentially due to database updates (poppobj_update)
-- **SSSA Verification**: Depends on POPP record data (called per record)
-
-### Theoretically Parallelizable
-- **Date Calculations**: Independent operations, but trivial overhead
-- **Multiple Plans**: If processing multiple plans, could partition by plan (requires architectural changes)
-
-**Current Architecture**: Single-threaded sequential processing (standard for OmniScript)
-
----
-
-## Error Propagation
-
-### CHECK.SSSA Errors
-- **Behavior**: If CHECK.SSSA fails silently (e.g., database error), caller may use incorrect Secondary1Buys value
-- **Impact**: Could generate incorrect C1 records
-- **Mitigation**: No explicit error handling; relies on OmniScript runtime exceptions
-
-### Database Query Errors
-- **Behavior**: poppobj_view or sssaobj_view failures would likely terminate program
-- **Impact**: No C1 records generated for this run
-- **Mitigation**: OmniScript runtime error handling (not in script)
-
-### File Write Errors
-- **Behavior**: OcFile1_Write failure would likely terminate program
-- **Impact**: Incomplete output file, POPP may be partially updated
-- **Mitigation**: No transactional rollback mechanism evident in code
+**Purpose**: Calculate net loan activity by accounting for reversals
 
 ---
 
-## Performance Characteristics
+## Database Object Call Patterns
 
-### Database Operations
-- **POPP Query**: Single query at start, then iterator (efficient)
-- **SSSA Queries**: One per POPP record with Secondary1Buys > 0 (could be many)
-- **Bottleneck**: SSSA queries if many POPP records have loan activity
+### poppobj (Plan Position Object)
+| Operation | Line(s) | Purpose | Parameters |
+|-----------|---------|---------|------------|
+| poppobj_view() | 31 | Initialize query | securityid:'POOLLOAN3', datelo:SevenDaysAgo, datehi:LastBusiness |
+| poppobj_next() | 32 | Fetch next record | None (loop iterator) |
+| poppobj_de() | 33, 41, 44 | Get string field | DE 030 (RKPlan), DE 01510 (TrustAccount) |
+| poppobj_numde() | 34, 35, 36, 42 | Get numeric field | DE 008 (TradeDate), DE 741 (Secondary1Buys), DE 877 (PriorCashApplied) |
+| poppobj_setde() | 54 | Update field | DE 877 (set to Secondary1Buys) |
+| poppobj_update() | 55 | Commit update | None |
 
-### File I/O
-- **Output File**: Sequential writes, one per processed record (efficient)
-- **Buffering**: Assumed handled by OcFile1_Write
+**Call Sequence**: view → next (loop) → de/numde (read) → setde (write) → update (commit)
 
-### Overall Performance
-- **Time Complexity**: O(P * S) where P = POPP records, S = avg SSSA records per POPP
-- **Typical Runtime**: Depends on 7-day data volume
-- **Optimization**: Could batch SSSA queries or use database joins (requires framework support)
-
----
-
-## Call Graph Dependencies
-
-### Required External Systems
-1. **POPP Database**: Must be accessible and contain current position data
-2. **SSSA Database**: Must be accessible and contain settlement activity data
-3. **File System**: $XDAT directory must be writable
-4. **Environment Variables**: $XDAT and $RUN-DATE must be set
-
-### Data Dependencies
-- **CHECK.SSSA depends on**: RKPlan, TradeDate from POPP record
-- **C1 record generation depends on**: Secondary1Buys (potentially modified by CHECK.SSSA)
+**Record Processing Count**: Variable (depends on 7-day window and POOLLOAN3 activity)
 
 ---
 
-**AI-Generated Documentation Notice**: This call graph was generated using AI analysis and should be reviewed by OmniScript experts for accuracy.
+### sssaobj (Secondary Activity Object)
+| Operation | Line(s) | Purpose | Parameters |
+|-----------|---------|---------|------------|
+| sssaobj_view() | 62 | Initialize query | PLAN:RKPlan, SECURITYID:'POOLLOAN3', DATE:TradeDate |
+| sssaobj_next() | 63 | Fetch next record | None (loop iterator) |
+| sssaobj_de() | 64, 65, 68 | Get string field | DE 011 (Activity Code), DE 009 (Transaction Type) |
+| sssaobj_numde() | 66, 69 | Get numeric field | DE 235 (Transaction Amount) |
 
-**Last Updated**: 2026-01-23
-**Program Version**: Includes GPD-1704 correction and reversal handling (09/25/2024)
+**Call Sequence**: view → next (loop) → de/numde (read)
+
+**Record Processing Count**: Typically 1-3 per position record (buys and potential sells)
+
+**Called From**: CHECK.SSSA routine only
+
+---
+
+## OmniScript Built-in Function Calls
+
+### Date/Time Functions
+| Function | Lines Called | Purpose | Return Type |
+|----------|--------------|---------|-------------|
+| OcDate_Current() | 17, 26, 27 | Get current system date | Numeric (date) |
+| OcDate_Valid() | 22 | Validate date format | Boolean |
+| OcDate_AddDays() | 23, 26 | Add calendar days | Numeric (date) |
+| OcDate_AddBusDays() | 24, 27 | Add business days | Numeric (date) |
+| OcTime_Current() | 17 | Get current system time | Numeric (time) |
+
+**Call Pattern**: Date functions primarily used in initialization (Phase 2)
+
+---
+
+### File I/O Functions
+| Function | Lines Called | Purpose | Return Type |
+|----------|--------------|---------|-------------|
+| OcFile1_Open() | 19 | Open output file | Status (implicit) |
+| OcFile1_Write() | 53 | Write record to file | Status (implicit) |
+
+**Call Pattern**: Open once (initialization), write per qualifying record (loop)
+
+**File Handle**: OcFile1 (implicit channel 1)
+
+---
+
+### Text/String Functions
+| Function | Lines Called | Purpose | Return Type |
+|----------|--------------|---------|-------------|
+| OcText_string() | 16 | Construct string with dynamic values | String |
+| OcText_Set() | 45-52 | Set substring at position | None (modifies variable) |
+| OcFmt() | 16, 17, 47, 50 | Format numeric values | String |
+| OCTEXT_GETENV() | 16, 21 | Get environment variable | String |
+| OcText_tonum() | 21 | Convert string to number | Numeric |
+
+**Call Pattern**: Heavy text manipulation during C1 record construction (Lines 45-52)
+
+---
+
+### Display/Debug Functions
+| Function | Lines Called | Purpose | Return Type |
+|----------|--------------|---------|-------------|
+| OcShow() | 18, 29 | Display values (logging) | None |
+
+**Call Pattern**: Display key values at initialization (filename, dates)
+
+---
+
+## Call Frequency Analysis
+
+### One-Time Initialization Calls
+- OcFile1_Open() - Once per program execution
+- OcDate calculation functions - Once per program execution
+- OCTEXT_GETENV() - Twice per program execution
+
+### Per-Record Calls (Main Loop)
+- poppobj_next() - Once per position record
+- poppobj_de/numde() - 4-6 times per position record
+- CHECK.SSSA routine - Once per record with Secondary1Buys <> 0
+- OcText_Set() - 8 times per qualifying record (C1 generation)
+- OcFile1_Write() - Once per qualifying record
+- poppobj_setde/update() - Once per qualifying record
+
+### Per-Reversal-Record Calls (CHECK.SSSA Loop)
+- sssaobj_next() - Once per SSSA transaction
+- sssaobj_de/numde() - 2-3 times per transaction
+
+### Estimated Total Call Volume (7-Day Window)
+Assuming 50 position records, 30 with non-zero Secondary1Buys, 60 SSSA transactions:
+- Main loop iterations: 50
+- CHECK.SSSA invocations: 30
+- SSSA loop iterations: 60
+- C1 records written: ~25-30 (after duplicate filtering)
+- Total function calls: ~1,500-2,000
+
+---
+
+## Critical Call Paths
+
+### Path 1: New Loan with Reversal
+```
+poppobj_view → poppobj_next → poppobj_numde(741) → CHECK.SSSA
+  → sssaobj_view → sssaobj_next (buy) → sssaobj_next (sell)
+  → [Calculate net] → [Return to main]
+  → OcText_Set (x8) → OcFile1_Write → poppobj_update
+```
+
+**Scenario**: Position has Secondary1Buys; SSSA has buy + sell; net > 0
+
+**Expected Result**: C1 record written with net amount; UDF1 updated
+
+---
+
+### Path 2: Already Processed Record
+```
+poppobj_view → poppobj_next → poppobj_numde(741, 877)
+  → [PriorCashApplied = Secondary1Buys]
+  → [Skip to next record]
+```
+
+**Scenario**: Position UDF1 already matches Secondary1Buys
+
+**Expected Result**: No C1 record; no database update; continue to next
+
+---
+
+### Path 3: Full Reversal
+```
+poppobj_view → poppobj_next → poppobj_numde(741) → CHECK.SSSA
+  → sssaobj_view → sssaobj_next (buy) → sssaobj_next (sell - full amount)
+  → [Calculate net = 0] → [Return to main]
+  → [Secondary1Buys = 0, skip record]
+```
+
+**Scenario**: Buy and sell amounts equal; net activity is zero
+
+**Expected Result**: No C1 record; no database update; continue to next
+
+---
+
+### Path 4: Simple New Loan (No Reversal)
+```
+poppobj_view → poppobj_next → poppobj_numde(741) → CHECK.SSSA
+  → sssaobj_view → sssaobj_next (no records)
+  → [WK001 = 0, Secondary1Buys unchanged] → [Return to main]
+  → OcText_Set (x8) → OcFile1_Write → poppobj_update
+```
+
+**Scenario**: Position has Secondary1Buys; no SSSA records found
+
+**Expected Result**: C1 record written with original amount; UDF1 updated
+
+---
+
+## Call Dependencies and Ordering
+
+### Strict Ordering Requirements
+
+1. **File Open Before Write**
+   - OcFile1_Open() MUST precede any OcFile1_Write() calls
+   - Violation: Program failure (file not open error)
+
+2. **poppobj_view Before poppobj_next**
+   - Database view MUST be initialized before iteration
+   - Violation: No records returned or error
+
+3. **poppobj_next Before Field Access**
+   - Record MUST be fetched before poppobj_de/numde calls
+   - Violation: Accessing invalid/stale data
+
+4. **poppobj_setde Before poppobj_update**
+   - Field changes MUST be staged before commit
+   - Violation: No data updated
+
+5. **CHECK.SSSA Before Secondary1Buys Use**
+   - Reversal calculation MUST complete before using Secondary1Buys
+   - Violation: Incorrect C1 amounts
+
+### Flexible Ordering (No Dependencies)
+
+- OcShow() calls can occur anywhere (debugging/logging only)
+- OcDate_AddDays() vs OcDate_AddBusDays() order doesn't matter
+- OcText_Set() calls within C1 construction (positions don't overlap)
+
+---
+
+## External System Dependencies
+
+### Environment Variables (OCTEXT_GETENV)
+1. **$XDAT** - Required
+   - Purpose: Output directory path
+   - Impact if Missing: File open failure
+   - Default: None (error)
+
+2. **$RUN-DATE** - Optional
+   - Purpose: Specify processing date
+   - Impact if Missing: Uses current date
+   - Default: OcDate_Current()
+
+### Database Systems
+1. **POPP (Plan Position)**
+   - Required: Always
+   - Impact if Unavailable: Program failure
+   - Rollback Behavior: Unknown (no explicit transaction management)
+
+2. **SSSA (Secondary Activity)**
+   - Required: Only if Secondary1Buys > 0
+   - Impact if Unavailable: Incorrect net calculations
+   - Rollback Behavior: Read-only (no updates)
+
+### File System
+1. **Output Directory**
+   - Required: Always ($XDAT path)
+   - Impact if Unavailable: File open failure
+   - Permissions: Write access required
+
+---
+
+## Call Graph Visualization (Mermaid)
+
+```mermaid
+graph TD
+    Start([Program Start]) --> Init[Initialize Variables]
+    Init --> BuildFile[Construct Output Filename]
+    BuildFile --> OpenFile[Open Output File]
+    OpenFile --> CalcDates[Calculate Date Range]
+    CalcDates --> QueryPOPP[Query POPP: POOLLOAN3]
+    
+    QueryPOPP --> LoopStart{More Records?}
+    LoopStart -->|No| EndProgram([End Program])
+    LoopStart -->|Yes| FetchRecord[Fetch Position Record]
+    
+    FetchRecord --> CheckZero{Secondary1Buys<br/><> 0?}
+    CheckZero -->|No| LoopStart
+    CheckZero -->|Yes| CallCheck[PERFORM CHECK.SSSA]
+    
+    CallCheck --> CheckSSA[Query SSSA for Reversals]
+    CheckSSA --> SSALoop{More SSSA<br/>Records?}
+    SSALoop -->|No| NetCalc[Secondary1Buys = Net]
+    SSALoop -->|Yes| CheckActivity{Activity = 'XI'?}
+    CheckActivity -->|No| SSALoop
+    CheckActivity -->|Yes| CheckType{Type?}
+    CheckType -->|'B'| AddBuy[WK001 += Amount]
+    CheckType -->|'S'| SubSell[WK001 -= Amount]
+    AddBuy --> SSALoop
+    SubSell --> SSALoop
+    NetCalc --> ReturnMain[GOBACK to Main]
+    
+    ReturnMain --> CheckDup{Already<br/>Processed?}
+    CheckDup -->|Yes| LoopStart
+    CheckDup -->|No| BuildC1[Build C1 Record]
+    BuildC1 --> WriteC1[Write to File]
+    WriteC1 --> UpdatePOPP[Update UDF1]
+    UpdatePOPP --> LoopStart
+    
+    style Start fill:#90EE90
+    style EndProgram fill:#FFB6C1
+    style CallCheck fill:#87CEEB
+    style CheckSSA fill:#87CEEB
+    style WriteC1 fill:#FFD700
+```
+
+---
+
+## Related Documentation
+- [GAP_NewLoanCash Data Dictionary](GAP_NewLoanCash_DATA_DICTIONARY.md) - Variable definitions and usage
+- [GAP_NewLoanCash Comprehensive Documentation](GAP_NewLoanCash_OVERVIEW.md) - Complete program overview
+- [CHECK.SSSA Procedure](procedures/CHECK.SSSA.md) - Detailed procedure documentation

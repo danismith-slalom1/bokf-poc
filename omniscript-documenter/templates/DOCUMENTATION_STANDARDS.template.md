@@ -32,20 +32,18 @@ These standards apply to:
 - **Line Length**: Maximum 120 characters (except for code blocks)
 
 ### Naming Conventions
-- **Program Analysis**: `[PROGRAM-NAME]_ANALYSIS.md`
-- **Data Dictionary**: `[PROGRAM-NAME]_DATA_DICTIONARY.md`
-- **Procedure Docs**: `procedures/[PROCEDURE-NAME].md`
-- **Call Graph**: `[PROGRAM-NAME]_CALL_GRAPH.md`
-- **Mutation Analysis**: `[PROGRAM-NAME]_VARIABLE_MUTATIONS.md`
-- **Comprehensive Doc**: `[PROGRAM-NAME]_COMPREHENSIVE_DOC.md`
-- **Cross-Reference**: `[PROGRAM-NAME]_CROSS_REFERENCE.md`
-- **Error Handling**: `[PROGRAM-NAME]_ERROR_HANDLING.md`
-- **Performance Analysis**: `[PROGRAM-NAME]_PERFORMANCE_ANALYSIS.md`
-- **Testing Guide**: `[PROGRAM-NAME]_TESTING_GUIDE.md`
-- **Integration Guide**: `[PROGRAM-NAME]_INTEGRATION_GUIDE.md`
-- **Business Rules**: `[PROGRAM-NAME]_BUSINESS_RULES.md`
-- **Mermaid Diagrams**: `[PROGRAM-NAME]_MERMAID_DIAGRAMS.md`
-- **Review Log**: `[PROGRAM-NAME]_REVIEW_LOG.md`
+- **Program Overview**: `{PROGRAM-NAME}_OVERVIEW.md` [Consolidates INDEX + COMPREHENSIVE_DOC]
+- **Data Dictionary**: `{PROGRAM-NAME}_DATA_DICTIONARY.md` [Includes Variable Mutations section]
+- **Procedure Docs**: `procedures/{PROCEDURE-NAME}.md`
+- **Call Graph**: `{PROGRAM-NAME}_CALL_GRAPH.md`
+- **Diagrams**: `{PROGRAM-NAME}_DIAGRAMS.md` [Complex visualizations; core diagrams in OVERVIEW]
+- **Error Handling**: `{PROGRAM-NAME}_ERROR_HANDLING.md`
+- **Performance Analysis**: `{PROGRAM-NAME}_PERFORMANCE_ANALYSIS.md`
+- **Testing Guide**: `{PROGRAM-NAME}_TESTING_GUIDE.md`
+- **Integration Guide**: `{PROGRAM-NAME}_INTEGRATION_GUIDE.md`
+- **Business Rules**: `{PROGRAM-NAME}_BUSINESS_RULES.md`
+- **Cross-Reference**: `{PROGRAM-NAME}_CROSS_REFERENCE.md`
+- **Review Log**: `{PROGRAM-NAME}_REVIEW_LOG.md`
 
 ### Document Structure
 Each documentation file must include:
