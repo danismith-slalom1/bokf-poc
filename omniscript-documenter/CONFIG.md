@@ -41,11 +41,57 @@ This is a configuration file to aid with the automation of the OMNISCRIPT docume
 
 ## Documentation Enhancement Settings
 
-### Error Handling Documentation (HIGH PRIORITY)
+<!-- EDGAR_CHANGE: UPDATED - Consolidated settings to reference CODE_QUALITY_ASSESSMENT template -->
+
+### Comprehensive Code Quality Assessment (HIGH PRIORITY)
+**Template**: `templates/CODE_QUALITY_ASSESSMENT.template.md`
+
+- **Always perform for mission-critical programs**: Yes/No [RECOMMENDED: Yes]
+- **Perform for standard programs**: Yes/No [RECOMMENDED: Yes for production-bound code]
+- **Assessment scope by program type**:
+  - Mission-critical: Comprehensive (All sections A-F)
+  - Standard business logic: Standard (Sections A, C, D, F + selective B, E)
+  - Utility programs: Targeted (Sections A, D, F minimum)
+  
+#### Quality Assessment Components:
+**Section A: Error Handling Documentation** (HIGH PRIORITY)
 - **Always document**: Yes/No [RECOMMENDED: Yes - critical for risk management]
 - **Risk assessment required**: Yes/No [RECOMMENDED: Yes]
 - **Error status analysis depth**: Basic/Comprehensive
 - **Recovery procedure documentation**: Yes/No
+- **Runtime error scenario analysis**: Yes/No [RECOMMENDED: Yes]
+- **Resource limit documentation**: Yes/No [RECOMMENDED: Yes]
+- **Input validation assessment**: Yes/No [RECOMMENDED: Yes]
+
+**Section B: Best Practices Assessment** (MEDIUM PRIORITY)
+- **OmniScript API pattern analysis**: Yes/No [RECOMMENDED: Yes]
+- **Deprecated API detection**: Yes/No [RECOMMENDED: Yes]
+- **COBOL-specific checks**: Yes/No/If applicable
+- **Integration pattern evaluation**: Yes/No [RECOMMENDED: Yes]
+- **Performance pattern analysis**: Yes/No [RECOMMENDED: Yes for critical programs]
+
+**Section C: Security Assessment** (HIGH PRIORITY)
+- **Security vulnerability scan**: Always/Critical only/Never [RECOMMENDED: Always]
+- **Hardcoded credential detection**: Yes/No [RECOMMENDED: Yes - MANDATORY for production]
+- **Injection vulnerability check**: Yes/No [RECOMMENDED: Yes]
+- **Access control review**: Yes/No [RECOMMENDED: Yes for critical programs]
+- **Compliance verification**: Yes/No/If applicable
+
+**Section D: Operational Risk Assessment** (HIGH PRIORITY)
+- **Risk categorization**: Yes/No [RECOMMENDED: Yes]
+- **Data corruption scenario analysis**: Yes/No [RECOMMENDED: Yes]
+- **Performance degradation assessment**: Yes/No [RECOMMENDED: Yes for critical programs]
+- **Resource exhaustion check**: Yes/No [RECOMMENDED: Yes]
+
+**Section E: Quality Scoring** (MEDIUM PRIORITY)
+- **Overall quality metrics**: Yes/No [RECOMMENDED: Yes]
+- **Per-procedure assessment**: Yes/No/Critical procedures only
+- **Trend analysis**: Yes/No [RECOMMENDED: Yes if historical data exists]
+
+**Section F: Quality Gate Checks** (HIGH PRIORITY)
+- **Automated gate evaluation**: Yes/No [RECOMMENDED: Yes for all production code]
+- **Deployment readiness determination**: Yes/No [RECOMMENDED: Yes]
+- **Remediation roadmap generation**: Yes/No [RECOMMENDED: Yes]
 
 ### Performance Analysis (MEDIUM PRIORITY)
 - **Document for critical programs**: Yes/No [RECOMMENDED: Yes for mission-critical]
@@ -116,15 +162,33 @@ This is a configuration file to aid with the automation of the OMNISCRIPT docume
 
 ## Quality Gates
 
+<!-- EDGAR_CHANGE: UPDATED - Enhanced quality gates to reference CODE_QUALITY_ASSESSMENT template -->
+
+**Quality Assessment Template**: Use `templates/CODE_QUALITY_ASSESSMENT.template.md` for standardized quality gate evaluation.
+
 - **Coverage Requirements**:
   - Minimum % of procedures documented: [100% for critical, variable for others]
   - Minimum % of data structures documented: [100% recommended]
   - Call graph completeness: [All procedure call relationships mapped]
+  - **Quality assessment completion**: [Required for mission-critical, recommended for all production code]
+
+- **Quality Gate Criteria** (from CODE_QUALITY_ASSESSMENT template):
+  - **PASS Criteria**: No CRITICAL risks, HIGH risks mitigated, error handling present, input validation present
+  - **PASS WITH WARNINGS**: Some HIGH/MEDIUM risks with documented mitigation plans
+  - **FAIL**: Any CRITICAL security/operational risk, hardcoded credentials, injection vulnerabilities, missing error handling
 
 - **Review Requirements**:
   - Expert approval required: [Yes/No by program type]
   - Peer review required: [Yes/No by program type]
+  - **Security team review**: [Required for programs with CRITICAL/HIGH security findings]
+  - **Operations team review**: [Required for programs with CRITICAL/HIGH operational risks]
   - Documentation update lag: [Maximum days between code change and doc update]
+
+- **Pre-Production Requirements**:
+  - Quality assessment must be performed: [Yes/No by program type]
+  - Quality gate status must be PASS or PASS WITH WARNINGS: [Yes/No]
+  - All CRITICAL findings remediated: [Yes/No]
+  - Remediation roadmap approved: [Yes/No]
 
 ## Maintenance Process
 

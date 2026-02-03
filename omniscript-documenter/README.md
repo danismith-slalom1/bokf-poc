@@ -6,7 +6,7 @@ If you're looking to invoke the module, please proceed to [INITIALIZER_PROMPT.md
 
 Transform undocumented or poorly documented OMNISCRIPT programs into comprehensive, production-ready documentation using AI assistance with expert human oversight.
 
-**🎯 Now includes**: Error handling analysis, performance optimization, testing guides, integration docs, business rules extraction, and code quality & risk assessment.
+**🎯 Now includes**: OmniScript version detection (expected: 6.05) with upgrade readiness assessment to target version 7.5, comprehensive code quality & risk assessment (security, operational, best practices), automated quality gates, and detailed remediation roadmaps.
 
 ## Usage Instructions
 
@@ -58,22 +58,20 @@ After documenting an OMNISCRIPT program, you will have:
   - Variable lifecycle state machines
 
 ### Enhanced Documentation (Automatically Generated)
-- **Error Handling Analysis** ⭐ documenting error status handling, risks, and recovery procedures
-- **Code Quality & Risk Assessment** ⭐ comprehensive security, best practices, and operational risk analysis with severity rankings
-  - Security vulnerabilities (hardcoded credentials, injection risks, insecure file handling)
-  - Best practices compliance (OmniScript/COBOL standards, deprecated APIs, performance patterns)
-  - Operational risks (crash scenarios, data corruption, resource leaks, error recovery gaps)
-  - Risk categorization (🔴 Critical, 🟠 High, 🟡 Medium, 🟢 Low, ⚪ Informational)
-  - Quality gate determination (Pass/Fail/Warnings) with actionable remediation roadmap
+<!-- EDGAR_CHANGE: UPDATED - Consolidated to reference CODE_QUALITY_ASSESSMENT template -->
+- **Comprehensive Code Quality Assessment** ⭐ using standardized template (`templates/CODE_QUALITY_ASSESSMENT.template.md`):
+  - **Section A: Error Handling Analysis** - Error status handling, runtime scenarios, resource limits, input validation, risk assessment
+  - **Section B: Best Practices Assessment** - OmniScript/COBOL API usage, integration patterns, performance patterns, deprecated features
+  - **Section C: Security Assessment** - 🔴 Critical/🟠 High/🟡 Medium security risks with exploit scenarios and remediation
+  - **Section D: Operational Risk Assessment** - 🔴 Critical/🟠 High/🟡 Medium/🟢 Low operational risks with impact analysis
+  - **Section E: Quality Scoring** - Overall metrics, per-procedure assessments, best practice violations, performance impact
+  - **Section F: Quality Gate Checks** - ✅ PASS/⚠️ PASS WITH WARNINGS/❌ FAIL determination with deployment recommendations
+  - Prioritized remediation roadmap with effort estimates
 - **Performance Analysis** ⭐ identifying bottlenecks, costs, and optimization opportunities
 - **Testing Guide** ⭐ with standard tests, edge cases, error scenarios, and integration tests
 - **Integration Guide** ⭐ documenting interfaces, deployment, and system requirements
 - **Business Rules** ⭐ extracting explicit and implicit business logic with traceability
-  - Call hierarchy graphs
-  - Data flow diagrams
-  - Module dependency graphs
-  - File I/O sequence diagrams
-  - Variable lifecycle state diagrams
+- **Data Flow Diagrams** visualizing data transformations and state changes
 - **Maintenance Guide** for ongoing documentation updates
 
 ## Prerequisites

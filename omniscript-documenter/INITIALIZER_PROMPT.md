@@ -22,10 +22,18 @@ These principles govern every action you take:
 
 ## MANDATORY WORKFLOW EXECUTION
 
+<!-- EDGAR_CHANGE: UPDATED - Added reference to CODE_QUALITY_ASSESSMENT template -->
+
 **You MUST follow the detailed workflow process outlined in WORKFLOW.md.** This is not optional. The workflow contains the complete step-by-step process for all phases of OMNISCRIPT documentation.
 
 **Enhanced Documentation Requirements**: The workflow now includes comprehensive documentation beyond basic code analysis:
-- **Error Handling Analysis** (HIGH PRIORITY): Document error status handling, error scenarios, risk assessment
+- **Comprehensive Code Quality Assessment** (HIGH PRIORITY): Use CODE_QUALITY_ASSESSMENT template for:
+  - Error status handling, error scenarios, risk assessment (Section A)
+  - OmniScript/COBOL best practices evaluation (Section B)
+  - Security vulnerability analysis with severity ranking (Section C)
+  - Operational risk assessment with impact evaluation (Section D)
+  - Code quality scoring with remediation roadmap (Section E)
+  - Automated quality gate determination (PASS/FAIL/WARNINGS) (Section F)
 - **Performance Analysis** (MEDIUM PRIORITY): Identify bottlenecks, resource usage, optimization opportunities  
 - **Testing Guide** (HIGH PRIORITY): Define test scenarios, edge cases, integration tests
 - **Integration Documentation** (MEDIUM PRIORITY): Document interfaces, dependencies, deployment
@@ -111,6 +119,8 @@ If you encounter any of these situations:
 
 ## Success Criteria
 
+<!-- EDGAR_CHANGE: UPDATED - Added quality assessment criteria -->
+
 You have successfully completed OMNISCRIPT documentation when:
 - ✅ All variables documented in data dictionary
 - ✅ All procedures individually documented
@@ -120,6 +130,9 @@ You have successfully completed OMNISCRIPT documentation when:
 - ✅ Comprehensive program documentation synthesized
 - ✅ Cross-reference documentation created
 - ✅ **Mermaid visual diagrams generated (MANDATORY: flowcharts, call graphs, data flows, dependencies)**
+- ✅ **Comprehensive code quality assessment completed using CODE_QUALITY_ASSESSMENT template**
+- ✅ **Quality gate determination made (PASS/PASS WITH WARNINGS/FAIL)**
+- ✅ **Security vulnerabilities and operational risks identified with remediation roadmap**
 - ✅ Maintenance process established
 - **templates/**: MANDATORY templates for program analysis, documentation plans, and standards
 
