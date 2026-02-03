@@ -9,6 +9,7 @@ Transform undocumented or poorly documented OMNISCRIPT programs into comprehensi
 **🎯 Now includes**: 
 - **Deterministic Grammar Parser** for accurate language analysis
 - Error handling analysis, performance optimization, testing guides, integration docs, and business rules extraction.
+**🎯 Now includes**: Error handling analysis, performance optimization, testing guides, integration docs, and business rules extraction.
 
 ## Quick Start
 
@@ -62,8 +63,6 @@ After documenting an OMNISCRIPT program, you will have:
 
 ### Core Documentation (Always Generated)
 - **Program Analysis** documenting structure, sections, dependencies, and chunking strategy
-- **OmniScript Version Detection and Quality Analysis** identifying current version (expected: 6.05, but detects actual version) and code quality assessment ⭐
-- **Upgrade Readiness Assessment** evaluating migration readiness from detected version to OmniScript 7.5 with detailed roadmap ⭐
 - **Data Dictionary** for all variables with purposes, usage patterns, and buffer limits
 - **Procedure Documentation** for each procedure with business logic, error handling, and performance notes
 - **Call Graph** showing all PERFORM relationships and control flow
