@@ -12,7 +12,6 @@ omniscript-documentation/
 │   ├── {PROGRAM-NAME}/
 │   │   ├── {PROGRAM-NAME}_INDEX.md                    [Master index - START HERE]
 │   │   ├── {PROGRAM-NAME}_COMPREHENSIVE_DOC.md        [Core - Complete overview]
-│   │   ├── {PROGRAM-NAME}_UPGRADE_ASSESSMENT.md       [NEW - Version upgrade readiness] ⭐
 │   │   ├── {PROGRAM-NAME}_DATA_DICTIONARY.md          [Core - All variables]
 │   │   ├── {PROGRAM-NAME}_CALL_GRAPH.md              [Core - Procedure hierarchy]
 │   │   ├── {PROGRAM-NAME}_VARIABLE_MUTATIONS.md       [Core - State tracking]
@@ -35,8 +34,6 @@ omniscript-documentation/
 ---
 
 ## Core Documentation Files (Always Generated)
-
-**Note**: All line counts shown are typical ranges based on medium-sized programs and vary significantly based on program complexity, size, and specific characteristics. These are estimates, not limits.
 
 ### 1. {PROGRAM-NAME}_INDEX.md
 **Purpose**: Master navigation hub for all documentation
@@ -168,39 +165,7 @@ omniscript-documentation/
 
 ## New Documentation Files (Enhancement)
 
-### 8. {PROGRAM-NAME}_UPGRADE_ASSESSMENT.md ⭐
-**Purpose**: OmniScript version detection, quality analysis, and upgrade readiness assessment
-
-**Priority**: HIGH (always generated for version migration planning)
-
-**Expected Context**: Files are expected to be OmniScript 6.05, but version detection verifies actual version
-
-**Contents**:
-- Executive summary with risk level and effort estimate
-- **Version Detection Analysis**: Methodology, detected version (expected: 6.05), and confidence level
-- **Current version analysis**: Feature usage and code quality for detected version
-- **6.05 → 7.5 upgrade path**: Primary focus (or actual detected version → 7.5)
-- Breaking changes analysis between detected and target versions
-- API migration requirements (removed/changed/deprecated APIs)
-- Compatibility risk assessment (High/Medium/Low)
-- Data structure compatibility evaluation
-- Performance implications of upgrade
-- Migration effort breakdown by priority and code section
-- Testing requirements for upgrade validation
-- Dependency chain analysis
-- Upgrade roadmap with phased approach
-- Benefits of upgrading vs risks of not upgrading
-- Go/No-Go recommendation with decision factors
-
-**Audience**: Architects, developers, project managers, business stakeholders
-
-**Lines**: ~800-1200 (typical range, varies by program complexity)
-
-**Migration Focus**: Actionable roadmap with effort estimates and risk mitigation; handles unknown version scenarios
-
----
-
-### 9. {PROGRAM-NAME}_ERROR_HANDLING.md ⭐
+### 8. {PROGRAM-NAME}_ERROR_HANDLING.md ⭐
 **Purpose**: Risk analysis and error handling documentation
 
 **Priority**: HIGH (always generated)
@@ -222,7 +187,7 @@ omniscript-documentation/
 
 ---
 
-### 10. {PROGRAM-NAME}_PERFORMANCE_ANALYSIS.md ⭐
+### 9. {PROGRAM-NAME}_PERFORMANCE_ANALYSIS.md ⭐
 **Purpose**: Performance characteristics and optimization
 
 **Priority**: MEDIUM (generated for critical/standard programs)
@@ -243,7 +208,7 @@ omniscript-documentation/
 
 ---
 
-### 11. {PROGRAM-NAME}_TESTING_GUIDE.md ⭐
+### 10. {PROGRAM-NAME}_TESTING_GUIDE.md ⭐
 **Purpose**: Comprehensive testing scenarios
 
 **Priority**: HIGH (always generated)
@@ -268,7 +233,7 @@ omniscript-documentation/
 
 ---
 
-### 12. {PROGRAM-NAME}_INTEGRATION_GUIDE.md ⭐
+### 11. {PROGRAM-NAME}_INTEGRATION_GUIDE.md ⭐
 **Purpose**: External interfaces and deployment
 
 **Priority**: MEDIUM (generated for critical/standard programs)
@@ -290,7 +255,7 @@ omniscript-documentation/
 
 ---
 
-### 13. {PROGRAM-NAME}_BUSINESS_RULES.md ⭐
+### 12. {PROGRAM-NAME}_BUSINESS_RULES.md ⭐
 **Purpose**: Explicit business logic extraction
 
 **Priority**: MEDIUM (generated for critical/standard programs)
@@ -314,7 +279,7 @@ omniscript-documentation/
 
 ---
 
-### 14. procedures/{PROCEDURE-NAME}.md (Enhanced)
+### 13. procedures/{PROCEDURE-NAME}.md (Enhanced)
 **Purpose**: Detailed procedure documentation
 
 **Enhanced Contents**:
@@ -337,8 +302,6 @@ omniscript-documentation/
 
 ## Document Sizing Summary
 
-**Note**: All line counts are approximate estimates for medium-sized programs. Actual documentation length varies based on program complexity, size, and specific requirements. Documentation should be as comprehensive as needed, regardless of these estimates.
-
 | Document Type | Lines (Approx) | Priority | Audience |
 |--------------|---------------|----------|----------|
 | INDEX | 300-400 | Core | Everyone |
@@ -355,12 +318,10 @@ omniscript-documentation/
 | **BUSINESS_RULES** ⭐ | **300-500** | **MEDIUM** | **Business** |
 | Procedure docs (each) | 100-300 | Core | Developers |
 
-**Total Documentation** (example: medium program, 10 procedures):
+**Total Documentation** (medium program, 10 procedures):
 - **Previous**: ~4,500-6,000 lines
 - **Enhanced**: ~7,000-10,000 lines ⭐
 - **Increase**: ~55% more comprehensive
-
-**Important**: These totals are illustrative estimates. Actual documentation length should match program complexity and comprehensiveness needs, not target specific line counts.
 
 ---
 
