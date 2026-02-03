@@ -6,11 +6,32 @@ If you're looking to invoke the module, please proceed to [INITIALIZER_PROMPT.md
 
 Transform undocumented or poorly documented OMNISCRIPT programs into comprehensive, production-ready documentation using AI assistance with expert human oversight.
 
-**🎯 Now includes**: OmniScript version detection (expected: 6.05) with upgrade readiness assessment to target version 7.5, comprehensive code quality & risk assessment (security, operational, best practices), automated quality gates, and detailed remediation roadmaps.
+**🎯 Now includes**: 
+- **Deterministic Grammar Parser** for accurate OmniScript language analysis
+- **Comprehensive Code Quality Assessment** with security, operational risk analysis, and automated quality gates
+- **OmniScript Version Detection** (expected: 6.05) with upgrade readiness assessment to target version 7.5
+- Error handling analysis, performance optimization, testing guides, integration docs, business rules extraction, and detailed remediation roadmaps
 
-## Usage Instructions
+## Quick Start
+
+### 1. Parse the OMNISCRIPT Program (RECOMMENDED FIRST STEP)
+
+Run the grammar parser for deterministic analysis:
+
+```bash
+python3 omniscript-documenter/omniscript_grammar_parser.py path/to/program.cbl
+```
+
+This generates a `*_PARSER_CONTEXT.txt` file with structured information about variables, routines, database operations, and control flow. This makes documentation significantly more accurate.
+
+See [GRAMMAR_PARSER.md](./GRAMMAR_PARSER.md) for complete parser documentation.
+
+### 2. Begin Documentation
+
+Send this prompt to your AI agent:
 
 ⚠️ **Thoroughly review all AI-generated documentation with OMNISCRIPT experts** - _Human-in-the-loop is CRITICAL for OMNISCRIPT_<br>
+✅ **Use the grammar parser first** - _Provides deterministic analysis for more accurate documentation_<br>
 ✅ **Generate static analysis first** - _Cross-reference reports and call graphs are essential_<br>
 ✅ **Follow the iterative approach** - _Data dictionary → Procedures → Call graphs → Mutations → Synthesis_
 

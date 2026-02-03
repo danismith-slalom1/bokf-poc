@@ -45,7 +45,25 @@ All documentation types are executed automatically based on program criticality 
 ## Critical Instructions
 
 ### Static Analysis Requirements
-**You MUST use static analysis tools to generate cross-reference and call graph data before AI documentation:**
+**You MUST use the OMNISCRIPT Grammar Parser AND static analysis tools:**
+
+#### 1. Grammar Parser (MANDATORY FIRST STEP)
+Run the deterministic grammar parser to extract structured program information:
+```bash
+python3 omniscript-documenter/omniscript_grammar_parser.py path/to/program.cbl
+```
+
+This generates a `*_PARSER_CONTEXT.txt` file with:
+- All variables (types, declarations, assignments)
+- All routines (structure, calls, control flow)
+- Database operations (views, updates, field accesses)
+- Built-in function usage
+- Control structures (if/loop/end with nesting)
+- Call graph (routine-to-routine relationships)
+
+**Benefits**: Deterministic analysis eliminates AI interpretation variability and provides concrete facts about the program structure.
+
+#### 2. Traditional Static Analysis (RECOMMENDED)
 - OMNISCRIPT interpreter cross-reference reports showing where each variable is defined, read, and modified
 - Call hierarchy mapping showing all procedure call relationships
 - File operation analysis showing all I/O operations
