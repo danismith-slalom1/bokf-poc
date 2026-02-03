@@ -1,304 +1,535 @@
-# CHECK.SSSA Procedure Documentation
+# CHECK.SSSA Routine Documentation
+
+## Routine: CHECK.SSSA
+**Program**: GAP_NewLoanCash  
+**Lines**: 59-75  
+**Purpose**: Detect and calculate net loan activity accounting for reversals  
+**Last Updated**: 2026-02-03
+
+---
 
 ## Overview
-- **Procedure Name**: CHECK.SSSA
-- **Type**: Subroutine/Routine
-- **Lines**: 55-69
-- **Purpose**: Validates and recalculates Secondary1Buys amount by analyzing SSSA (Security Settlement Activity) records to account for buy/sell and reversal activity
+
+CHECK.SSSA is a subroutine that queries the SSSA (Trust Transaction) database to identify loan reversal activity and calculate the net loan amount. It handles scenarios where loan purchases (buys) are offset by loan sales (sells) on the same trade date, ensuring that cash reconciliation reflects the actual net cash impact rather than gross transaction amounts.
 
 ---
 
-## Business Purpose
+## Entry Point
 
-This procedure ensures accurate net loan activity by:
-1. Querying SSSA records for the specific plan, security, and trade date
-2. Identifying all 'XI' transaction type activity
-3. Netting buy transactions against sell/reversal transactions
-4. Producing the true net loan amount accounting for any reversals
+### Invocation
+```omniscript
+PERFORM 'CHECK.SSSA';
+```
 
-**Critical Business Context**: Without this check, loan reversals (sells) would not be properly netted against buys, leading to incorrect cash reconciliation amounts.
-
----
-
-## Input Requirements
-
-### Expected State
-- **RKPlan**: Must be non-empty string (validated on line 56)
-- **TradeDate**: Must be non-zero numeric date (validated on line 56)
-- **Secondary1Buys**: Initial value from POPP field 741 (caller responsibility)
-
-### Preconditions
-- Called from main processing loop after retrieving POPP record
-- Only invoked when `Secondary1Buys <> 0` (line 33-34)
-- SSSA database must be accessible and queryable
+**Called From**: Main program, line 38  
+**Call Condition**: `IF (Secondary1Buys <> 0)` (line 37)
 
 ---
 
-## Processing Logic
+## Parameters
 
-### Step 1: Input Validation (Line 56)
+### Input Parameters (via Global Variables)
+| Parameter | Type | Source | Purpose |
+|-----------|------|--------|---------|
+| RKPlan | String | poppobj_de(030) | Plan identifier for filtering |
+| TradeDate | Numeric | poppobj_numde(008) | Trade date for filtering |
+| Secondary1Buys | Numeric | poppobj_numde(741) | Initial loan amount (to be adjusted) |
+
+### Output Parameters (via Global Variables)
+| Parameter | Type | Destination | Purpose |
+|-----------|------|-------------|---------|
+| Secondary1Buys | Numeric | Modified in place | Net loan amount after reversals |
+
+---
+
+## Algorithm
+
+### Pseudocode
+```
+ROUTINE CHECK.SSSA:
+  IF RKPlan is not empty AND TradeDate is not zero THEN
+    SET accumulator WK001 = 0
+    
+    QUERY SSSA table WHERE:
+      PLAN = RKPlan
+      SECURITYID = 'POOLLOAN3'
+      DATE = TradeDate
+    
+    FOR EACH activity record:
+      IF transaction source = 'XI' THEN
+        IF transaction type = 'B' (Buy) THEN
+          WK001 = WK001 + transaction amount
+        END IF
+        
+        IF transaction type = 'S' (Sell) THEN
+          WK001 = WK001 - transaction amount
+        END IF
+      END IF
+    END FOR
+    
+    SET Secondary1Buys = WK001
+  END IF
+  
+  RETURN (GOBACK)
+END ROUTINE
+```
+
+---
+
+## Detailed Logic
+
+### Step 1: Parameter Validation (Line 60)
 ```omniscript
 if (RKPlan <> '') and (TradeDate <> 0);
 ```
-- Validates that both required query parameters are present
-- If either is empty/zero, procedure returns without processing (implicit return via if block)
-- **Business Logic**: Prevents invalid SSSA queries that would return no results or cause errors
 
-### Step 2: Initialize Accumulator (Line 56)
+**Purpose**: Ensure valid parameters before querying database
+
+**Validation Checks**:
+- RKPlan must not be empty string
+- TradeDate must not be zero (invalid date)
+
+**If Validation Fails**:
+- Routine exits immediately via GOBACK (line 75)
+- Secondary1Buys remains unchanged (original value from field 741)
+- No database query performed
+
+**Business Rationale**: Prevents database queries with incomplete parameters that would return no results or cause errors.
+
+---
+
+### Step 2: Initialize Accumulator (Line 61)
 ```omniscript
 WK001 = 0;
 ```
-- Resets working variable to accumulate net activity
-- **Importance**: Ensures clean state for each invocation
 
-### Step 3: Query SSSA Records (Line 57)
+**Purpose**: Initialize work variable for net amount calculation
+
+**Variable**: WK001 (local to routine)  
+**Initial Value**: 0 (zero)  
+**Type**: Numeric  
+**Purpose**: Accumulator for net buy/sell activity
+
+---
+
+### Step 3: Query Activity Records (Line 62)
 ```omniscript
 sssaobj_view(PLAN:RKPlan SECURITYID:'POOLLOAN3' DATE:TradeDate);
 ```
-- Queries SSSA (Security Settlement Activity) database
-- **Filter Criteria**:
-  - `PLAN`: Matches the specific retirement plan (RKPlan)
-  - `SECURITYID`: Fixed to 'POOLLOAN3' (loan pool security)
-  - `DATE`: Matches the specific trade date
-- Returns all settlement activity records matching these criteria
 
-### Step 4: Process SSSA Records Loop (Lines 58-66)
+**Database**: SSSA (TRUSTTRANS.P1)  
+**Operation**: Query/View
+
+**Filter Criteria**:
+| Field | Value | Purpose |
+|-------|-------|---------|
+| PLAN | RKPlan | Match same retirement plan |
+| SECURITYID | 'POOLLOAN3' | Match pool loan security |
+| DATE | TradeDate | Match same trade date |
+
+**Expected Results**: 
+- 0 records: No reversal activity (WK001 remains 0, Secondary1Buys unchanged)
+- 1+ records: Process each to calculate net amount
+
+---
+
+### Step 4: Process Activity Loop (Lines 63-72)
 ```omniscript
 loop while sssaobj_next();
-   if sssaobj_de(011) = 'XI';
-      if sssaobj_de(009) = 'B';
-         WK001 = WK001 + sssaobj_numde(235);
-      end;
-      if sssaobj_de(009) = 'S';
-         WK001 = WK001 - sssaobj_numde(235);
-      end; 
-   end;
+  if sssaobj_de(011) = 'XI';
+     if sssaobj_de(009) = 'B';
+        WK001 = WK001 + sssaobj_numde(235);
+     end;
+     if sssaobj_de(009) = 'S';
+        WK001 = WK001 - sssaobj_numde(235);
+     end; 
+  end;
 endloop;
 ```
 
-#### Sub-step 4a: Filter for 'XI' Activity Type (Line 59)
-- Checks if activity code (field 011) equals 'XI'
-- **Business Logic**: Only certain activity types are relevant for loan cash reconciliation
-- Non-'XI' records are ignored
+**Iteration**: For each activity record returned by query
 
-#### Sub-step 4b: Process Buy Transactions (Lines 60-62)
+#### Step 4a: Filter by Transaction Source (Line 64)
+```omniscript
+if sssaobj_de(011) = 'XI';
+```
+
+**Field**: 011 (Transaction Source)  
+**Filter Value**: 'XI'  
+**Purpose**: Only process specific transaction source type
+
+**Other Sources**: Ignored (not included in netting calculation)
+
+---
+
+#### Step 4b: Process Buy Transactions (Line 65)
 ```omniscript
 if sssaobj_de(009) = 'B';
    WK001 = WK001 + sssaobj_numde(235);
 end;
 ```
-- Checks if transaction type (field 009) is 'B' (Buy)
-- Adds the transaction amount (field 235) to the accumulator
-- **Business Logic**: Buy transactions increase the net loan amount (positive cash impact)
 
-#### Sub-step 4c: Process Sell/Reversal Transactions (Lines 63-65)
+**Transaction Type**: 'B' (Buy)  
+**Operation**: Add amount to accumulator  
+**Field**: 235 (Transaction Amount)
+
+**Example**:
+- WK001 = $0
+- Buy transaction: $100,000
+- Result: WK001 = $100,000
+
+---
+
+#### Step 4c: Process Sell Transactions (Line 68)
 ```omniscript
 if sssaobj_de(009) = 'S';
    WK001 = WK001 - sssaobj_numde(235);
 end;
 ```
-- Checks if transaction type (field 009) is 'S' (Sell/Reversal)
-- Subtracts the transaction amount (field 235) from the accumulator
-- **Business Logic**: Sell transactions reverse loan amounts (negative cash impact)
-- **Critical**: This handles loan reversal activity correctly (enhancement 09/25/2024)
 
-### Step 5: Update Secondary1Buys (Line 68)
-```omniscript
-Secondary1Buys = WK001;
-```
-- Assigns the calculated net amount back to Secondary1Buys
-- **Effect**: Overwrites the initial POPP field 741 value with the SSSA-verified amount
-- **Business Logic**: SSSA is the authoritative source for actual net loan activity
+**Transaction Type**: 'S' (Sell)  
+**Operation**: Subtract amount from accumulator (reversal)  
+**Field**: 235 (Transaction Amount)
 
-### Step 6: Return to Caller (Line 69)
-```omniscript
-GOBACK;
-```
-- Returns control to the calling code (main processing loop)
-- Updated `Secondary1Buys` value is now available to caller
+**Example**:
+- WK001 = $100,000 (from buy)
+- Sell transaction: $30,000
+- Result: WK001 = $70,000 (net activity)
 
 ---
 
-## Output and Side Effects
+### Step 5: Assign Net Result (Line 73)
+```omniscript
+Secondary1Buys = WK001;
+```
 
-### Variables Modified
-- **Secondary1Buys**: Recalculated to reflect net buy/sell activity from SSSA
-- **WK001**: Local working variable (not visible to caller)
+**Purpose**: Update global variable with net loan amount
 
-### Database Operations
-- **Read**: SSSA records (via sssaobj_view and sssaobj_next)
-- **Write**: None (read-only operation)
+**Side Effect**: Modifies `Secondary1Buys` global variable  
+**Impact**: Main program uses adjusted value for C1 record
 
-### Return Values
-- No explicit return value
-- Updated `Secondary1Buys` variable serves as implicit output
+**Possible Outcomes**:
+- Positive value: Net buy activity (normal case)
+- Zero: Complete reversal (no net activity)
+- Negative value: Over-reversal (unusual but valid)
+
+---
+
+### Step 6: Return to Caller (Line 75)
+```omniscript
+GOBACK;
+```
+
+**Purpose**: Return control to main program  
+**Return Value**: None (results via modified global variable)
+
+---
+
+## Data Flow
+
+### Input Data Flow
+```
+Main Program → CHECK.SSSA
+  - RKPlan (from POPP.030)
+  - TradeDate (from POPP.008)
+  - Secondary1Buys (from POPP.741)
+```
+
+### Processing Data Flow
+```
+CHECK.SSSA:
+  1. Validate parameters
+  2. Query SSSA database
+  3. Filter transactions (source = 'XI')
+  4. Accumulate buys (+) and sells (-)
+  5. Calculate net amount in WK001
+  6. Assign to Secondary1Buys
+```
+
+### Output Data Flow
+```
+CHECK.SSSA → Main Program
+  - Secondary1Buys (modified with net amount)
+```
+
+---
+
+## Examples
+
+### Example 1: Simple Buy (No Reversal)
+**Input**:
+- RKPlan: 'ABC123'
+- TradeDate: 20240110
+- Secondary1Buys: $100,000
+
+**SSSA Query Results**:
+| Type | Source | Amount |
+|------|--------|--------|
+| B | XI | $100,000 |
+
+**Processing**:
+- WK001 = 0
+- Process 'B': WK001 = 0 + 100,000 = 100,000
+- Secondary1Buys = 100,000
+
+**Output**: Secondary1Buys = $100,000 (unchanged)
+
+---
+
+### Example 2: Partial Reversal
+**Input**:
+- RKPlan: 'DEF456'
+- TradeDate: 20240112
+- Secondary1Buys: $100,000
+
+**SSSA Query Results**:
+| Type | Source | Amount |
+|------|--------|--------|
+| B | XI | $100,000 |
+| S | XI | $30,000 |
+
+**Processing**:
+- WK001 = 0
+- Process 'B': WK001 = 0 + 100,000 = 100,000
+- Process 'S': WK001 = 100,000 - 30,000 = 70,000
+- Secondary1Buys = 70,000
+
+**Output**: Secondary1Buys = $70,000 (reduced by reversal)
+
+---
+
+### Example 3: Full Reversal
+**Input**:
+- RKPlan: 'GHI789'
+- TradeDate: 20240114
+- Secondary1Buys: $100,000
+
+**SSSA Query Results**:
+| Type | Source | Amount |
+|------|--------|--------|
+| B | XI | $100,000 |
+| S | XI | $100,000 |
+
+**Processing**:
+- WK001 = 0
+- Process 'B': WK001 = 0 + 100,000 = 100,000
+- Process 'S': WK001 = 100,000 - 100,000 = 0
+- Secondary1Buys = 0
+
+**Output**: Secondary1Buys = $0 (fully reversed)
+
+**Main Program Impact**: Skipped by BR-004 (zero amount exclusion)
+
+---
+
+### Example 4: Multiple Transactions
+**Input**:
+- RKPlan: 'JKL012'
+- TradeDate: 20240115
+- Secondary1Buys: $200,000
+
+**SSSA Query Results**:
+| Type | Source | Amount |
+|------|--------|--------|
+| B | XI | $100,000 |
+| B | XI | $50,000 |
+| B | XI | $50,000 |
+| S | XI | $30,000 |
+| S | XI | $20,000 |
+
+**Processing**:
+- WK001 = 0
+- Process 'B': WK001 = 0 + 100,000 = 100,000
+- Process 'B': WK001 = 100,000 + 50,000 = 150,000
+- Process 'B': WK001 = 150,000 + 50,000 = 200,000
+- Process 'S': WK001 = 200,000 - 30,000 = 170,000
+- Process 'S': WK001 = 170,000 - 20,000 = 150,000
+- Secondary1Buys = 150,000
+
+**Output**: Secondary1Buys = $150,000 (net of all activity)
+
+---
+
+### Example 5: No Matching Activity
+**Input**:
+- RKPlan: 'MNO345'
+- TradeDate: 20240116
+- Secondary1Buys: $50,000
+
+**SSSA Query Results**: (empty - no records)
+
+**Processing**:
+- WK001 = 0
+- Loop: No iterations (no records)
+- Secondary1Buys = 0
+
+**Output**: Secondary1Buys = $0
+
+**Note**: This scenario indicates data mismatch (POPP has buy amount but SSSA has no activity)
+
+---
+
+## Edge Cases
+
+### Edge Case 1: Invalid Parameters
+**Input**: RKPlan = '', TradeDate = 0
+
+**Behavior**: 
+- Validation fails at line 60
+- Routine exits immediately via GOBACK
+- Secondary1Buys unchanged
+
+**Business Impact**: Uses original POPP.741 value (no adjustment)
+
+---
+
+### Edge Case 2: Negative Net Amount (Over-Reversal)
+**Input**: 
+- Secondary1Buys: $100,000
+- SSSA: Buy $100K, Sell $120K
+
+**Processing**: WK001 = 100,000 - 120,000 = -20,000
+
+**Output**: Secondary1Buys = -$20,000
+
+**Main Program Impact**: 
+- NewLoanUnits = 0 - (-20,000) = +$20,000
+- C1 record has positive amount (unusual)
+
+**Business Question**: Is over-reversal valid? Requires business owner clarification.
+
+---
+
+### Edge Case 3: Non-XI Transaction Source
+**SSSA Records**:
+| Type | Source | Amount |
+|------|--------|--------|
+| B | XX | $100,000 |
+| B | XI | $50,000 |
+
+**Processing**:
+- First record (source 'XX'): Skipped (line 64 filter)
+- Second record (source 'XI'): WK001 = 50,000
+
+**Output**: Secondary1Buys = $50,000
+
+**Business Logic**: Only 'XI' source transactions are included in netting.
+
+---
+
+## Performance Considerations
+
+### Database Query
+- **Operation**: `sssaobj_view()` with 3-field filter
+- **Index Recommendation**: PLAN, SECURITYID, DATE
+- **Expected Records**: Typically 0-10 records per query
+- **Performance**: Low impact (single-row lookup)
+
+### Loop Iterations
+- **Typical**: 0-2 iterations (buy + possible sell)
+- **Maximum**: Dependent on transaction volume
+- **Complexity**: O(n) where n = activity records
+
+### Call Frequency
+- **Condition**: Only when Secondary1Buys ≠ 0 (line 37)
+- **Typical**: 20-50% of position records (estimate)
+- **Impact**: Moderate (adds database query overhead)
 
 ---
 
 ## Error Handling
 
-### Explicit Error Handling
-- **Input Validation**: Checks for empty RKPlan or zero TradeDate (line 56)
-- **Handling**: Silently returns without processing if validation fails
+### Current Implementation
+- **Parameter Validation**: ✓ Implemented (line 60)
+- **Database Query Errors**: ✗ Not handled (relies on OMNISCRIPT runtime)
+- **Data Type Errors**: ✗ Not handled (assumes valid numeric amounts)
 
-### Missing Error Handling
-- **No check for SSSA query failures**: If database is unavailable or query fails, behavior is undefined
-- **No check for field 235 data validity**: Assumes all amounts are valid numeric values
-- **No overflow protection**: Large accumulation in WK001 could exceed numeric limits (unlikely in practice)
-- **Risk Level**: **Medium** - Database errors could cause program termination or incorrect results
+### Potential Errors
+1. **Database unavailable**: Runtime exception
+2. **Invalid field 235 data**: Type coercion or error
+3. **NULL values**: Potential calculation errors
 
-### Recommended Improvements
-1. Add explicit error handling for SSSA database operations
-2. Validate field 235 values before accumulation
-3. Log warning if no SSSA records found when Secondary1Buys > 0 (potential data inconsistency)
+### Recommendations
+See [Error Handling Documentation](../GAP_NewLoanCash_ERROR_HANDLING.md) for comprehensive error handling recommendations.
 
 ---
 
-## Performance Characteristics
+## Testing Scenarios
 
-### Database Queries
-- **Query Count**: 1 per invocation (sssaobj_view)
-- **Query Efficiency**: Indexed query on PLAN + SECURITYID + DATE (likely efficient)
-- **Record Iteration**: Processes all matching SSSA records in loop
+### Test 1: Normal Buy with Reversal
+- Setup: Insert buy + sell in SSSA
+- Expected: Net amount calculated correctly
+- Validation: Compare WK001 to manual calculation
 
-### Computational Complexity
-- **Time Complexity**: O(n) where n = number of matching SSSA records
-- **Typical n**: Small (1-10 records per plan/date combination)
-- **Bottleneck**: Database query, not computation
+### Test 2: Buy Only (No Reversal)
+- Setup: Insert buy only in SSSA
+- Expected: Amount unchanged
+- Validation: Secondary1Buys = original value
 
-### Optimization Opportunities
-- Could cache SSSA query results if same plan/date queried multiple times
-- Consider database-side aggregation (SUM) if OmniScript supports it
+### Test 3: Full Reversal
+- Setup: Insert equal buy and sell
+- Expected: Secondary1Buys = 0
+- Validation: Main program skips record
 
----
+### Test 4: No Activity Records
+- Setup: Empty SSSA for plan/date
+- Expected: Secondary1Buys = 0
+- Validation: Check for data mismatch warning
 
-## Edge Cases and Boundary Conditions
-
-### Edge Case 1: No SSSA Records Found
-- **Scenario**: POPP shows Secondary1Buys > 0, but no matching SSSA records
-- **Behavior**: WK001 remains 0, Secondary1Buys set to 0
-- **Business Impact**: C1 record would show zero amount (likely incorrect)
-- **Mitigation**: Consider logging warning if initial Secondary1Buys > 0 but result is 0
-
-### Edge Case 2: Only Sell Transactions (Full Reversal)
-- **Scenario**: All SSSA records are 'S' (sell/reversal)
-- **Behavior**: WK001 becomes negative, Secondary1Buys becomes negative
-- **Business Impact**: Negative loan amount (valid for reversals)
-- **Handling**: Correctly handled - caller logic will process negative amounts appropriately
-
-### Edge Case 3: Mixed Buy and Sell Transactions
-- **Scenario**: Multiple 'B' and 'S' transactions for same plan/date
-- **Behavior**: Net amount calculated correctly (buys - sells)
-- **Business Impact**: Accurate net loan activity
-- **Handling**: Primary purpose of this routine (added 09/25/2024)
-
-### Edge Case 4: Non-'XI' Activity Types
-- **Scenario**: SSSA contains records with activity code != 'XI'
-- **Behavior**: Records are skipped (line 59 condition)
-- **Business Impact**: Only relevant activity types processed
-- **Handling**: Correct filtering behavior
-
-### Edge Case 5: Empty RKPlan or Zero TradeDate
-- **Scenario**: Caller invokes with invalid parameters
-- **Behavior**: Procedure returns immediately without processing
-- **Business Impact**: Secondary1Buys remains at initial POPP value
-- **Handling**: Safeguards against invalid queries
-
----
-
-## Security Considerations
-
-### Input Validation
-- **RKPlan**: Basic null/empty check (line 56)
-  - **Risk**: No sanitization for SQL injection (if SSSA query uses SQL backend)
-  - **Mitigation**: Assumes OmniScript framework handles query parameterization
-- **TradeDate**: Zero check only
-  - **Risk**: No validation for date range or format
-  - **Mitigation**: Assumes caller provides valid dates
-
-### Resource Limits
-- **Query Result Size**: No limit on number of SSSA records returned
-  - **Risk**: Extremely large result sets could cause memory issues
-  - **Mitigation**: Business logic suggests small result sets (plan/date specific)
+### Test 5: Invalid Parameters
+- Setup: RKPlan = '' or TradeDate = 0
+- Expected: Routine exits early, no change
+- Validation: Secondary1Buys = original value
 
 ---
 
 ## Dependencies
 
-### Database Objects
-- **SSSA Database (sssaobj)**: Must be accessible and contain current data
-  - **Fields Used**: 009 (transaction type), 011 (activity code), 235 (amount)
-  - **Query Method**: sssaobj_view() and sssaobj_next()
+### Upstream Dependencies
+- **Main Program**: Provides RKPlan, TradeDate, Secondary1Buys
+- **POPP Database**: Source of input parameters
+- **SSSA Database**: Source of activity records
 
-### Called Procedures
-- None (leaf procedure)
-
-### OmniScript Functions
-- `sssaobj_view()`: Database view/query function
-- `sssaobj_next()`: Iterator for query results
-- `sssaobj_de()`: Retrieve string field from current record
-- `sssaobj_numde()`: Retrieve numeric field from current record
+### Downstream Impact
+- **Main Program**: Uses adjusted Secondary1Buys for C1 record
+- **Idempotency**: Adjusted amount written to field 877
+- **Cash Reconciliation**: Net amount used in C1 record
 
 ---
 
-## Call Relationships
+## Related Business Rules
 
-### Called By
-- Main processing loop (line 34: `PERFORM 'CHECK.SSSA'`)
-- **Invocation Condition**: When `Secondary1Buys <> 0` in POPP record
+- **BR-005**: Reversal Netting Logic
+- **BR-001**: Security Type Filter (POOLLOAN3)
 
-### Calls
-- None (no sub-procedures)
+See [Business Rules Documentation](../GAP_NewLoanCash_BUSINESS_RULES.md) for complete details.
 
 ---
 
-## Business Rules Implemented
+## Modification History
 
-1. **Only 'XI' activity types are relevant** for loan cash reconciliation
-2. **Buy transactions ('B') increase net loan amounts** (positive cash impact)
-3. **Sell transactions ('S') decrease net loan amounts** (reversal activity)
-4. **Net loan amount = Sum of Buys - Sum of Sells** for the specific plan/security/date
-5. **SSSA is the authoritative source** for actual settlement activity (overrides POPP field 741)
-
----
-
-## Historical Changes
-
-### 09/25/2024 - Gary Matten
-- **Enhancement**: Recognize Loan Reversal Activity and Net Activity Correctly when there are BUYS and SELLS
-- **Implementation**: Added sell transaction handling (lines 63-65)
-- **Impact**: Procedure now correctly nets buy and sell activity instead of only processing buys
+| Date | Change | Reason |
+|------|--------|--------|
+| 09/25/2024 | Added sell transaction handling | GPD-XXXX: Recognize loan reversal activity |
+| 12/21/2023 | Initial implementation | Original development |
 
 ---
 
-## Testing Recommendations
+## Maintenance Notes
 
-### Test Case 1: Normal Buy Activity
-- **Setup**: SSSA has 1 'XI'/'B' record with amount 10000
-- **Expected**: Secondary1Buys = 10000
+### Potential Enhancements
+1. Add error handling for database query failures
+2. Log transactions processed for auditing
+3. Add validation for negative net amounts
+4. Support additional transaction types beyond B/S
 
-### Test Case 2: Normal Sell Activity (Reversal)
-- **Setup**: SSSA has 1 'XI'/'S' record with amount 10000
-- **Expected**: Secondary1Buys = -10000
-
-### Test Case 3: Mixed Buy and Sell
-- **Setup**: SSSA has 'XI'/'B' 15000 and 'XI'/'S' 5000
-- **Expected**: Secondary1Buys = 10000 (net)
-
-### Test Case 4: No SSSA Records
-- **Setup**: No SSSA records for plan/date
-- **Expected**: Secondary1Buys = 0
-
-### Test Case 5: Non-XI Activity
-- **Setup**: SSSA has activity code 'AB' (not 'XI')
-- **Expected**: Secondary1Buys = 0 (record filtered out)
-
-### Test Case 6: Invalid Input
-- **Setup**: RKPlan = '' or TradeDate = 0
-- **Expected**: Procedure returns immediately, Secondary1Buys unchanged
+### Change Impact
+- Modifying transaction source filter ('XI') affects which records are processed
+- Adding new transaction types requires new conditional logic
+- Changing accumulation logic affects cash reconciliation accuracy
 
 ---
 
-**AI-Generated Documentation Notice**: This procedure documentation was generated using AI analysis and should be reviewed by OmniScript and business logic experts for accuracy.
+*This procedure documentation provides comprehensive details on the CHECK.SSSA reversal detection routine.*
 
-**Last Updated**: 2026-01-23
+*Last Updated*: 2026-02-03

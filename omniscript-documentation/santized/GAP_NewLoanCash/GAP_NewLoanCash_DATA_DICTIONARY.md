@@ -1,332 +1,347 @@
 # GAP_NewLoanCash Data Dictionary
 
-## Program Variables
-
-This document provides a comprehensive data dictionary for all variables used in the GAP_NewLoanCash OmniScript program.
+## Program: GAP_NewLoanCash
+**Purpose**: Process Plan Position Accounts for loan cash reconciliation  
+**Last Updated**: 2026-02-03
 
 ---
 
 ## Global Variables
 
-### `sd080`
-- **Data Type**: Numeric
-- **Initial Value**: `99999999`
-- **Purpose**: Standard OmniScript variable, likely used for system-level operations or status codes
-- **Usage Pattern**: Initialized at program start
-- **Modified**: Line 11 (initialization)
-- **Read**: Not explicitly referenced in business logic
-- **Notes**: Common OmniScript convention for system variables
+### sd080
+- **Data Type**: Numeric (String representation)
+- **Initial Value**: 99999999
+- **Purpose**: Special error code or status indicator used in OMNISCRIPT environment
+- **Declared**: Line 13
+- **Assignments**: Line 13 (initialization only)
+- **Usage Pattern**: Set once at program initialization
+- **Business Logic**: Standard OMNISCRIPT system variable for error handling context
 
 ---
 
-## Program-Defined Variables
-
-### `FileName`
-- **Data Type**: String (Text)
-- **Purpose**: Stores the complete path and name of the output file for C1 activity records
-- **Construction**: 
-  - Base directory: `$XDAT`
-  - File pattern: `OTDALY.OMNISCRIPT.C1.NEWLOANOFFSET.[DATE].[TIME].DAT`
-  - Date format: `Z8` (YYYYMMDD)
-  - Time format: `Z6` (HHMMSS)
+### FileName
+- **Data Type**: String (Dynamic path)
+- **Purpose**: Stores the constructed output file path for C1 activity records
+- **Declared**: Line 16
+- **Assignments**: Line 16 (constructed from environment variables and timestamps)
 - **Usage Pattern**: 
-  - Constructed: Line 13-14
-  - Displayed: Line 15 (OcShow)
-  - Used for file open: Line 16
-- **Example Value**: `/path/to/xdat/OTDALY.OMNISCRIPT.C1.NEWLOANOFFSET.20260123.143056.DAT`
-- **Notes**: Unique filename generated per execution using current date/time
+  - Built using `$XDAT` environment variable
+  - Includes date (`OcDate_Current()`) and time (`OcTime_Current()`) in filename
+  - Format: `OTDALY.OMNISCRIPT.C1.NEWLOANOFFSET.YYYYMMDD.HHMMSS.DAT`
+- **Business Logic**: Unique output file for each program execution, preventing overwrites
+- **Related Variables**: None
+- **File Operations**: Used in `OcFile1_Open()` at line 19
 
-### `RunDate`
-- **Data Type**: Numeric (Date)
-- **Purpose**: The business date for the current run, sourced from environment variable
-- **Initialization**: Retrieved from `$RUN-DATE` environment variable (Line 18)
-- **Usage Pattern**:
-  - Retrieved: Line 18
-  - Validated: Line 19 (OcDate_Valid check)
-  - Used to calculate: `SevenDaysAgo`, `LastBusiness`
-  - Displayed: Line 26
+---
+
+### RunDate
+- **Data Type**: Numeric (Date format YYYYMMDD)
+- **Purpose**: Execution date for the batch process, sourced from environment
+- **Declared**: Line 21
+- **Assignments**: Line 21 (from `$RUN-DATE` environment variable)
+- **Usage Pattern**: 
+  - Retrieved from environment variable `$RUN-DATE`
+  - Validated using `OcDate_Valid()` function
+  - Used to calculate date ranges for data processing
+- **Business Logic**: Controls the effective date for position account processing
+- **Related Variables**: `SevenDaysAgo`, `LastBusiness`
+- **Validation**: Must be valid date format; falls back to current date if invalid
+
+---
+
+### SevenDaysAgo
+- **Data Type**: Numeric (Date format YYYYMMDD)
+- **Purpose**: Start date for the 7-day lookback window for position records
+- **Declared**: Line 23
+- **Assignments**: 
+  - Line 23 (conditional on valid RunDate)
+  - Line 26 (fallback if RunDate invalid)
+- **Usage Pattern**: 
+  - Calculated as `RunDate - 7 calendar days` OR `Current Date - 7 calendar days`
+  - Used as lower bound in `poppobj_view()` query
+- **Business Logic**: Defines the beginning of the processing window for plan positions
+- **Related Variables**: `RunDate`, `LastBusiness`
+- **Database Usage**: Used in `poppobj_view(datelo:SevenDaysAgo datehi:LastBusiness)` at line 31
+
+---
+
+### LastBusiness
+- **Data Type**: Numeric (Date format YYYYMMDD)
+- **Purpose**: Last business day (excluding weekends/holidays) for position processing
+- **Declared**: Line 24
+- **Assignments**: 
+  - Line 24 (conditional on valid RunDate)
+  - Line 27 (fallback if RunDate invalid)
+- **Usage Pattern**: 
+  - Calculated as `RunDate - 1 business day` OR `Current Date - 1 business day`
+  - Used as upper bound in `poppobj_view()` query
+  - Used as effective date in C1 activity records (line 47)
+- **Business Logic**: Ensures processing only includes completed business days
+- **Related Variables**: `RunDate`, `SevenDaysAgo`
+- **Database Usage**: Upper date filter in position view query
+
+---
+
+### RKPlan
+- **Data Type**: String (Plan identifier, 6 characters)
+- **Purpose**: Retirement plan identifier from position records
+- **Declared**: Line 33
+- **Assignments**: 
+  - Line 33 (from `poppobj_de(030)` - first retrieval)
+  - Line 41 (from `poppobj_de(030)` - second retrieval inside conditional)
+- **Usage Pattern**: 
+  - Retrieved from position object field 030
+  - Used in C1 activity record construction (positions 5-10)
+  - Used as filter in `sssaobj_view()` for reversal checks
+- **Business Logic**: Identifies which retirement plan the transaction applies to
+- **Related Variables**: `TradeDate`, `TrustAccount`
+- **Database Usage**: 
+  - Read from `poppobj` at lines 33, 41
+  - Used in `sssaobj_view(PLAN:RKPlan ...)` at line 62
+- **C1 Record Position**: Positions 5-10 (6 bytes)
+
+---
+
+### TradeDate
+- **Data Type**: Numeric (Date format YYYYMMDD)
+- **Purpose**: Trade date of the position record transaction
+- **Declared**: Line 34
+- **Assignments**: 
+  - Line 34 (from `poppobj_numde(008)` - first retrieval)
+  - Line 42 (from `poppobj_numde(008)` - second retrieval)
+- **Usage Pattern**: 
+  - Retrieved from position object numeric field 008
+  - Used as date filter in `sssaobj_view()` for matching activity
+- **Business Logic**: Identifies when the position transaction occurred
+- **Related Variables**: `RKPlan`, `Secondary1Buys`
+- **Database Usage**: 
+  - Read from `poppobj` at lines 34, 42
+  - Used in `sssaobj_view(DATE:TradeDate)` at line 62
+
+---
+
+### Secondary1Buys
+- **Data Type**: Numeric (Dollar amount with decimal precision)
+- **Purpose**: Dollar amount of secondary market purchases (loan activity)
+- **Declared**: Line 35
+- **Assignments**: 
+  - Line 35 (from `poppobj_numde(741)` - POPP field 741)
+  - Line 73 (calculated from `WK001` after reversal check)
+- **Usage Pattern**: 
+  - Retrieved from position object field 741
+  - Checked for reversal activity in `CHECK.SSSA` routine
+  - Compared against `PriorCashApplied` to determine if update needed
+  - Negated and written to C1 record as `NewLoanUnits`
 - **Business Logic**: 
-  - If valid date in environment: Use it
-  - If invalid/missing: Fall back to current date
-- **Notes**: Critical for determining processing date range
+  - Represents loan purchase amount that needs cash offset
+  - May be adjusted for reversals (sells that offset buys)
+  - Zero values are skipped (no activity)
+- **Related Variables**: `PriorCashApplied`, `NewLoanUnits`, `WK001`
+- **Database Usage**: 
+  - Read from `poppobj` field 741 at line 35
+  - Written back to `poppobj` field 877 at line 54
+- **Validation**: Must be non-zero to process
 
-### `SevenDaysAgo`
-- **Data Type**: Numeric (Date)
-- **Purpose**: Start date for the 7-day lookback period to process position accounts
-- **Calculation**:
-  - If `RunDate` valid: `OcDate_AddDays(RunDate, -7)` (Line 20)
-  - Otherwise: `OcDate_AddDays(OcDate_Current(), -7)` (Line 23)
-- **Usage Pattern**:
-  - Calculated: Lines 20 or 23
-  - Displayed: Line 26
-  - Used in query: Line 28 (poppobj_view datelo parameter)
-- **Business Logic**: Defines the starting boundary for retrieving plan position accounts
-- **Notes**: Ensures processing covers previous 7 calendar days
+---
 
-### `LastBusiness`
-- **Data Type**: Numeric (Date)
-- **Purpose**: The last business day (prior to run date) used for date stamping C1 records
-- **Calculation**:
-  - If `RunDate` valid: `OcDate_AddBusDays(RunDate, -1)` (Line 21)
-  - Otherwise: `OcDate_AddBusDays(OcDate_Current(), -1)` (Line 24)
-- **Usage Pattern**:
-  - Calculated: Lines 21 or 24
-  - Displayed: Line 26
-  - Used in query: Line 28 (poppobj_view datehi parameter)
-  - Written to output: Line 44 (C1 record field position 31-38)
-- **Business Logic**: C1 activity records are dated with the last business day
-- **Notes**: Business day calculation excludes weekends and holidays
+### PriorCashApplied
+- **Data Type**: Numeric (Dollar amount)
+- **Purpose**: Previously recorded cash amount in POPP UDF1 field to prevent duplicate processing
+- **Declared**: Line 36
+- **Assignments**: Line 36 (from `poppobj_numde(877)` - POPP field 877)
+- **Usage Pattern**: 
+  - Retrieved from position object field 877 (UDF1)
+  - Compared to `Secondary1Buys` to check if already processed
+  - If equal, record is skipped (already updated)
+- **Business Logic**: Idempotency control - prevents reprocessing the same position record
+- **Related Variables**: `Secondary1Buys`
+- **Database Usage**: Read from `poppobj` field 877 at line 36
+- **Validation Logic**: `IF (PriorCashApplied <> Secondary1Buys)` determines processing
 
-### `RKPlan`
-- **Data Type**: String
-- **Purpose**: Plan identifier from position account record
-- **Source**: Retrieved from POPP database object field 030
-- **Usage Pattern**:
-  - Retrieved: Lines 30, 38 (from poppobj_de)
-  - Displayed: Not explicitly shown
-  - Written to output: Line 43 (C1 record field position 5-10)
-  - Used in SSSA query: Line 57 (CHECK.SSSA routine)
-- **Business Logic**: Links C1 activity to specific retirement plan
-- **Notes**: 6-character field in C1 record format
+---
 
-### `TradeDate`
-- **Data Type**: Numeric (Date)
-- **Purpose**: The trade date from the position account record
-- **Source**: Retrieved from POPP database object field 008
-- **Usage Pattern**:
-  - Retrieved: Lines 31, 39 (from poppobj_numde)
-  - Displayed: Not explicitly shown
-  - Used in SSSA query: Line 58 (CHECK.SSSA routine)
-- **Business Logic**: Identifies when the loan transaction occurred
-- **Conditions**: Must be non-zero to query SSSA (Line 56)
-- **Notes**: Used to match corresponding SSSA activity records
+### NewLoanUnits
+- **Data Type**: Numeric (Dollar amount with sign, negative)
+- **Purpose**: Calculated negative value of loan purchases for C1 activity record
+- **Declared**: Line 43
+- **Assignments**: Line 43 (calculated as `0 - Secondary1Buys`)
+- **Usage Pattern**: 
+  - Calculated by negating `Secondary1Buys`
+  - Formatted as `Z,12V2-` (12 digits with 2 decimals, signed)
+  - Written to C1 record positions 116-130
+- **Business Logic**: Represents cash offset (negative) for loan purchases in reconciliation
+- **Related Variables**: `Secondary1Buys`
+- **C1 Record Position**: Positions 116-130 (15 bytes, formatted with sign)
 
-### `Secondary1Buys`
-- **Data Type**: Numeric (Decimal)
-- **Purpose**: Dollar amount of secondary market loan purchases (new loans)
-- **Source**: 
-  - Initially: Retrieved from POPP database object field 741 (Line 32)
-  - Recalculated: In CHECK.SSSA routine by analyzing SSSA buy/sell activity (Lines 60-67)
-- **Usage Pattern**:
-  - Retrieved: Line 32
-  - Validated: Line 33 (check if non-zero to trigger SSSA check)
-  - Validated: Line 36 (check if different from PriorCashApplied)
-  - Recalculated: Line 68 (after SSSA aggregation)
-  - Negated for output: Line 40 (NewLoanUnits = 0 - Secondary1Buys)
-  - Written to POPP: Line 49 (updates field 877)
+---
+
+### TrustAccount
+- **Data Type**: String (Account number, 32 characters)
+- **Purpose**: Trust account identifier for the C1 activity record
+- **Declared**: Line 44
+- **Assignments**: Line 44 (from `poppobj_de(01510)` - POPP field 1510)
+- **Usage Pattern**: 
+  - Retrieved from position object field 1510
+  - Written directly to C1 record positions 40-71
+- **Business Logic**: Identifies which trust account the cash activity applies to
+- **Related Variables**: `RKPlan`
+- **Database Usage**: Read from `poppobj` field 1510 at line 44
+- **C1 Record Position**: Positions 40-71 (32 bytes)
+
+---
+
+### Line
+- **Data Type**: String (Fixed-length record, 134+ bytes)
+- **Purpose**: Formatted C1 activity record for output file
+- **Declared**: Line 14 (via `OcLVar_Define`)
+- **Assignments**: Lines 45-52 (built incrementally using `OcText_Set`)
+- **Usage Pattern**: 
+  - Constructed using multiple `OcText_Set()` calls
+  - Written to output file using `OcFile1_Write()` at line 53
+- **Business Logic**: Contains the complete C1 transaction record for cash reconciliation
+- **Related Variables**: All output variables contribute to this
+- **File Operations**: Written via `OcFile1_Write(Line)` at line 53
+
+#### Line Field Layout:
+| Position | Length | Field | Source Variable |
+|----------|--------|-------|-----------------|
+| 1-4      | 4      | Record Type | 'C100' (constant) |
+| 5-10     | 6      | Plan ID | RKPlan |
+| 31-38    | 8      | Effective Date | LastBusiness (formatted Z8) |
+| 40-71    | 32     | Trust Account | TrustAccount |
+| 73-92    | 20     | Transaction Code | '000000000000000    2' (constant) |
+| 115      | 1      | Sign | '0' (constant) |
+| 116-130  | 15     | Amount | NewLoanUnits (formatted Z,12V2-) |
+| 134-138  | 5      | Activity Code | '00339' (constant) |
+
+---
+
+## Local Variables (Routine-Specific)
+
+### WK001
+- **Data Type**: Numeric (Dollar amount)
+- **Purpose**: Work variable to calculate net loan activity accounting for reversals
+- **Scope**: Local to `CHECK.SSSA` routine
+- **Declared**: Implicitly (first use at line 61)
+- **Assignments**: 
+  - Line 61 (initialized to 0)
+  - Line 65 (accumulated for Buy transactions)
+  - Line 68 (decremented for Sell/reversal transactions)
+  - Line 73 (assigned back to `Secondary1Buys`)
+- **Usage Pattern**: 
+  - Accumulator for calculating net position after reversals
+  - Adds buy amounts, subtracts sell amounts
+  - Final net value replaces `Secondary1Buys`
 - **Business Logic**: 
-  - Represents cash required for new loan purchases
-  - Must be validated against SSSA for reversal activity
-  - Netted with sales to handle reversals correctly
-- **Notes**: Critical field for cash reconciliation accuracy
-
-### `PriorCashApplied`
-- **Data Type**: Numeric (Decimal)
-- **Purpose**: Previous cash amount applied to this position (stored in UDF1 field 877)
-- **Source**: Retrieved from POPP database object field 877 (Line 33)
-- **Usage Pattern**:
-  - Retrieved: Line 33
-  - Compared: Line 36 (if different from Secondary1Buys, record needs processing)
-- **Business Logic**: 
-  - Acts as idempotency check to prevent duplicate processing
-  - If value matches Secondary1Buys, record was already processed
-  - If different, C1 record needs to be created and POPP updated
-- **Notes**: Prevents re-processing of previously handled transactions
-
-### `Line`
-- **Data Type**: String (120 characters)
-- **Purpose**: Formatted C1 activity record output line
-- **Structure**: Fixed-width format with specific field positions:
-  - Position 1-4: `'C100'` (record type)
-  - Position 5-10: RKPlan (6 chars)
-  - Position 31-38: LastBusiness date (8 chars, Z8 format)
-  - Position 40-71: TrustAccount (32 chars)
-  - Position 73-92: `'000000000000000    2'` (20 chars - Position 92 = '2')
-  - Position 115: `'0'` (1 char)
-  - Position 116-130: NewLoanUnits formatted (15 chars, Z,12V2- format)
-  - Position 134-138: `'00339'` (5 chars - activity code)
-- **Usage Pattern**:
-  - Constructed: Lines 42-48 (field by field using OcText_Set)
-  - Written: Line 48 (OcFile1_Write)
-- **Business Logic**: Creates standardized C1 record for cash reconciliation
-- **Notes**: Position 92 set to '2' per GPD-1704 correction (06/27/2024)
-
-### `TrustAccount`
-- **Data Type**: String
-- **Purpose**: Trust account number associated with the position
-- **Source**: Retrieved from POPP database object field 01510 (Line 41)
-- **Usage Pattern**:
-  - Retrieved: Line 41
-  - Written to output: Line 44 (C1 record field position 40-71)
-- **Business Logic**: Links C1 activity to specific trust account for reconciliation
-- **Notes**: 32-character field in C1 record format
-
-### `NewLoanUnits`
-- **Data Type**: Numeric (Decimal)
-- **Purpose**: Negated loan amount for C1 record (cash offset)
-- **Calculation**: `0 - Secondary1Buys` (Line 40)
-- **Usage Pattern**:
-  - Calculated: Line 40
-  - Written to output: Line 47 (formatted as Z,12V2-)
-- **Business Logic**: 
-  - Negative value represents cash required for loan purchase
-  - Right side (AC) of cash reconciliation entry
-- **Format**: 15-character field with 2 decimal places, comma separators, negative sign
-- **Notes**: Represents the cash impact of new loan activity
-
-### `WK001`
-- **Data Type**: Numeric (Decimal)
-- **Purpose**: Working variable to accumulate net buy/sell activity from SSSA
-- **Scope**: Local to CHECK.SSSA routine
-- **Usage Pattern**:
-  - Initialized: Line 56 (WK001 = 0)
-  - Accumulated: Lines 61, 64 (add buys, subtract sells)
-  - Assigned to Secondary1Buys: Line 68
-- **Business Logic**: 
-  - Accumulates all 'XI' transaction type amounts
-  - Adds 'B' (Buy) transactions: `WK001 = WK001 + sssaobj_numde(235)`
-  - Subtracts 'S' (Sell/Reversal) transactions: `WK001 = WK001 - sssaobj_numde(235)`
-  - Produces net loan activity accounting for reversals
-- **Notes**: Critical for handling loan reversal activity correctly (added 09/25/2024)
+  - Handles loan reversal scenarios where sells offset buys
+  - Ensures accurate net loan activity for cash reconciliation
+- **Related Variables**: `Secondary1Buys`
+- **Database Usage**: Accumulates values from `sssaobj_numde(235)` at lines 65, 68
 
 ---
 
-## Database Object Fields Referenced
+## Variable Mutation Analysis
 
-### POPP Object (Plan Position)
-- **Field 008**: TradeDate - Date of the transaction
-- **Field 030**: RKPlan - Plan identifier
-- **Field 741**: Secondary1Buys - Secondary market buy amount (initial value)
-- **Field 877**: PriorCashApplied - UDF1 field storing previously applied cash
-- **Field 01510**: TrustAccount - Associated trust account number
+### High-Frequency Mutations (3+ Locations)
 
-### SSSA Object (Security Settlement Activity)
-- **Field 009**: Transaction type ('B' = Buy, 'S' = Sell/Reversal)
-- **Field 011**: Activity code (filtered for 'XI')
-- **Field 235**: Transaction amount (dollar value)
-
----
-
-## Environment Variables
-
-### `$XDAT`
-- **Purpose**: Environment variable pointing to the data directory for output files
-- **Usage**: Used in FileName construction (Line 13)
-- **Notes**: Must be set in runtime environment
-
-### `$RUN-DATE`
-- **Purpose**: Environment variable containing the business date for the run
-- **Usage**: Retrieved and validated as RunDate (Line 18)
-- **Format**: Numeric date value
-- **Notes**: If invalid or missing, current date is used as fallback
+#### Secondary1Buys
+- **Initial Assignment**: Line 35 (from database field 741)
+- **Conditional Check**: Line 37 (reversal check trigger)
+- **Comparison**: Line 40 (idempotency check)
+- **Calculation**: Line 43 (negated for C1 record)
+- **Database Write**: Line 54 (written to field 877)
+- **Modification**: Line 73 (updated from reversal calculation)
+- **Mutation Count**: 6 references, 3 modifications
+- **Risk Assessment**: HIGH - Critical for accurate cash reconciliation
+- **Validation**: Must ensure reversal logic correctly nets buys/sells
 
 ---
 
-## Constants
+## Database Object Reference Guide
 
-### Record Type: `'C100'`
-- **Value**: String literal `'C100'`
-- **Purpose**: Identifies C1 activity record type
-- **Position**: Characters 1-4 of output record
-- **Usage**: Line 42
+### poppobj (Plan Position Object)
+- **Purpose**: Plan position accounts table/view
+- **Query**: `poppobj_view(securityid:'POOLLOAN3' datelo:SevenDaysAgo datehi:LastBusiness)`
+- **Operations**: View, Next, SetDE, Update
+- **Fields Used**:
+  - Field 008: TradeDate (numeric)
+  - Field 030: RKPlan (string)
+  - Field 741: Secondary1Buys (numeric) - UDF custom field
+  - Field 877: PriorCashApplied (numeric) - UDF1 field
+  - Field 1510: TrustAccount (string)
+- **Update Pattern**: Field 877 updated with Secondary1Buys value for idempotency
 
-### Position Indicator: `'000000000000000    2'`
-- **Value**: 20-character string with '2' at position 92 (relative to field start)
-- **Purpose**: Position indicator for C1 record format
-- **Position**: Characters 73-92 of output record
-- **Usage**: Line 45
-- **History**: Changed from '1' to '2' per GPD-1704 (06/27/2024)
-
-### Activity Code: `'00339'`
-- **Value**: String literal `'00339'`
-- **Purpose**: Identifies the type of C1 activity (new loan cash offset)
-- **Position**: Characters 134-138 of output record
-- **Usage**: Line 48
-
-### Transaction Filter: `'XI'`
-- **Value**: String literal `'XI'`
-- **Purpose**: Filters SSSA records for specific transaction type
-- **Usage**: Line 60 (conditional check in CHECK.SSSA)
-
-### Buy Indicator: `'B'`
-- **Value**: String literal `'B'`
-- **Purpose**: Identifies buy transactions in SSSA
-- **Usage**: Line 61 (conditional check)
-
-### Sell Indicator: `'S'`
-- **Value**: String literal `'S'`
-- **Purpose**: Identifies sell/reversal transactions in SSSA
-- **Usage**: Line 63 (conditional check)
+### sssaobj (Secondary Security Activity Object)
+- **Purpose**: TRUSTTRANS.P1 security activity records
+- **Query**: `sssaobj_view(PLAN:RKPlan SECURITYID:'POOLLOAN3' DATE:TradeDate)`
+- **Operations**: View, Next
+- **Fields Used**:
+  - Field 009: Transaction Type (B=Buy, S=Sell)
+  - Field 011: Transaction Source ('XI')
+  - Field 235: Transaction Amount (numeric)
+- **Business Logic**: Used to detect and calculate loan reversals
 
 ---
 
-## Variable Relationships
+## Built-In Function Reference
 
-### Date Calculation Chain
-```
-$RUN-DATE → RunDate → SevenDaysAgo (RunDate - 7 days)
-                   → LastBusiness (RunDate - 1 business day)
-```
+### Date/Time Functions
+- **OcDate_Current()**: Returns current system date (YYYYMMDD)
+- **OcTime_Current()**: Returns current system time (HHMMSS)
+- **OcDate_Valid(date)**: Validates date format and value
+- **OcDate_AddDays(date, days)**: Adds calendar days to date
+- **OcDate_AddBusDays(date, days)**: Adds business days to date (skips weekends/holidays)
 
-### SSSA Verification Chain
-```
-Secondary1Buys (POPP) → CHECK.SSSA → WK001 (accumulator) → Secondary1Buys (recalculated)
-                                   ↓
-                              Net Buy/Sell Activity
-```
+### String/Formatting Functions
+- **OcFMT(value, format)**: Formats numeric values
+  - 'Z8': Zero-filled 8-digit format (dates)
+  - 'Z6': Zero-filled 6-digit format (times)
+  - 'Z,12V2-': 12 digits with 2 decimals, comma-separated, signed
+- **OcText_string()**: Concatenates text strings
+- **OcText_Set(Line, position, value, length)**: Sets substring in fixed-length record
+- **OcText_GetEnv(variable)**: Retrieves environment variable value
+- **OcText_ToNum(string)**: Converts string to numeric
 
-### C1 Record Construction
-```
-RKPlan, TrustAccount, LastBusiness, Secondary1Buys → Line (formatted record) → Output File
-```
+### File I/O Functions
+- **OcFile1_Open(name:, mode:)**: Opens file for reading/writing
+- **OcFile1_Write(record)**: Writes record to file
 
-### Idempotency Check
-```
-Secondary1Buys vs PriorCashApplied → If different: Process record
-                                    → If same: Skip (already processed)
-```
-
----
-
-## Buffer Sizes and Limits
-
-### `Line` Variable
-- **Maximum Size**: 138+ characters
-- **Risk**: String overflow if field positions exceed buffer capacity
-- **Mitigation**: Fixed-format fields with defined positions prevent overflow
-
-### `FileName` Variable
-- **Maximum Size**: Variable based on $XDAT path length
-- **Risk**: Path length exceeds system limits on some platforms
-- **Mitigation**: Standard paths should be within 256-character limit
-
-### Record Accumulation
-- **Limit**: No explicit limit on number of records processed in loop
-- **Risk**: Very large datasets could cause memory issues
-- **Mitigation**: Streaming record processing (one at a time) minimizes memory usage
+### Display Functions
+- **OcShow(variables...)**: Displays variable values (debugging/logging)
 
 ---
 
-## Notes
+## Summary Statistics
 
-### Date Handling
-- All date calculations use OmniScript built-in date functions
-- Business day calculations respect holiday calendars
-- Date format conversions use Z8 format (YYYYMMDD)
-
-### Decimal Precision
-- Financial amounts use OmniScript numeric types
-- Output formatting uses Z,12V2- (12 integer digits, 2 decimals, comma separators, negative sign)
-- Precision sufficient for typical financial calculations
-
-### Variable Naming Conventions
-- PascalCase for program variables (FileName, RunDate, etc.)
-- UPPERCASE for database field names (POOLLOAN3, TRUSTTRANS)
-- Working variables prefixed with WK (WK001)
+- **Total Global Variables**: 11
+- **Total Local Variables**: 1
+- **Database Objects Referenced**: 2 (poppobj, sssaobj)
+- **Database Operations**: 6 distinct operations
+- **Built-In Functions Used**: 13 distinct functions
+- **Routines/Procedures**: 1 (CHECK.SSSA)
+- **Control Structures**: 5 IF statements, 2 LOOP structures
+- **File Operations**: 1 output file (C1 activity records)
 
 ---
 
-**AI-Generated Documentation Notice**: This data dictionary was generated using AI analysis and should be reviewed by OmniScript experts for accuracy.
+## Data Flow Summary
 
-**Last Updated**: 2026-01-23
-**Program Version**: Includes GPD-1704 correction (06/27/2024) and reversal handling (09/25/2024)
+1. **Initialization**: Set error context, build output filename
+2. **Date Calculation**: Determine 7-day processing window from RunDate or current date
+3. **Position Retrieval**: Query plan positions for POOLLOAN3 security within date range
+4. **For Each Position**:
+   - Extract plan, trade date, loan amounts, prior applied cash, trust account
+   - Check for reversals if Secondary1Buys > 0 (calls CHECK.SSSA)
+   - Compare PriorCashApplied to Secondary1Buys for idempotency
+   - If different (not already processed):
+     - Build C1 activity record with negated loan amount
+     - Write C1 record to output file
+     - Update position record field 877 with Secondary1Buys value
+5. **CHECK.SSSA Routine**:
+   - Query security activity for same plan/security/date
+   - Net buys (+) and sells (-) for transaction source 'XI'
+   - Return adjusted Secondary1Buys amount
+
+---
+
+*This data dictionary was generated using the OMNISCRIPT Grammar Parser and manual program analysis.*
