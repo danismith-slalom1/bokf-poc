@@ -198,9 +198,9 @@ When creating the program analysis document, ensure you:
 
 ### File Naming Convention
 Save OMNISCRIPT program analysis documents as:
-`${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_ANALYSIS.md`
+`${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_ANALYSIS.md`
 
-Where `${OMNISCRIPT_DOCS_DIR}` refers to `omniscript-documentation/{REPO-NAME}/[PROGRAM-NAME]/`
+Where `${OMNISCRIPT_DOCS_DIR}` refers to `omniscript-documentation/{REPO-NAME}/{PROGRAM-NAME}/`
 
 ## Mandatory Compliance
 
@@ -215,7 +215,7 @@ This template structure is **NON-NEGOTIABLE**. Agents must:
 
 ## Usage Notes
 
-- This document should be placed in `${OMNISCRIPT_DOCS_DIR}/` where `${OMNISCRIPT_DOCS_DIR}` = `omniscript-documentation/{REPO-NAME}/[PROGRAM-NAME]/`
+- This document should be placed in `${OMNISCRIPT_DOCS_DIR}/` where `${OMNISCRIPT_DOCS_DIR}` = `omniscript-documentation/{REPO-NAME}/{PROGRAM-NAME}/`
 - The program analysis is created in Phase 1.4
 - OMNISCRIPT experts must explicitly approve the analysis before proceeding to Phase 2
 - This template enforces mandatory compliance for consistent documentation

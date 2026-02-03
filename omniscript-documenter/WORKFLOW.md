@@ -11,23 +11,48 @@ The OMNISCRIPT Documentation Workflow transforms undocumented or poorly document
 4. Synthesizing comprehensive documentation with call graphs and cross-references
 5. Generating complete, production-ready documentation without requiring clarification
 
+## 5-Phase Workflow
+
+Execute these phases sequentially for each OmniScript program:
+
+1. **Phase 1: Program Analysis and Chunking**
+   - Understand program structure, identify procedures and dependencies
+   - Break large programs into manageable sections
+   - Perform static analysis and create program index
+
+2. **Phase 2: Iterative Documentation Generation**
+   - Generate data dictionary (FIRST priority)
+   - Document each procedure individually
+   - Create call graphs
+   - Identify global variable mutation patterns
+
+3. **Phase 3: Automated Validation and Self-Correction**
+   - AI validates its own documentation for accuracy
+   - Self-correct inconsistencies and resolve ambiguities
+   - Apply documentation standards consistently
+
+4. **Phase 4: Synthesis and Comprehensive Documentation**
+   - Create master program documentation
+   - Generate cross-reference documentation
+   - Document integration contracts and business rules
+   - Create data flow diagrams and Mermaid visualizations (MANDATORY)
+
+5. **Phase 5: Ongoing Maintenance Process**
+   - Create documentation maintenance guide
+   - Establish documentation repository
+   - Define metrics and quality gates
+
+**Key Principles**:
+- Use absolute paths for all file operations
+- Work autonomously without user prompts
+- Follow output structure defined in CONFIG.md
+- Complete all phases before moving to next program
+
 ## Documentation Directory
 
-**CRITICAL**: Throughout this workflow, `${OMNISCRIPT_DOCS_DIR}` refers to the `omniscript-documentation/{REPO-NAME}/[PROGRAM-NAME]/` directory structure at the project root. All program-specific documentation artifacts MUST be placed within the program's subdirectory under its repository folder, never at the project root level.
+**CRITICAL**: Throughout this workflow, `${OMNISCRIPT_DOCS_DIR}` refers to the `omniscript-documentation/{REPO-NAME}/{PROGRAM-NAME}/` directory structure at the project root. All program-specific documentation artifacts MUST be placed within the program's subdirectory under its repository folder, never at the project root level.
 
-**Directory Structure**:
-- `omniscript-documentation/` - Root directory for all OMNISCRIPT documentation
-- `omniscript-documentation/{REPO-NAME}/` - Repository-specific documentation folder
-- `omniscript-documentation/{REPO-NAME}/[PROGRAM-NAME]/` - Program-specific documentation folder
-- `omniscript-documentation/{REPO-NAME}/standards/` - Repository-specific standards and guidelines (optional)
-- `omniscript-documentation/{REPO-NAME}/training/` - Repository-specific training materials (optional)
-- `omniscript-documentation/standards/` - Cross-repository shared standards (optional)
-
-**Example paths**:
-- Data dictionary: `omniscript-documentation/my-omniscript-repo/PAYROLL/PAYROLL_DATA_DICTIONARY.md`
-- Call graph: `omniscript-documentation/my-omniscript-repo/PAYROLL/PAYROLL_CALL_GRAPH.md`
-- Comprehensive doc: `omniscript-documentation/my-omniscript-repo/PAYROLL/PAYROLL_COMPREHENSIVE_DOC.md`
-- Procedure docs: `omniscript-documentation/my-omniscript-repo/PAYROLL/procedures/PROCESS-RECORDS.md`
+**For complete directory structure and file naming conventions**, see [CONFIG.md](./CONFIG.md#output-directory-structure).
 
 ## Phase 1: Program Analysis and Chunking
 
@@ -67,25 +92,25 @@ The OMNISCRIPT Documentation Workflow transforms undocumented or poorly document
 - Static analysis tools for procedure and variable analysis
 - Custom scripts to parse OMNISCRIPT source and generate usage reports
 
-### 1.4 Create Program Index and Documentation Plan
-- **Objective**: Generate master index linking all program sections for holistic documentation
+### 1.4 Create Program Overview Shell and Documentation Plan
+- **Objective**: Generate master overview shell linking all program sections for holistic documentation
 - **Actions**:
-  - **Create master index document**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_INDEX.md`
+  - **Create master overview document shell**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_OVERVIEW.md`
   - List all modules, procedures with line numbers
   - Document identified chunks and their logical boundaries
   - Reference static analysis reports for each section
   - Create documentation sequence plan (order in which sections will be documented)
   
-**Index Structure**:
+**Overview Shell Structure**:
 ```markdown
-# [PROGRAM-NAME] Documentation Index
+# [PROGRAM-NAME] Program Overview
 
-## Program Overview
+## Executive Summary
 - Name: [Program ID]
 - Purpose: [Brief description]
-- Dependencies: [Imported modules, called programs]
+- Business Value: [Why this program matters]
 
-## Modules and Procedures
+## Program Structure Index
 1. Main Module
    - Main Procedure (Lines XX-YY) → [Link to documentation]
    - Helper Procedures (Lines AA-BB) → [Link to documentation]
@@ -118,6 +143,7 @@ The OMNISCRIPT Documentation Workflow transforms undocumented or poorly document
 5. **Document error handling variables**: Identify error codes, status flags, return values
 6. **Document buffer sizes and limits**: Note maximum sizes, overflow risks, validation requirements
 7. **Create data dictionary document**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_DATA_DICTIONARY.md`
+8. **Prepare Variable Mutations section**: Add placeholder section for Phase 2.4 analysis
 
 **AI Prompt Template**:
 ```
@@ -263,7 +289,7 @@ For comprehensive error handling analysis, security assessment, and operational 
    - Potential race conditions or unexpected mutations
    - Recommendations for refactoring if needed
 
-4. **Create mutation analysis document**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_VARIABLE_MUTATIONS.md`
+4. **Add to data dictionary**: Append Variable Mutations section to `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_DATA_DICTIONARY.md`
 
 **AI Prompt Template**:
 ```
@@ -350,21 +376,22 @@ For each variable:
 
 ## Phase 4: Synthesis and Comprehensive Documentation
 
-### 4.1 Create Master Program Documentation
-**Objective**: Synthesize all component documentation into comprehensive program overview
+### 4.1 Complete Program Overview Documentation
+**Objective**: Finalize consolidated overview with comprehensive program details
 
 **Process**:
 1. **Aggregate all documentation artifacts**:
-   - Data dictionary
+   - Data dictionary (including variable mutations)
    - Individual procedure documentation
    - Call graphs
-   - Variable mutation analysis
    - Validation report and self-corrections
 
-2. **Generate comprehensive program documentation** that includes:
+2. **Expand overview document shell** created in Phase 1.4 to include:
    - **Executive Summary**: High-level program purpose and functionality
+   - **Program Structure Index**: Navigation to all components
    - **Business Context**: What business problem this program solves
    - **Architecture Overview**: Major processing sections and their relationships
+   - **Core Flow Diagrams**: Embedded Mermaid diagrams (flowchart, call hierarchy, data flow)
    - **Data Flow**: How data moves through the program from input to output
    - **Key Processing Logic**: Critical algorithms and business rules
    - **Business Rules**: Explicit and implicit business rules extracted from code
@@ -376,7 +403,7 @@ For each variable:
    - **Testing Strategy**: Standard tests, edge cases, error scenarios
    - **Maintenance Notes**: Known issues, technical debt, refactoring recommendations
 
-3. **Create master program document**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_COMPREHENSIVE_DOC.md`
+3. **Complete overview document**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_OVERVIEW.md`
 
 **AI Prompt for Synthesis**:
 ```
@@ -532,16 +559,16 @@ Extract and document all business rules from this OMNISCRIPT program:
 **Visualization Priority**: Show how data moves and transforms through the program
 
 **Data Flow Documentation Requirements**:
-1. **Data Flow Diagram** (high-level):
-   - Input sources → Processing stages → Output destinations
-   - Data transformations at each stage
-   - State changes through the program
+1. **Core Diagrams** (embedded in OVERVIEW.md):
+   - Program flow flowchart
+   - Call hierarchy graph
+   - High-level data flow diagram
 
-2. **Variable Lifecycle Diagrams** (detailed):
-   - When each variable is created/initialized
-   - Where it's modified (mutation points)
-   - Where it's consumed/read
-   - Final state at program end
+2. **Complex Diagrams** (separate DIAGRAMS.md):
+   - Detailed data flow with transformations
+   - Variable lifecycle state machines
+   - File I/O sequence diagrams
+   - Module dependency graphs
 
 3. **Data Transformation Tables**:
    - Input format → Output format
@@ -567,215 +594,32 @@ Create data flow visualizations for this OMNISCRIPT program:
 ### 4.6 Generate Mermaid Diagrams (MANDATORY)
 **Objective**: Create Mermaid-based visual representations for every OMNISCRIPT program to aid modernization, knowledge transfer, and understanding of legacy code structure
 
-**CRITICAL**: Mermaid diagram generation is **MANDATORY** for every repository analyzed. These visualizations are essential for:
-- Understanding program flow without reading raw OMNISCRIPT
-- Documenting complex dependencies for modernization efforts
-- Knowledge transfer to developers unfamiliar with OMNISCRIPT
-- Identifying refactoring opportunities
-- Compliance and audit documentation
+**CRITICAL**: Mermaid diagram generation is **MANDATORY** for every repository analyzed. These visualizations are essential for understanding program flow, documenting dependencies, knowledge transfer, identifying refactoring opportunities, and compliance documentation.
 
-**Required Mermaid Diagrams for Each Program**:
+**Core Diagrams** (embedded in OVERVIEW.md):
+1. Program Flow Diagram (flowchart)
+2. Call Hierarchy (graph)
+3. Data Flow Diagram (flowchart)
 
-1. **Program Flow Diagram (flowchart)**:
-   - Main program logic from start to termination
-   - Decision points (IF/CASE statements)
-   - Loop structures
-   - Major processing sections
-   - Error handling paths
+**Complex Diagrams** (separate DIAGRAMS.md):
+4. Module Dependency Graph (graph)
+5. File I/O Operations Timeline (sequenceDiagram)
+6. Variable Lifecycle State Diagram (stateDiagram-v2)
 
-   ```mermaid
-   flowchart TD
-       Start([Program Start]) --> Init[INITIALIZATION]
-       Init --> Read{READ-INPUT-FILE}
-       Read -->|EOF| Close[CLOSE-FILES]
-       Read -->|Success| Process[PROCESS-RECORD]
-       Process --> Validate{VALIDATE-DATA}
-       Validate -->|Valid| Write[WRITE-OUTPUT]
-       Validate -->|Invalid| Error[ERROR-HANDLING]
-       Write --> Read
-       Error --> Read
-       Close --> End([Program End])
-   ```
+**For complete Mermaid generation instructions, examples, best practices, and troubleshooting**, see [MERMAID_GUIDE.md](./MERMAID_GUIDE.md).
 
-2. **Call Hierarchy (graph)**:
-   - All procedure call relationships
-   - Nested call structures
-   - Execution order and dependencies
-   - Loop procedures vs one-time execution
+**Outputs**: 
+- Core diagrams embedded in `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_OVERVIEW.md`
+- Complex diagrams in `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_DIAGRAMS.md`
 
-   ```mermaid
-   graph TD
-       Main[MAIN-PROCESSING] --> Init[INITIALIZATION]
-       Main --> Process[PROCESS-RECORDS]
-       Process --> Read[READ-INPUT-FILE]
-       Process --> Validate[VALIDATE-RECORD]
-       Process --> Write[WRITE-OUTPUT-FILE]
-       Validate --> Check1[CHECK-NUMERIC-FIELDS]
-       Validate --> Check2[CHECK-DATE-FIELDS]
-       Main --> Term[TERMINATION]
-   ```
-
-3. **Data Flow Diagram (flowchart)**:
-   - Input files and their processing
-   - Data transformations through program variables
-   - Output file generation
-   - Variable mutations and state changes
-
-   ```mermaid
-   flowchart LR
-       Input[(INPUT-FILE)] --> Read[Read Records]
-       Read --> Vars[Program Variables<br/>Data Transformation]
-       Vars --> Calc[Business Logic<br/>Calculations]
-       Calc --> Format[Format Output]
-       Format --> Write[Write Records]
-       Write --> Output[(OUTPUT-FILE)]
-   ```
-
-4. **Module Dependency Graph (graph)**:
-   - All import/include statements and their relationships
-   - Shared data structures across programs
-   - Nested module inclusions
-   - Dependency hierarchy
-
-   ```mermaid
-   graph TB
-       Program[MAIN-PROGRAM] --> Mod1[IMPORT CUSTOMER-MODULE]
-       Program --> Mod2[IMPORT DATE-UTILITIES]
-       Program --> Mod3[IMPORT ERROR-CODES]
-       Mod2 --> Mod4[IMPORT COMMON-UTILS]
-       Mod3 --> Mod4
-   ```
-
-5. **File I/O Operations Timeline (sequenceDiagram)**:
-   - All file operations in execution order
-   - OPEN/READ/WRITE/CLOSE sequences
-   - Multi-file coordination
-   - Transaction boundaries
-
-   ```mermaid
-   sequenceDiagram
-       participant P as Program
-       participant I as Input File
-       participant O as Output File
-       participant L as Log File
-       
-       P->>I: OPEN INPUT
-       P->>O: OPEN OUTPUT
-       P->>L: OPEN EXTEND
-       loop Until EOF
-           P->>I: READ
-           I-->>P: Record Data
-           P->>P: Process Logic
-           P->>O: WRITE
-           P->>L: WRITE Log Entry
-       end
-       P->>I: CLOSE
-       P->>O: CLOSE
-       P->>L: CLOSE
-   ```
-
-6. **Variable Lifecycle State Diagram (stateDiagram-v2)** (for complex global variables):
-   - Variable initialization
-   - State transitions through processing
-   - Final states and conditions
-
-   ```mermaid
-   stateDiagram-v2
-       [*] --> Initialized: INITIALIZATION
-       Initialized --> Processing: READ-RECORD
-       Processing --> Validated: VALIDATE-DATA
-       Processing --> Invalid: Validation Failed
-       Validated --> Written: WRITE-OUTPUT
-       Invalid --> Error: ERROR-HANDLING
-       Written --> Processing: Next Record
-       Error --> Processing: Next Record
-       Processing --> [*]: END-OF-FILE
-   ```
-
-**Mermaid Generation Process**:
-
-1. **Analyze Program Structure**: Use static analysis and documentation created in previous phases
-2. **Generate Mermaid Code**: For each required diagram type, create valid Mermaid syntax
-3. **Validate Rendering**: Test all Mermaid diagrams render correctly (use online editor: https://mermaid.live)
-4. **Embed in Documentation**: Include Mermaid code blocks in dedicated diagrams document
-5. **Cross-Reference**: Link diagrams from master index and relevant section documentation
-
-**AI Prompt Template for Mermaid Generation**:
-```
-Using the call graph, data dictionary, and procedure documentation, generate Mermaid diagrams for this OMNISCRIPT program:
-
-1. Program Flow (flowchart): Main processing logic with decision points
-2. Call Hierarchy (graph): All procedure call relationships
-3. Data Flow (flowchart): Input → Processing → Output flow
-4. Module Dependencies (graph): All import statements and relationships
-5. File I/O Timeline (sequenceDiagram): All file operations in order
-6. Variable Lifecycles (stateDiagram-v2): For variables [list complex variables]
-
-Ensure all Mermaid syntax is valid and diagrams are clear and readable.
-
-Context:
-[Insert call graph]
-[Insert data dictionary summary]
-[Insert file operations list]
-[Insert import statements list]
-```
-
-**Output Structure**:
-Create **mandatory** diagrams document: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_MERMAID_DIAGRAMS.md`
-
-Document should contain:
-- Brief introduction to each diagram type
-- The Mermaid code block (renders automatically in most Markdown viewers)
-- A text description of key insights from the diagram
-- References to detailed documentation sections
-
-**Example Diagrams Document Structure**:
-```markdown
-# [PROGRAM-NAME] Visual Diagrams
-
-## 1. Program Flow
-
-This flowchart shows the main processing logic from program start to end.
-
-```mermaid
-flowchart TD
-    [... mermaid code ...]
-```
-
-**Key Insights**: 
-- Main processing loop handles records until EOF
-- Three validation stages before output
-- Error handling redirects to logging procedure
-
-## 2. Call Hierarchy
-
-[... continue for all diagram types ...]
-
-
-**Mermaid Best Practices for OMNISCRIPT**:
-- Keep diagrams focused and readable (split large programs into multiple diagrams)
-- Use consistent naming matching OMNISCRIPT procedure names
-- Add annotations for complex logic (use `:::className` styling)
-- Link diagram nodes to detailed documentation when possible
-- Use subgraphs to group related procedures or processing sections
-- Color-code critical paths, error handling, and I/O operations
-
-**Tools and Resources**:
-- **Mermaid Live Editor**: https://mermaid.live (validate syntax)
-- **Mermaid Documentation**: https://mermaid.js.org/intro/
-- **VS Code Extension**: Mermaid Preview (install for inline rendering)
-- **GitHub/GitLab**: Native Mermaid rendering in Markdown files
-
-### 4.7 Update Master Index
-**Objective**: Link all comprehensive documentation back to the master index
+### 4.7 Finalize Cross-References in Overview
+**Objective**: Complete all navigation links in the overview document
 
 **Actions**:
-1. Update `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_INDEX.md` with links to:
-   - Comprehensive program documentation
-   - Data dictionary
+1. Update `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_OVERVIEW.md` with links to:
+   - Data dictionary (with variable mutations)
    - Call graph
-   - Variable mutations
-   - **Mermaid visual diagrams (MANDATORY)**
+   - Diagrams (complex visualizations)
    - **Error handling analysis**
    - **Performance analysis**
    - **Testing guide**
@@ -786,7 +630,7 @@ flowchart TD
    - Documentation standards applied
 
 2. Add navigation paths for different user types:
-   - **New developers**: Start here path (executive summary → architecture → Mermaid diagrams → key procedures)
+   - **New developers**: Start here path (executive summary → architecture → core diagrams → key procedures)
    - **Maintenance developers**: Quick reference path (cross-reference → specific procedure → testing guide)
    - **Business analysts**: Business logic path (business rules → implementation locations → data flow)
    - **Auditors**: Compliance path (error handling → file operations → business rules → audit logging)
@@ -848,13 +692,12 @@ Please update the documentation to reflect:
 omniscript-documentation/
 ├── programs/
 │   ├── PROGRAM-A/
-│   │   ├── PROGRAM-A_INDEX.md
-│   │   ├── PROGRAM-A_DATA_DICTIONARY.md
-│   │   ├── PROGRAM-A_COMPREHENSIVE_DOC.md
+│   │   ├── PROGRAM-A_OVERVIEW.md              [Consolidated: INDEX + COMPREHENSIVE_DOC]
+│   │   ├── PROGRAM-A_DATA_DICTIONARY.md       [Includes: Variable Mutations section]
 │   │   ├── PROGRAM-A_CALL_GRAPH.md
-│   │   ├── PROGRAM-A_VARIABLE_MUTATIONS.md
+│   │   ├── PROGRAM-A_DIAGRAMS.md              [Complex diagrams; core in OVERVIEW]
+│   │   ├── PROGRAM-A_ERROR_HANDLING.md
 │   │   ├── PROGRAM-A_CROSS_REFERENCE.md
-│   │   ├── PROGRAM-A_DIAGRAMS.md
 │   │   ├── PROGRAM-A_VALIDATION_REPORT.md
 │   │   └── procedures/
 │   │       ├── PROCEDURE-1.md

@@ -22,30 +22,14 @@ These principles govern every action you take:
 
 ## MANDATORY WORKFLOW EXECUTION
 
-<!-- EDGAR_CHANGE: UPDATED - Added reference to CODE_QUALITY_ASSESSMENT template -->
-
 **You MUST follow the detailed workflow process outlined in WORKFLOW.md.** This is not optional. The workflow contains the complete step-by-step process for all phases of OMNISCRIPT documentation.
 
-**Enhanced Documentation Requirements**: The workflow now includes comprehensive documentation beyond basic code analysis:
-- **Comprehensive Code Quality Assessment** (HIGH PRIORITY): Use CODE_QUALITY_ASSESSMENT template for:
-  - Error status handling, error scenarios, risk assessment (Section A)
-  - OmniScript/COBOL best practices evaluation (Section B)
-  - Security vulnerability analysis with severity ranking (Section C)
-  - Operational risk assessment with impact evaluation (Section D)
-  - Code quality scoring with remediation roadmap (Section E)
-  - Automated quality gate determination (PASS/FAIL/WARNINGS) (Section F)
-- **Performance Analysis** (MEDIUM PRIORITY): Identify bottlenecks, resource usage, optimization opportunities  
-- **Testing Guide** (HIGH PRIORITY): Define test scenarios, edge cases, integration tests
-- **Integration Documentation** (MEDIUM PRIORITY): Document interfaces, dependencies, deployment
-- **Business Rules** (MEDIUM PRIORITY): Extract explicit and implicit business rules, security requirements
-- **Data Flow Diagrams** (LOW PRIORITY): Visualize data transformations and state changes
-
-All documentation types are executed automatically based on program criticality configured in CONFIG.md.
+**Enhanced Documentation Requirements**: The workflow includes comprehensive documentation beyond basic code analysis (error handling, performance, testing, integration, business rules, data flow diagrams, and code quality assessment). All documentation types are executed automatically based on program criticality configured in [CONFIG.md](./CONFIG.md#documentation-enhancement-settings).
 
 ## Critical Instructions
 
 ### Static Analysis Requirements
-**You MUST use the OMNISCRIPT Grammar Parser AND static analysis tools:**
+**You MUST use the OMNISCRIPT Grammar Parser as the MANDATORY FIRST STEP, followed by traditional static analysis tools:**
 
 #### 1. Grammar Parser (MANDATORY FIRST STEP)
 Run the deterministic grammar parser to extract structured program information:
@@ -78,25 +62,16 @@ This generates a `*_PARSER_CONTEXT.txt` file with:
 
 ### File Placement Guidelines
 
-**CRITICAL**: All documentation MUST be placed in the `omniscript-documentation/{REPO-NAME}/` directory structure at the project root, organized by repository and program name. Use this as your `OMNISCRIPT_DOCS_DIR` base path.
+**CRITICAL**: All documentation MUST be placed in the `omniscript-documentation/{REPO-NAME}/{PROGRAM-NAME}/` directory structure. Documentation files follow this consolidated structure:
 
-**File Organization**:
-- **Program documentation files**: Place in `omniscript-documentation/{REPO-NAME}/[PROGRAM-NAME]/` subdirectory
-  - Example: `omniscript-documentation/my-omniscript-repo/PAYROLL/PAYROLL_DATA_DICTIONARY.md`
-  - Example: `omniscript-documentation/my-omniscript-repo/PAYROLL/PAYROLL_CALL_GRAPH.md`
-  - Example: `omniscript-documentation/my-omniscript-repo/PAYROLL/PAYROLL_COMPREHENSIVE_DOC.md`
-  - Example: `omniscript-documentation/invoice-system/INVOICE_CALC/INVOICE_CALC_DATA_DICTIONARY.md`
-- **Procedure documentation**: Place in `omniscript-documentation/{REPO-NAME}/[PROGRAM-NAME]/procedures/` subdirectory (if needed)
-  - Example: `omniscript-documentation/my-omniscript-repo/PAYROLL/procedures/PROCESS-RECORDS.md`
-- **Repository-specific standards**: Place in `omniscript-documentation/{REPO-NAME}/` directory (shared across programs in that repo)
-  - Example: `omniscript-documentation/my-omniscript-repo/DOCUMENTATION_STANDARDS.md`
-  - Example: `omniscript-documentation/my-omniscript-repo/MAINTENANCE_GUIDE.md`
-- **Cross-repository standards**: Place in `omniscript-documentation/` directory (shared across all repositories)
-  - Example: `omniscript-documentation/GLOBAL_STANDARDS.md`
-- **Training materials**: Place in `omniscript-documentation/{REPO-NAME}/training/` directory (if needed)
-- **NEVER place documentation files at the project root** - all docs go in `omniscript-documentation/{REPO-NAME}/`
-- **Repository name**: Extract from the source repository (e.g., `my-omniscript-repo`)
-- **Program name**: Extract from the OMNISCRIPT file name (e.g., `PAYROLL.os` → `PAYROLL`)
+- **OVERVIEW.md**: Consolidated program overview (merges index + comprehensive doc, includes core diagrams)
+- **DATA_DICTIONARY.md**: All variables with Variable Mutations section appended
+- **CALL_GRAPH.md**: Call relationships and control flow
+- **DIAGRAMS.md**: Complex Mermaid diagrams (state machines, sequences, detailed flows)
+- **ERROR_HANDLING.md**: Error analysis and risk assessment
+- **procedures/*.md**: Individual procedure documentation
+
+For complete directory structure, file naming conventions, and organization rules, see [CONFIG.md - Output Directory Structure](./CONFIG.md#output-directory-structure).
 
 ### Implementation Guidelines
 - **NEVER skip static analysis** - it's critical for accurate documentation
@@ -122,9 +97,10 @@ This generates a `*_PARSER_CONTEXT.txt` file with:
 
 ## Essential Reading
 
-**You MUST review WORKFLOW.md** for the complete phase-by-phase process before beginning OMNISCRIPT documentation.
-
-**You MUST review CONFIG.md** for configuration settings specific to the OMNISCRIPT environment and documentation requirements.
+**You MUST review these documents** before beginning OMNISCRIPT documentation:
+- **[WORKFLOW.md](./WORKFLOW.md)**: Complete phase-by-phase process (MANDATORY)
+- **[CONFIG.md](./CONFIG.md)**: Configuration settings and requirements
+- **[MERMAID_GUIDE.md](./MERMAID_GUIDE.md)**: Mandatory visual diagram generation
 
 ## Emergency Procedures
 
@@ -137,28 +113,11 @@ If you encounter any of these situations:
 
 ## Success Criteria
 
-<!-- EDGAR_CHANGE: UPDATED - Added quality assessment criteria -->
-
-You have successfully completed OMNISCRIPT documentation when:
-- ✅ All variables documented in data dictionary
-- ✅ All procedures individually documented
-- ✅ Call graph created showing all call relationships
-- ✅ Variable mutation patterns identified and documented
-- ✅ OMNISCRIPT experts have reviewed and approved all documentation
-- ✅ Comprehensive program documentation synthesized
-- ✅ Cross-reference documentation created
-- ✅ **Mermaid visual diagrams generated (MANDATORY: flowcharts, call graphs, data flows, dependencies)**
-- ✅ **Comprehensive code quality assessment completed using CODE_QUALITY_ASSESSMENT template**
-- ✅ **Quality gate determination made (PASS/PASS WITH WARNINGS/FAIL)**
-- ✅ **Security vulnerabilities and operational risks identified with remediation roadmap**
-- ✅ Maintenance process established
-- **templates/**: MANDATORY templates for program analysis, documentation plans, and standards
+For complete success criteria and quality gates, see [WORKFLOW.md - Phase Completion Criteria](./WORKFLOW.md#success-criteria).
 
 ---
 
-**Remember**: You are a skilled OMNISCRIPT documentation specialist who leverages AI to accelerate documentation while ensuring accuracy through expert human review. You follow the iterative approach: analyze → chunk → document with AI → expert review → correct → synthesize. Never skip steps, never finalize without expert approval
-- **WORKFLOW.md**: Contains detailed step-by-step process guidance that you MUST follow
-- **CONFIG.md**: Always your primary source of requirements and validation
+**Remember**: You are a skilled OMNISCRIPT documentation specialist who leverages AI to accelerate documentation while ensuring accuracy through expert human review. You follow the iterative approach: analyze → chunk → document with AI → expert review → correct → synthesize. Never skip steps, never finalize without expert approval.
 
 ---
 

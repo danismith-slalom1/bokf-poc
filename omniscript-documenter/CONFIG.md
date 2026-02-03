@@ -30,97 +30,125 @@ This is a configuration file to aid with the automation of the OMNISCRIPT docume
 
 - **Documentation Depth by Program Type**:
   - **Mission-critical**: Comprehensive documentation (all phases + all supplemental docs)
-    - Includes: Data dictionary, procedures, call graphs, mutations, comprehensive doc, Mermaid diagrams
-    - **Plus**: Error handling analysis, performance analysis, testing guide, integration guide, business rules
-  - **Standard business logic**: Standard documentation (data dictionary + procedures + call graph + essentials)
-    - Includes: Data dictionary, key procedures, call graph, Mermaid diagrams
-    - **Plus**: Error handling analysis, testing guide (basic)
+    - **REQUIRED FILES**: Overview, Data dictionary (with mutations), Call graph, Diagrams, Error handling, Integration guide, Business rules, Cross reference, Validation report, Procedures (all)
+    - **OPTIONAL**: Performance analysis
+  - **Standard business logic**: Standard documentation (overview + data dictionary + procedures + call graph + essentials)
+    - **REQUIRED FILES**: Overview, Data dictionary (with mutations), Call graph, Diagrams, Error handling, Integration guide, Business rules, Cross reference, Validation report, Procedures (key)
+    - **OPTIONAL**: Performance analysis, Testing guide (basic)
   - **Simple utilities**: Minimal documentation (overview + key sections)
-    - Includes: Overview, key procedures, basic Mermaid diagram
-    - **Plus**: Error handling assessment (if file I/O present)
+    - **REQUIRED FILES**: Overview (with embedded flow diagram), Data dictionary, Procedures (key)
+    - **OPTIONAL**: Error handling assessment (if file I/O present)
+
+**DEFAULT DOCUMENTATION LEVEL**: If not specified, use **Standard business logic** level for all programs.
+
+## Output Directory Structure
+
+**Standard documentation location**: All OMNISCRIPT documentation must follow this directory structure:
+
+```
+omniscript-documentation/
+└── {REPO-NAME}/
+    └── {PROGRAM-NAME}/
+        ├── {PROGRAM}_OVERVIEW.md                  [REQUIRED: Merged INDEX + COMPREHENSIVE_DOC]
+        ├── {PROGRAM}_DATA_DICTIONARY.md           [REQUIRED: Includes Variable Mutations section]
+        ├── {PROGRAM}_CALL_GRAPH.md                [REQUIRED]
+        ├── {PROGRAM}_DIAGRAMS.md                  [REQUIRED: Complex visualizations + Mermaid diagrams]
+        ├── {PROGRAM}_ERROR_HANDLING.md            [REQUIRED: See Phase 3.1 in WORKFLOW.md]
+        ├── {PROGRAM}_INTEGRATION_GUIDE.md         [REQUIRED: See Phase 4.3 in WORKFLOW.md]
+        ├── {PROGRAM}_BUSINESS_RULES.md            [REQUIRED: See Phase 4.4 in WORKFLOW.md]
+        ├── {PROGRAM}_CROSS_REFERENCE.md           [REQUIRED: See Phase 4.2 in WORKFLOW.md]
+        ├── {PROGRAM}_VALIDATION_REPORT.md         [REQUIRED: See Phase 3.1 in WORKFLOW.md]
+        └── procedures/
+            ├── PROCEDURE-1.md
+            ├── PROCEDURE-2.md
+            └── ...
+```
+
+**Path Naming Conventions**:
+- Repository name: Extract from repository or project folder name
+- Program name: Extract from OmniScript file name without extension (e.g., `PAYROLL.os` → `PAYROLL`)
+- Use uppercase for program names in directory paths
+- Use underscores to separate program name from document type
+
+**For complete file naming conventions and documentation standards**, see [templates/DOCUMENTATION_STANDARDS.template.md](./templates/DOCUMENTATION_STANDARDS.template.md#naming-conventions).
+
+**Example paths**:
+- Overview: `omniscript-documentation/my-repo/PAYROLL/PAYROLL_OVERVIEW.md`
+- Data dictionary: `omniscript-documentation/my-repo/PAYROLL/PAYROLL_DATA_DICTIONARY.md`
+- Call graph: `omniscript-documentation/my-repo/PAYROLL/PAYROLL_CALL_GRAPH.md`
+- Diagrams: `omniscript-documentation/my-repo/PAYROLL/PAYROLL_DIAGRAMS.md`
+- Procedure: `omniscript-documentation/my-repo/PAYROLL/procedures/CALCULATE-TAX.md`
 
 ## Documentation Enhancement Settings
 
-<!-- EDGAR_CHANGE: UPDATED - Consolidated settings to reference CODE_QUALITY_ASSESSMENT template -->
+### Error Handling Documentation (MANDATORY)
+- **Always document**: **YES** (REQUIRED for all programs)
+- **Risk assessment required**: **YES** (REQUIRED)
+- **Error status analysis depth**: Comprehensive
+- **Recovery procedure documentation**: YES
+- **Output file**: `{PROGRAM}_ERROR_HANDLING.md`
+- **See**: WORKFLOW.md Phase 3.1 for validation process
 
-### Comprehensive Code Quality Assessment (HIGH PRIORITY)
-**Template**: `templates/CODE_QUALITY_ASSESSMENT.template.md`
+### Comprehensive Code Quality Assessment
+- **Template**: [CODE_QUALITY_ASSESSMENT.template.md](./templates/CODE_QUALITY_ASSESSMENT.template.md)
+- **When to use**: After Phase 5 completion, or standalone for existing code
+- **Scope**: Security, operational risk, best practices, quality gates (Sections A-F)
+- **Output file**: `{PROGRAM}_QUALITY_ASSESSMENT.md`
+- **See**: WORKFLOW.md "Comprehensive Code Quality Assessment" section
 
-- **Always perform for mission-critical programs**: Yes/No [RECOMMENDED: Yes]
-- **Perform for standard programs**: Yes/No [RECOMMENDED: Yes for production-bound code]
-- **Assessment scope by program type**:
-  - Mission-critical: Comprehensive (All sections A-F)
-  - Standard business logic: Standard (Sections A, C, D, F + selective B, E)
-  - Utility programs: Targeted (Sections A, D, F minimum)
-  
-#### Quality Assessment Components:
-**Section A: Error Handling Documentation** (HIGH PRIORITY)
-- **Always document**: Yes/No [RECOMMENDED: Yes - critical for risk management]
-- **Risk assessment required**: Yes/No [RECOMMENDED: Yes]
-- **Error status analysis depth**: Basic/Comprehensive
-- **Recovery procedure documentation**: Yes/No
-- **Runtime error scenario analysis**: Yes/No [RECOMMENDED: Yes]
-- **Resource limit documentation**: Yes/No [RECOMMENDED: Yes]
-- **Input validation assessment**: Yes/No [RECOMMENDED: Yes]
+### Integration Documentation (MANDATORY)
+- **Document all external calls**: **YES** (REQUIRED)
+- **Entry point contract**: **Always** (REQUIRED)
+- **Deployment guide**: Full (for mission-critical), Basic (for standard)
+- **System requirements**: Detailed
+- **Output file**: `{PROGRAM}_INTEGRATION_GUIDE.md`
+- **See**: WORKFLOW.md Phase 4.3 for requirements
 
-**Section B: Best Practices Assessment** (MEDIUM PRIORITY)
-- **OmniScript API pattern analysis**: Yes/No [RECOMMENDED: Yes]
-- **Deprecated API detection**: Yes/No [RECOMMENDED: Yes]
-- **COBOL-specific checks**: Yes/No/If applicable
-- **Integration pattern evaluation**: Yes/No [RECOMMENDED: Yes]
-- **Performance pattern analysis**: Yes/No [RECOMMENDED: Yes for critical programs]
+### Business Rules Extraction (MANDATORY)
+- **Extract explicit rules**: **YES** (REQUIRED)
+- **Infer implicit rules**: **YES** (REQUIRED)
+- **Security requirements**: **Document** (REQUIRED)
+- **Compliance documentation**: YES (if applicable)
+- **Output file**: `{PROGRAM}_BUSINESS_RULES.md`
+- **See**: WORKFLOW.md Phase 4.4 for extraction process
 
-**Section C: Security Assessment** (HIGH PRIORITY)
-- **Security vulnerability scan**: Always/Critical only/Never [RECOMMENDED: Always]
-- **Hardcoded credential detection**: Yes/No [RECOMMENDED: Yes - MANDATORY for production]
-- **Injection vulnerability check**: Yes/No [RECOMMENDED: Yes]
-- **Access control review**: Yes/No [RECOMMENDED: Yes for critical programs]
-- **Compliance verification**: Yes/No/If applicable
+### Cross-Reference Documentation (MANDATORY)
+- **Variable index**: **YES** (REQUIRED)
+- **Procedure index**: **YES** (REQUIRED)
+- **File operations index**: **YES** (REQUIRED)
+- **Business rule index**: **YES** (REQUIRED)
+- **Error handling index**: **YES** (REQUIRED)
+- **Output file**: `{PROGRAM}_CROSS_REFERENCE.md`
+- **See**: WORKFLOW.md Phase 4.2 for generation
 
-**Section D: Operational Risk Assessment** (HIGH PRIORITY)
-- **Risk categorization**: Yes/No [RECOMMENDED: Yes]
-- **Data corruption scenario analysis**: Yes/No [RECOMMENDED: Yes]
-- **Performance degradation assessment**: Yes/No [RECOMMENDED: Yes for critical programs]
-- **Resource exhaustion check**: Yes/No [RECOMMENDED: Yes]
+### Validation Report (MANDATORY)
+- **Self-validation**: **YES** (REQUIRED)
+- **Confidence scores**: **YES** (REQUIRED)
+- **Assumption documentation**: **YES** (REQUIRED)
+- **Alternative interpretations**: YES (where applicable)
+- **Output file**: `{PROGRAM}_VALIDATION_REPORT.md`
+- **See**: WORKFLOW.md Phase 3.1 for validation process
 
-**Section E: Quality Scoring** (MEDIUM PRIORITY)
-- **Overall quality metrics**: Yes/No [RECOMMENDED: Yes]
-- **Per-procedure assessment**: Yes/No/Critical procedures only
-- **Trend analysis**: Yes/No [RECOMMENDED: Yes if historical data exists]
+### Data Flow Diagrams (MANDATORY)
+- **Generate for all programs**: **YES** (REQUIRED)
+- **Variable lifecycle diagrams**: All major variables (REQUIRED)
+- **Transformation examples**: **YES** (REQUIRED)
+- **Mermaid diagrams**: **YES** (MANDATORY - see MERMAID_GUIDE.md)
+- **Output file**: `{PROGRAM}_DIAGRAMS.md`
 
-**Section F: Quality Gate Checks** (HIGH PRIORITY)
-- **Automated gate evaluation**: Yes/No [RECOMMENDED: Yes for all production code]
-- **Deployment readiness determination**: Yes/No [RECOMMENDED: Yes]
-- **Remediation roadmap generation**: Yes/No [RECOMMENDED: Yes]
+### Performance Analysis (OPTIONAL)
+- **Document for critical programs**: YES (for mission-critical only)
+- **String operation analysis**: YES (if applicable)
+- **Memory usage analysis**: YES (if applicable)
+- **Optimization recommendations**: YES (if applicable)
+- **Output file**: `{PROGRAM}_PERFORMANCE_ANALYSIS.md` (optional)
 
-### Performance Analysis (MEDIUM PRIORITY)
-- **Document for critical programs**: Yes/No [RECOMMENDED: Yes for mission-critical]
-- **String operation analysis**: Yes/No [RECOMMENDED: Yes - can be expensive]
-- **Memory usage analysis**: Yes/No
-- **Optimization recommendations**: Yes/No
-
-### Testing Guide Creation (HIGH PRIORITY)
-- **Always generate**: Yes/No [RECOMMENDED: Yes]
-- **Edge case identification**: Automatic/Manual review
-- **Sample test data**: Include/Reference only
-- **Integration test scenarios**: Yes/No
-
-### Integration Documentation (MEDIUM PRIORITY)
-- **Document all external calls**: Yes/No [RECOMMENDED: Yes]
-- **Entry point contract**: Always/Critical only
-- **Deployment guide**: Full/Basic/None
-- **System requirements**: Detailed/Summary
-
-### Business Rules Extraction (MEDIUM PRIORITY)
-- **Extract explicit rules**: Yes/No [RECOMMENDED: Yes]
-- **Infer implicit rules**: Yes/No [RECOMMENDED: Yes for critical programs]
-- **Security requirements**: Document/Skip
-- **Compliance documentation**: Yes/No/If applicable
-
-### Data Flow Diagrams (LOW PRIORITY - but valuable)
-- **Generate for all programs**: Yes/No
-- **Variable lifecycle diagrams**: Critical variables only/All major variables
-- **Transformation examples**: Yes/No
+### Testing Guide Creation (OPTIONAL)
+- **Always generate**: NO (optional for standard programs)
+- **Edge case identification**: Automatic (when generated)
+- **Sample test data**: Include (when generated)
+- **Integration test scenarios**: YES (when generated)
+- **Output file**: `{PROGRAM}_TESTING_GUIDE.md` (optional)
 
 ## AI Tool Configuration
 

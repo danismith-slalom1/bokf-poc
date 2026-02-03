@@ -6,15 +6,15 @@ If you're looking to invoke the module, please proceed to [INITIALIZER_PROMPT.md
 
 Transform undocumented or poorly documented OMNISCRIPT programs into comprehensive, production-ready documentation using AI assistance with expert human oversight.
 
-**🎯 Now includes**: 
-- **Deterministic Grammar Parser** for accurate OmniScript language analysis
-- **Comprehensive Code Quality Assessment** with security, operational risk analysis, and automated quality gates
-- **OmniScript Version Detection** (expected: 6.05) with upgrade readiness assessment to target version 7.5
-- Error handling analysis, performance optimization, testing guides, integration docs, business rules extraction, and detailed remediation roadmaps
+**🎯 Key Features**: 
+- **Deterministic Grammar Parser** for accurate language analysis
+- **Mandatory Mermaid Diagrams** for visual program understanding
+- **Comprehensive Code Quality Assessment** with security, operational risk analysis, and automated quality gates (🔴 Critical / 🟠 High / 🟡 Medium risk ratings)
+- Enhanced documentation including error handling, performance analysis, testing guides, integration docs, and business rules extraction
 
 ## Quick Start
 
-### 1. Parse the OMNISCRIPT Program (RECOMMENDED FIRST STEP)
+### 1. Parse the OMNISCRIPT Program (MANDATORY FIRST STEP)
 
 Run the grammar parser for deterministic analysis:
 
@@ -63,37 +63,37 @@ Send this prompt to your AI agent:
 After documenting an OMNISCRIPT program, you will have:
 
 ### Core Documentation (Always Generated)
-- **Program Analysis** documenting structure, sections, dependencies, and chunking strategy
-- **Data Dictionary** for all variables with purposes, usage patterns, and buffer limits
+- **Program Overview** (consolidates index + comprehensive doc) with executive summary, architecture, embedded core diagrams, and navigation
+- **Data Dictionary** for all variables with purposes, usage patterns, buffer limits, and **Variable Mutations section**
 - **Procedure Documentation** for each procedure with business logic, error handling, and performance notes
 - **Call Graph** showing all PERFORM relationships and control flow
-- **Variable Mutation Analysis** tracking state changes across the program
-- **Comprehensive Program Documentation** synthesizing all components with business rules and security
-- **Cross-Reference Documentation** enabling quick navigation
-- **Mermaid Visual Diagrams (MANDATORY)** including:
-  - Program flow flowcharts
-  - Call hierarchy graphs
-  - Data flow diagrams
+- **Diagrams** with complex Mermaid visualizations:
   - Module dependencies
-  - File I/O timelines
+  - Detailed data flow with transformations
+  - File I/O operation timelines
   - Variable lifecycle state machines
+  
+  See [MERMAID_GUIDE.md](./MERMAID_GUIDE.md) for complete diagram generation instructions.
 
 ### Enhanced Documentation (Automatically Generated)
-<!-- EDGAR_CHANGE: UPDATED - Consolidated to reference CODE_QUALITY_ASSESSMENT template -->
-- **Comprehensive Code Quality Assessment** ⭐ using standardized template (`templates/CODE_QUALITY_ASSESSMENT.template.md`):
-  - **Section A: Error Handling Analysis** - Error status handling, runtime scenarios, resource limits, input validation, risk assessment
-  - **Section B: Best Practices Assessment** - OmniScript/COBOL API usage, integration patterns, performance patterns, deprecated features
-  - **Section C: Security Assessment** - 🔴 Critical/🟠 High/🟡 Medium security risks with exploit scenarios and remediation
-  - **Section D: Operational Risk Assessment** - 🔴 Critical/🟠 High/🟡 Medium/🟢 Low operational risks with impact analysis
-  - **Section E: Quality Scoring** - Overall metrics, per-procedure assessments, best practice violations, performance impact
-  - **Section F: Quality Gate Checks** - ✅ PASS/⚠️ PASS WITH WARNINGS/❌ FAIL determination with deployment recommendations
-  - Prioritized remediation roadmap with effort estimates
-- **Performance Analysis** ⭐ identifying bottlenecks, costs, and optimization opportunities
-- **Testing Guide** ⭐ with standard tests, edge cases, error scenarios, and integration tests
-- **Integration Guide** ⭐ documenting interfaces, deployment, and system requirements
-- **Business Rules** ⭐ extracting explicit and implicit business logic with traceability
-- **Data Flow Diagrams** visualizing data transformations and state changes
-- **Maintenance Guide** for ongoing documentation updates
+
+**Comprehensive Code Quality Assessment** ⭐ using standardized template ([CODE_QUALITY_ASSESSMENT.template.md](./templates/CODE_QUALITY_ASSESSMENT.template.md)):
+- **Section A: Error Handling Analysis** - Error status handling, runtime scenarios, resource limits, input validation, risk assessment
+- **Section B: Best Practices Assessment** - OmniScript/COBOL API usage, integration patterns, performance patterns, deprecated features
+- **Section C: Security Assessment** - 🔴 Critical/🟠 High/🟡 Medium security risks with exploit scenarios and remediation
+- **Section D: Operational Risk Assessment** - 🔴 Critical/🟠 High/🟡 Medium/🟢 Low operational risks with impact analysis
+- **Section E: Quality Scoring** - Overall metrics, per-procedure assessments, best practice violations, performance impact
+- **Section F: Quality Gate Checks** - ✅ PASS/⚠️ PASS WITH WARNINGS/❌ FAIL determination with deployment recommendations
+
+**Additional Enhanced Documentation** (based on program criticality configured in [CONFIG.md](./CONFIG.md#documentation-enhancement-settings)):
+- **Error Handling Analysis** - Error status handling, risks, and recovery procedures
+- **Performance Analysis** - Bottlenecks, costs, and optimization opportunities
+- **Testing Guide** - Standard tests, edge cases, error scenarios, and integration tests
+- **Integration Guide** - Interfaces, deployment, and system requirements
+- **Business Rules** - Explicit and implicit business logic with traceability
+- **Maintenance Guide** - Ongoing documentation updates
+
+For detailed configuration of enhanced documentation, see [CONFIG.md](./CONFIG.md#documentation-enhancement-settings).
 
 ## Prerequisites
 
@@ -103,46 +103,6 @@ Before using this module, you should have:
 2. **Static Analysis Tools** (highly recommended):
    - OMNISCRIPT interpreter with cross-reference generation capability
    - OR static analysis tools for procedure and variable analysis
+3. **Python 3**: Required for the OMNISCRIPT grammar parser
 
-## Compatibility Matrix
-
-| AI Platform | AI Model | Status | Notes |
-|---------|-----|---------------------|-------|
-| **GitHub Copilot** | | | |
-| | Claude Sonnet 4 | ⚠️ Experimental | Requires proper chunking and expert review |
-| | GPT-4.1 | ⚠️ Experimental | May struggle with complex OMNISCRIPT patterns |
-| **Claude** | | | |
-| | Claude Sonnet 4 | ⚠️ Experimental | Best results with detailed prompts and context |
-| **Cursor** | | | |
-| | Claude Sonnet 4 | ❌ Not Tested | - |
-
-**Legend:**
-- ✅ Fully Tested - All functionality verified, high quality documentation
-- ⚠️ Experimental - Basic functionality works, requires careful expert review
-- ❌ Not Tested - No testing completed
-
-**IMPORTANT**: Regardless of AI tool or testing status, **all AI-generated OMNISCRIPT documentation MUST be reviewed by OMNISCRIPT experts**. AI tools can misinterpret OMNISCRIPT syntax, business logic, and data flows. Expert review is not optional.
-| | o3-mini | ❌ Not Tested | ❌ Not Tested |
-| | Gemini 2.5 Pro | ❌ Not Tested | ❌ Not Tested |
-| | GPT-5 | ❌ Not Tested | ❌ Not Tested |
-| **Cursor** | | | |
-| | GPT-4.1 | ❌ Not Tested | ❌ Not Tested |
-| | Claude Sonnet 4 | ❌ Not Tested | ❌ Not Tested |
-| | o3-mini | ❌ Not Tested | ❌ Not Tested |
-| | Gemini 2.5 Pro | ❌ Not Tested | ❌ Not Tested |
-| | GPT-5 | ❌ Not Tested | ❌ Not Tested |
-| **Claude** | | | |
-| | GPT-4.1 | ❌ Not Tested | ❌ Not Tested |
-| | Claude Sonnet 4 | ❌ Not Tested | ✅ Fully Tested |
-| | o3-mini | ❌ Not Tested | ❌ Not Tested |
-| | Gemini 2.5 Pro | ❌ Not Tested | ❌ Not Tested |
-| | GPT-5 | ❌ Not Tested | ❌ Not Tested |
-| **GPT-5** | | | |
-| | GitHub Copilot | ❌ Not Tested | ❌ Not Tested |
-| | Cursor | ❌ Not Tested | ❌ Not Tested |
-| | Claude | ❌ Not Tested | ❌ Not Tested |
-
-**Legend:**
-- ✅ Fully Tested - All functionality verified to work correctly
-- ⚠️ Partially Tested - Basic functionality tested, some edge cases or **known issues** may exist
-- ❌ Not Tested - No testing completed on this platform/LLM combination, or **significant issues** were found
+**IMPORTANT**: All AI-generated OMNISCRIPT documentation MUST be reviewed by OMNISCRIPT experts. AI tools can misinterpret OMNISCRIPT syntax, business logic, and data flows. Expert review is not optional.
