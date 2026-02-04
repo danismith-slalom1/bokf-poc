@@ -22,27 +22,59 @@ You are an OmniScript documentation and GitLab automation specialist that handle
 
 ## Environment Requirements
 
-**Required Environment Variables:**
-- `GITLAB_TOKEN` - GitLab Personal Access Token with `api`, `read_repository`, and `write_repository` scopes
+**Required SSH Setup:**
+- SSH key configured for GitLab access
+- SSH key added to your GitLab account
+- SSH agent running with key loaded
+- Used for: Cloning source repositories AND pushing to documentation repository
+
+**Optional Environment Variables:**
+- `GITLAB_DOCS_TOKEN` - GitLab PAT for documentation repository (scopes: `api`, `read_repository`, `write_repository`)
+  - **Only required if creating merge requests via API**
+  - Not needed if using SSH-only workflow (clone, commit, push)
 - `GITLAB_USERNAME` - Your GitLab username (optional, extracted from git config if not set)
 - `GITLAB_EMAIL` - Your GitLab email (optional, extracted from git config if not set)
 
 **Setup Instructions:**
 ```bash
-# Add to your shell profile (~/.zshrc or ~/.bashrc)
-export GITLAB_TOKEN="your-personal-access-token"
-export GITLAB_USERNAME="your.username"
-export GITLAB_EMAIL="your.email@company.com"
+# 1. Setup SSH key for GitLab (if not already configured)
+ssh-keygen -t ed25519 -C "your.email@company.com" -f ~/.ssh/gitlab_ed25519
+
+# 2. Add SSH key to ssh-agent
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/gitlab_ed25519
+
+# 3. Add public key to GitLab (copy output and add to GitLab → Preferences → SSH Keys)
+cat ~/.ssh/gitlab_ed25519.pub
+
+# 4. Test SSH connection
+ssh -T git@gitlab.com
+
+# 5. (Optional) Add GitLab token if you want automatic merge request creation
+#    Add to your shell profile (~/.zshrc or ~/.bashrc)
+export GITLAB_DOCS_TOKEN="your-docs-repo-token"      # Only for MR API calls
+export GITLAB_USERNAME="your.username"                # Optional, falls back to git config
+export GITLAB_EMAIL="your.email@company.com"          # Optional, falls back to git config
 ```
+
+**Security Best Practice:**
+SSH-first authentication approach:
+- SSH keys are used for ALL git operations (clone, push, pull)
+- No token required for source repository access
+- No token required for documentation repository git operations
+- Token ONLY needed for GitLab API calls (merge request creation)
+- SSH keys are more secure and don't expire like tokens
+- Simpler setup for basic workflow (no token management)
 
 ## Complete Workflow
 
 ### Phase 1: Repository Setup
 1. Parse GitLab URL to extract: `gitlab-host`, `owner`, `repo`, `branch`
-2. Clone repository to `temp-repos/{repo-name}/`
-3. Configure Git user (from env vars or global config)
-4. Create feature branch: `docs/omniscript-documentation-{timestamp}`
-5. Checkout feature branch
+2. Clone source repository using SSH to `temp-repos/{repo-name}/`
+3. Clone documentation repository using SSH (if separate repo provided)
+4. Configure Git user (from env vars or global config)
+5. Create feature branch in docs repo: `docs/omniscript-documentation-{timestamp}`
+6. Checkout feature branch
 
 ### Phase 2: Documentation Generation
 1. Identify all OmniScript files (*.os, *.omniscript, *.omni)
@@ -63,14 +95,19 @@ export GITLAB_EMAIL="your.email@company.com"
 4. Push feature branch to GitLab remote
 
 ### Phase 4: Merge Request Creation
-1. Extract project ID from GitLab API
-2. Create merge request via GitLab REST API with:
-   - Source branch: feature branch
-   - Target branch: main/master
-   - Title: "docs: Add OmniScript documentation for {count} programs"
-   - Description: Summary of generated documentation with file list
-   - Labels: `documentation`, `automated`
-3. Return merge request URL to user
+1. If GITLAB_DOCS_TOKEN is available:
+   - Extract project ID from GitLab API
+   - Create merge request via GitLab REST API with:
+     - Source branch: feature branch
+     - Target branch: main/master
+     - Title: "docs: Add OmniScript documentation for {count} programs"
+     - Description: Summary of generated documentation with file list
+     - Labels: `documentation`, `automated`
+   - Return merge request URL to user
+2. If GITLAB_DOCS_TOKEN is NOT available:
+   - Provide instructions for manual MR creation
+   - Display GitLab URL for creating MR
+   - Show branch name and suggested title/description
 
 ## Output Structure
 
@@ -99,22 +136,27 @@ Example: docs/omniscript-documentation-2026-02-04-143022
 
 ### Git Commands Sequence
 ```bash
-# 1. Clone
-git clone {gitlab-url} temp-repos/{repo-name}
-cd temp-repos/{repo-name}
+# 1. Clone source repository via SSH
+git clone git@{gitlab-host}:{owner}/{repo}.git temp-repos/{repo-name}
 
-# 2. Configure
-git config user.name "${GITLAB_USERNAME}"
-git config user.email "${GITLAB_EMAIL}"
+# 2. Clone documentation repository via SSH (if separate)
+git clone git@{gitlab-host}:{owner}/{docs-repo}.git temp-repos/{docs-repo-name}
+cd temp-repos/{docs-repo-name}
 
-# 3. Create branch
+# 3. Configure user (from env vars or global git config)
+git config user.name "${GITLAB_USERNAME:-$(git config --global user.name)}"
+git config user.email "${GITLAB_EMAIL:-$(git config --global user.email)}"
+
+# 4. Create feature branch
 git checkout -b docs/omniscript-documentation-{timestamp}
 
-# 4. Stage and commit
+# 5. Generate documentation in omniscript-documentation/ directory
+
+# 6. Stage and commit
 git add omniscript-documentation/
 git commit -m "docs: Add OmniScript documentation for {count} programs"
 
-# 5. Push
+# 7. Push via SSH
 git push -u origin docs/omniscript-documentation-{timestamp}
 ```
 
@@ -128,13 +170,13 @@ https://{gitlab-host}/api/v4
 **Get Project ID:**
 ```bash
 GET /projects/{owner}%2F{repo}
-Authorization: Bearer ${GITLAB_TOKEN}
+Authorization: Bearer ${GITLAB_DOCS_TOKEN}
 ```
 
 **Create Merge Request:**
 ```bash
 POST /projects/{project_id}/merge_requests
-Authorization: Bearer ${GITLAB_TOKEN}
+Authorization: Bearer ${GITLAB_DOCS_TOKEN}
 Content-Type: application/json
 
 {
@@ -150,12 +192,20 @@ Content-Type: application/json
 ## Error Handling
 
 ### Authentication Failures
-- Check if `GITLAB_TOKEN` is set
-- Verify token has required scopes
-- Provide clear setup instructions
+- **SSH Authentication (Primary):**
+  - Check if SSH key is configured and loaded in ssh-agent
+  - Test SSH connection: `ssh -T git@gitlab.com`
+  - Verify SSH key has access to both source and documentation repositories
+  - Check ssh-agent is running: `ssh-add -l`
+  - Provide clear SSH setup instructions
+- **API Token (Optional - Only for MR creation):**
+  - Check if `GITLAB_DOCS_TOKEN` is set (only needed for automatic MR creation)
+  - Verify token has `api`, `read_repository`, and `write_repository` scopes
+  - If token missing, proceed without automatic MR creation
 
 ### Git Operation Failures
 - Check repository permissions
+- Verify SSH key has access to source repository
 - Verify branch doesn't already exist
 - Handle merge conflicts gracefully
 
@@ -187,11 +237,16 @@ A successful execution includes:
 ## Quick Start Example
 
 ```bash
-# Set up environment (one-time)
-export GITLAB_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
+# Set up SSH key (one-time)
+ssh-keygen -t ed25519 -C "your.email@company.com"
+ssh-add ~/.ssh/id_ed25519
+# Add public key to GitLab: cat ~/.ssh/id_ed25519.pub
 
-# Run agent
-@omniscript-gitlab-automation-agent https://gitlab.com/company/omniscript-programs
+# (Optional) Set token only if you want automatic MR creation
+export GITLAB_DOCS_TOKEN="glpat-docs-yyyyyyyyyyyyyyyy"
+
+# Run agent with source repo URL and destination docs repo URL
+@omniscript-gitlab-automation-agent https://gitlab.com/company/omniscript-programs https://gitlab.com/company/docs-repo
 
 # Agent output:
 # ✓ Cloned repository to temp-repos/omniscript-programs/

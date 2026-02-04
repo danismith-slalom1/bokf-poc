@@ -11,14 +11,27 @@ Use this exact template structure when creating OMNISCRIPT program analysis docu
 
 ## Program Identification
 
+### Source Repository Information
+- **Source Repository URL**: [GitLab repository URL where source code resides]
+- **Repository Name**: [Extracted repository name]
+- **Branch**: [Branch being documented]
+- **Commit SHA**: [Specific commit being documented]
+- **Clone Path**: [Path where repository was cloned]
+
 ### Program Metadata
 - **Program ID**: [Program name]
+- **Source File Path**: [Path within source repository]
+- **Source File**: [Full path to OMNISCRIPT source file in clone]
 - **Author**: [From program comments if present]
 - **Date Written**: [From metadata if present]
 - **Date Modified**: [Most recent modification date if available]
-- **Source File**: [Full path to OMNISCRIPT source file]
 - **OMNISCRIPT Version**: [Interpreter version or dialect]
 - **Runtime Environment**: [Interpreter characteristics, platform requirements]
+
+### Documentation Repository Information
+- **Documentation Repository URL**: [Fixed GitLab repository URL]
+- **Documentation Branch**: [Branch created for this documentation]
+- **Documentation Path**: `${OMNISCRIPT_DOCS_OUTPUT_DIR}/{SOURCE-REPO-NAME}/{PROGRAM-NAME}/` (env var, default: `omniscript-documentation`)
 
 ### Program Purpose
 [Brief description of what this program does, based on comments or metadata]
@@ -200,7 +213,7 @@ When creating the program analysis document, ensure you:
 Save OMNISCRIPT program analysis documents as:
 `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_ANALYSIS.md`
 
-Where `${OMNISCRIPT_DOCS_DIR}` refers to `omniscript-documentation/{REPO-NAME}/{PROGRAM-NAME}/`
+Where `${OMNISCRIPT_DOCS_DIR}` refers to `${OMNISCRIPT_DOCS_OUTPUT_DIR}/{REPO-NAME}/{PROGRAM-NAME}/` (env var, default: `omniscript-documentation`)
 
 ## Mandatory Compliance
 
@@ -215,8 +228,8 @@ This template structure is **NON-NEGOTIABLE**. Agents must:
 
 ## Usage Notes
 
-- This document should be placed in `${OMNISCRIPT_DOCS_DIR}/` where `${OMNISCRIPT_DOCS_DIR}` = `omniscript-documentation/{REPO-NAME}/{PROGRAM-NAME}/`
+- This document should be placed in `${OMNISCRIPT_DOCS_DIR}/` where `${OMNISCRIPT_DOCS_DIR}` = `${OMNISCRIPT_DOCS_OUTPUT_DIR}/{REPO-NAME}/{PROGRAM-NAME}/` (env var, default: `omniscript-documentation`)
 - The program analysis is created in Phase 1.4
 - OMNISCRIPT experts must explicitly approve the analysis before proceeding to Phase 2
 - This template enforces mandatory compliance for consistent documentation
-- **Example path**: `omniscript-documentation/my-repo/PAYROLL/PAYROLL_ANALYSIS.md`
+- **Example path**: `${OMNISCRIPT_DOCS_OUTPUT_DIR}/my-repo/PAYROLL/PAYROLL_ANALYSIS.md` (typically: `omniscript-documentation/my-repo/PAYROLL/PAYROLL_ANALYSIS.md`)

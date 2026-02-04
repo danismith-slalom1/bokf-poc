@@ -192,8 +192,8 @@ Test all Mermaid diagrams to ensure they render correctly:
 
 ### Step 4: Embed in Documentation
 Include Mermaid code blocks in the appropriate location:
-- **Core diagrams**: Embed in `omniscript-documentation/{REPO-NAME}/{PROGRAM-NAME}/{PROGRAM-NAME}_OVERVIEW.md`
-- **Complex diagrams**: Place in `omniscript-documentation/{REPO-NAME}/{PROGRAM-NAME}/{PROGRAM-NAME}_DIAGRAMS.md`
+- **Core diagrams**: Embed in `${OMNISCRIPT_DOCS_OUTPUT_DIR}/{REPO-NAME}/{PROGRAM-NAME}/{PROGRAM-NAME}_OVERVIEW.md`
+- **Complex diagrams**: Place in `${OMNISCRIPT_DOCS_OUTPUT_DIR}/{REPO-NAME}/{PROGRAM-NAME}/{PROGRAM-NAME}_DIAGRAMS.md`
 
 ### Step 5: Cross-Reference
 Link diagrams from:

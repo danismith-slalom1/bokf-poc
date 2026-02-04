@@ -9,6 +9,30 @@ Use this exact template structure when creating OMNISCRIPT documentation plan do
 ```markdown
 # OMNISCRIPT Documentation Plan - [Program Name] - [Date]
 
+## Repository Configuration
+
+### Source Repository (OmniScript Code)
+- **Repository URL**: [Variable - provided by user]
+- **Branch**: [Usually main/master]
+- **Program Path**: [Path to OmniScript file within repository]
+- **Clone Location**: `/tmp/source-repo-[timestamp]`
+
+### Documentation Repository (Generated Docs)
+- **Repository URL**: [Fixed - from CONFIG.md]
+- **Branch**: `docs/{source-repo-name}/{program-name}-{date}`
+- **Target Directory**: `${OMNISCRIPT_DOCS_OUTPUT_DIR}/{source-repo-name}/{program-name}/` (env var, default: `omniscript-documentation`)
+- **Clone Location**: `/tmp/omniscript-docs-[timestamp]`
+
+### Git Operations Plan
+- [ ] Clone source repository
+- [ ] Verify program file exists
+- [ ] Clone documentation repository
+- [ ] Create documentation branch
+- [ ] [Generate documentation phases...]
+- [ ] Commit documentation
+- [ ] Push branch
+- [ ] Create merge request
+
 ## Program Summary
 - **Program**: [Program name]
 - **Complexity**: [Simple/Moderate/Complex]

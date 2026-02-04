@@ -75,29 +75,38 @@ Edit the `.env` file and add your credentials:
 
 ```bash
 # GitLab Authentication
-GITLAB_TOKEN=your-personal-access-token-here
+GITLAB_DOCS_TOKEN=your-docs-repo-token-here        # For API operations (merge requests)
 GITLAB_USERNAME=your.username
 GITLAB_EMAIL=your.email@company.com
+
+# Note: SSH keys (configured in Step 2) are used for git clone/push operations
+# No token needed for source repository access
 ```
 
 **How to get your GitLab Personal Access Token:**
 
+**GITLAB_DOCS_TOKEN (for API operations)**
 1. Log in to your GitLab account
 2. Go to **Settings** → **Access Tokens**
 3. Click **Add new token**
-4. Set the token name (e.g., "OmniScript Documentation Bot")
+4. Set the token name (e.g., "OmniScript Docs API")
 5. Select scopes: `api`, `read_repository`, `write_repository`
 6. Click **Create personal access token**
-7. Copy the token and add it to your `.env` file
+7. Copy the token and add it to your `.env` file as `GITLAB_DOCS_TOKEN`
+
+**Note:** SSH keys (configured in Step 2) handle all git operations (clone, push). The token is only needed for GitLab API calls like creating merge requests.
 
 **Alternative: Set Environment Variables in Your Shell**
 
 You can also add these to your shell profile (`~/.zshrc` or `~/.bashrc`):
 
 ```bash
-export GITLAB_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
+# GitLab API token for merge request creation
+export GITLAB_DOCS_TOKEN="glpat-xxxxxxxxxxxxxxxxxxxx"
 export GITLAB_USERNAME="your.username"
 export GITLAB_EMAIL="your.email@company.com"
+
+# Note: SSH keys handle git clone/push - no token needed for those operations
 ```
 
 Then reload your shell:
@@ -106,7 +115,41 @@ Then reload your shell:
 source ~/.zshrc  # or source ~/.bashrc
 ```
 
-### Step 2: GitHub Copilot Setup
+### Step 2: SSH Key Setup for GitLab
+
+Configure SSH key for GitLab access:
+
+```bash
+# 1. Generate SSH key (if you don't have one)
+ssh-keygen -t ed25519 -C "your.email@company.com" -f ~/.ssh/gitlab_ed25519
+
+# 2. Start ssh-agent and add your key
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/gitlab_ed25519
+
+# 3. Copy public key to clipboard (macOS)
+cat ~/.ssh/gitlab_ed25519.pub | pbcopy
+
+# 4. Add public key to GitLab:
+#    - Go to GitLab → Preferences → SSH Keys
+#    - Paste your public key
+#    - Give it a title (e.g., "Work Laptop")
+#    - Click "Add key"
+
+# 5. Test SSH connection
+ssh -T git@gitlab.com
+```
+
+### Step 3: Git Configuration
+
+Configure your Git identity:
+
+```bash
+git config --global user.email "your.email@company.com"
+git config --global user.name "Your Name"
+```
+
+### Step 4: GitHub Copilot Setup
 
 1. **Install GitHub Copilot Extension**
    - Open VS Code
@@ -123,7 +166,24 @@ source ~/.zshrc  # or source ~/.bashrc
    - Install "GitHub Copilot Chat" extension
    - Open Copilot Chat panel (Ctrl+Cmd+I on macOS)
 
-### Step 3: Verify Workspace Setup
+### Step 4: GitHub Copilot Setup
+
+1. **Install GitHub Copilot Extension**
+   - Open VS Code
+   - Go to Extensions (⌘+Shift+X on macOS)
+   - Search for "GitHub Copilot"
+   - Install the extension
+   - Sign in with your GitHub account
+
+2. **Verify Copilot is Active**
+   - Look for the Copilot icon in the status bar (bottom right)
+   - Should show "GitHub Copilot: Active"
+
+3. **Enable Copilot Chat**
+   - Install "GitHub Copilot Chat" extension
+   - Open Copilot Chat panel (Ctrl+Cmd+I on macOS)
+
+### Step 5: Verify Workspace Setup
 
 Ensure your workspace has the following structure:
 
@@ -254,15 +314,20 @@ bokf-poc/
 
 ### Common Issues
 
-**"GITLAB_TOKEN not found"**
+**"GITLAB_TOKEN not found" or "Token not found"**
 - Ensure `.env` file exists in workspace root
-- Verify `GITLAB_TOKEN` is set correctly
-- Try setting environment variables in shell profile
+- Verify `GITLAB_DOCS_TOKEN` is set
+- Try setting environment variable in shell profile
+- Token is only needed for merge request creation (API operations)
+- Git operations use SSH keys (no token needed)
 
 **"Authentication failed"**
-- Check that your GitLab token has required scopes: `api`, `read_repository`, `write_repository`
-- Verify token hasn't expired
-- Test token with: `curl -H "Authorization: Bearer $GITLAB_TOKEN" https://gitlab.com/api/v4/user`
+- For SSH operations: Verify SSH key is added to GitLab and ssh-agent
+  - Test: `ssh -T git@gitlab.com`
+- For API operations: Check that `GITLAB_DOCS_TOKEN` has required scopes
+  - Required scopes: `api`, `read_repository`, `write_repository`
+  - Verify token hasn't expired
+  - Test: `curl -H "Authorization: Bearer $GITLAB_DOCS_TOKEN" https://gitlab.com/api/v4/user`
 
 **"Branch already exists"**
 - The agent creates timestamped branches to avoid conflicts

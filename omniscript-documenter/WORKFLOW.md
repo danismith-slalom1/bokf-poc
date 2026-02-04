@@ -5,15 +5,22 @@ This document describes the step-by-step process for using AI to document OMNISC
 ## Overview
 
 The OMNISCRIPT Documentation Workflow transforms undocumented or poorly documented OMNISCRIPT programs into well-documented, maintainable codebases through a fully automated process by:
-1. Analyzing and chunking OMNISCRIPT program structure
-2. Performing static analysis to understand variable usage and program flow
-3. Iteratively documenting each component with AI-driven analysis
-4. Synthesizing comprehensive documentation with call graphs and cross-references
-5. Generating complete, production-ready documentation without requiring clarification
+1. Cloning source code from GitLab source repository
+2. Analyzing and chunking OMNISCRIPT program structure
+3. Performing static analysis to understand variable usage and program flow
+4. Iteratively documenting each component with AI-driven analysis
+5. Synthesizing comprehensive documentation with call graphs and cross-references
+6. Publishing documentation to GitLab documentation repository with merge request
+7. Generating complete, production-ready documentation without requiring clarification
 
-## 5-Phase Workflow
+## 7-Phase Workflow
 
 Execute these phases sequentially for each OmniScript program:
+
+0. **Phase 0: Repository Setup and Source Code Acquisition**
+   - Clone source repository from GitLab (variable URL per request)
+   - Clone documentation repository (fixed URL)
+   - Extract source metadata and verify program file
 
 1. **Phase 1: Program Analysis and Chunking**
    - Understand program structure, identify procedures and dependencies
@@ -42,6 +49,12 @@ Execute these phases sequentially for each OmniScript program:
    - Establish documentation repository
    - Define metrics and quality gates
 
+6. **Phase 6: Documentation Publishing to GitLab**
+   - Commit all documentation to documentation repository branch
+   - Push branch to GitLab
+   - Create merge request for expert review
+   - Cleanup temporary files
+
 **Key Principles**:
 - Use absolute paths for all file operations
 - Work autonomously without user prompts
@@ -50,14 +63,123 @@ Execute these phases sequentially for each OmniScript program:
 
 ## Documentation Directory
 
-**CRITICAL**: Throughout this workflow, `${OMNISCRIPT_DOCS_DIR}` refers to the `omniscript-documentation/{REPO-NAME}/{PROGRAM-NAME}/` directory structure at the project root. All program-specific documentation artifacts MUST be placed within the program's subdirectory under its repository folder, never at the project root level.
+**CRITICAL**: Throughout this workflow, `${OMNISCRIPT_DOCS_DIR}` refers to the `${OMNISCRIPT_DOCS_OUTPUT_DIR}/{SOURCE-REPO-NAME}/{PROGRAM-NAME}/` directory structure (where `${OMNISCRIPT_DOCS_OUTPUT_DIR}` defaults to `omniscript-documentation` but can be configured via environment variable). All program-specific documentation artifacts MUST be placed within the program's subdirectory under its source repository folder.
+
+**Working Directory Structure**:
+```
+/tmp/
+├── source-repo/              # Clone of source GitLab repository (variable URL)
+│   └── src/
+│       └── PROGRAM.cbl       # OmniScript source file
+│
+└── omniscript-docs/          # Clone of documentation GitLab repository (fixed URL)
+    └── ${OMNISCRIPT_DOCS_OUTPUT_DIR}/  # Configured via env var, defaults to 'omniscript-documentation'
+        └── {SOURCE-REPO-NAME}/
+            └── {PROGRAM-NAME}/
+                ├── PROGRAM_OVERVIEW.md
+                ├── PROGRAM_DATA_DICTIONARY.md
+                └── ...
+```
 
 **For complete directory structure and file naming conventions**, see [CONFIG.md](./CONFIG.md#output-directory-structure).
+
+## Phase 0: Repository Setup and Source Code Acquisition
+
+### 0.1 Clone Source Repository
+- **Objective**: Obtain OmniScript source code from GitLab source repository
+- **Actions**:
+  - Validate source repository URL provided by user
+  - Authenticate with GitLab using configured credentials
+  - Clone source repository to temporary working directory
+  - Checkout specified branch (default: `main`)
+  - Verify OmniScript program file exists in repository
+
+**Example Commands**:
+```bash
+# Clone using SSH (recommended)
+git clone git@gitlab.com:org/source-repo.git /tmp/source-repo
+
+# Checkout specific branch if needed
+cd /tmp/source-repo
+git checkout develop
+```
+
+**Validation**:
+- Repository cloned successfully
+- Program file exists at specified path
+- File is valid OmniScript code (check extension: .os, .cbl, .txt)
+
+### 0.2 Setup Documentation Repository
+- **Objective**: Prepare documentation repository for receiving generated documentation
+- **Actions**:
+  - Clone documentation repository from `$DOCS_REPOSITORY_URL` (configured in `.env`)
+  - Create new branch for this documentation effort
+  - Set up git user configuration from `$GIT_USER_NAME` and `$GIT_USER_EMAIL`
+  - Verify write access to documentation repository
+
+**Example Commands**:
+```bash
+# Load environment configuration
+source omniscript-documenter/.env
+
+# Clone documentation repository (using environment variable)
+git clone https://oauth2:${GITLAB_TOKEN}@${DOCS_REPOSITORY_URL#https://} ${WORK_DIR}/omniscript-docs
+
+cd ${WORK_DIR}/omniscript-docs
+
+# Configure git user (from environment variables)
+git config user.name "${GIT_USER_NAME}"
+git config user.email "${GIT_USER_EMAIL}"
+
+# Create and checkout new branch
+SOURCE_REPO_NAME=$(basename $(git -C ${WORK_DIR}/source-repo remote get-url origin) .git)
+PROGRAM_NAME="PAYROLL"
+BRANCH_NAME="docs/${SOURCE_REPO_NAME}/${PROGRAM_NAME}-$(date +%Y-%m-%d)"
+git checkout -b ${BRANCH_NAME}
+```
+
+**Output**:
+- Documentation repository cloned
+- New branch created following naming convention
+- Git configured for commits
+- Ready to receive documentation files
+
+### 0.3 Extract Source Information
+- **Objective**: Gather metadata about source repository and program
+- **Actions**:
+  - Extract source repository name from URL
+  - Identify program file name and location
+  - Record source repository URL, branch, commit SHA
+  - Store this metadata for inclusion in documentation
+
+**Metadata to Capture**:
+```yaml
+source_repository:
+  url: "https://gitlab.com/org/payroll-system.git"
+  name: "payroll-system"
+  branch: "main"
+  commit_sha: "abc123def456"
+  clone_path: "${WORK_DIR}/source-repo"
+  
+program:
+  filename: "PAYROLL-CALC.cbl"
+  filepath: "src/omniscript/PAYROLL-CALC.cbl"
+  name: "PAYROLL-CALC"
+  
+documentation_repository:
+  url: "${DOCS_REPOSITORY_URL}"  # From .env file
+  name: "omniscript-docs"
+  clone_path: "${WORK_DIR}/omniscript-docs"
+  branch: "docs/payroll-system/PAYROLL-CALC-2026-02-04"
+```
+
+**Deliverable**: Source metadata file stored in documentation repository for reference
 
 ## Phase 1: Program Analysis and Chunking
 
 ### 1.1 OMNISCRIPT Program Structure Analysis
 - **Objective**: Understand the OMNISCRIPT program's organization, procedures, and logical boundaries
+- **Source Location**: Program file cloned from source repository in Phase 0
 - **Actions**:
   - Identify program metadata (program name, purpose, main entry point)
   - Analyze procedure structure (main procedures, sub-procedures, functions)
@@ -396,7 +518,7 @@ For each variable:
 - Common pattern documentation using established templates
 - Cross-reference formatting and linking conventions
 
-**Auto-generate standards document**: `omniscript-documentation/DOCUMENTATION_STANDARDS.md` (at root level, shared across all programs) documenting:
+**Auto-generate standards document**: `${OMNISCRIPT_DOCS_OUTPUT_DIR}/DOCUMENTATION_STANDARDS.md` (at root level, shared across all programs) documenting:
 - Format conventions used in this documentation
 - Terminology definitions and usage
 - Documentation depth rationale
@@ -695,7 +817,7 @@ Create data flow visualizations for this OMNISCRIPT program:
    - When to create new documentation vs. update existing
    - How to handle deprecated code sections
 
-**Create maintenance guide**: `omniscript-documentation/MAINTENANCE_GUIDE.md` (at root level, shared across all programs)
+**Create maintenance guide**: `${OMNISCRIPT_DOCS_OUTPUT_DIR}/MAINTENANCE_GUIDE.md` (at root level, shared across all programs)
 
 **AI Prompt Template for Maintenance**:
 ```
@@ -886,6 +1008,13 @@ Documentation Validation Focus:
 - [ ] Documentation repository established
 - [ ] Metrics and quality gates implemented
 
+**Phase 6 Complete When**:
+- [ ] All documentation committed to documentation repository branch
+- [ ] Branch pushed to GitLab documentation repository
+- [ ] Merge request created with reviewers assigned
+- [ ] Source metadata included in commit messages
+- [ ] Temporary clones cleaned up
+
 ### Overall Success Indicators
 
 **Immediate Success**:
@@ -952,6 +1081,161 @@ Documentation Validation Focus:
 - Run automated validation on schedule to detect drift
 
 **Prevention**: Establish automated maintenance process in Phase 5
+
+## Phase 6: Documentation Publishing to GitLab
+
+### 6.1 Stage and Commit Documentation
+- **Objective**: Commit all generated documentation to the documentation repository branch
+- **Actions**:
+  - Stage all documentation files in `omniscript-documentation/{SOURCE-REPO-NAME}/{PROGRAM-NAME}/`
+  - Create commit with descriptive message following template from CONFIG.md
+  - Include source repository metadata in commit message
+
+**Example Commands**:
+```bash
+cd /tmp/omniscript-docs
+
+# Stage all documentation files
+git add omniscript-documentation/${SOURCE_REPO_NAME}/${PROGRAM_NAME}/
+
+# Commit with metadata
+git commit -m "docs(${PROGRAM_NAME}): Generate documentation from ${SOURCE_REPO_NAME}
+
+- Generated by omniscript-documenter v1.0
+- Source: ${SOURCE_REPO_URL}
+- Source Commit: ${SOURCE_COMMIT_SHA}
+- Program: ${PROGRAM_NAME}
+- Date: $(date -Iseconds)
+- Files Generated:
+  * OVERVIEW.md
+  * DATA_DICTIONARY.md
+  * CALL_GRAPH.md
+  * DIAGRAMS.md
+  * ERROR_HANDLING.md
+  * INTEGRATION_GUIDE.md
+  * BUSINESS_RULES.md
+  * CROSS_REFERENCE.md
+  * VALIDATION_REPORT.md
+  * procedures/*.md
+"
+```
+
+**Validation**:
+- All documentation files committed
+- Commit message follows template
+- No uncommitted changes remain
+
+### 6.2 Push Branch to Documentation Repository
+- **Objective**: Push the documentation branch to GitLab
+- **Actions**:
+  - Push branch to origin (documentation repository)
+  - Verify push was successful
+  - Capture branch URL for merge request
+
+**Example Commands**:
+```bash
+cd /tmp/omniscript-docs
+
+# Push branch to remote
+git push -u origin ${BRANCH_NAME}
+
+# Verify push
+git ls-remote --heads origin ${BRANCH_NAME}
+```
+
+**Output**:
+- Branch pushed to GitLab documentation repository
+- Branch visible in GitLab UI
+- Ready for merge request creation
+
+### 6.3 Create GitLab Merge Request
+- **Objective**: Create merge request for expert review before merging documentation
+- **Actions**:
+  - Use GitLab API to create merge request
+  - Apply merge request template from CONFIG.md
+  - Assign reviewers from configuration
+  - Apply labels for tracking
+  - Link to source repository in description
+
+**Example using GitLab API**:
+```bash
+# Create merge request using GitLab API
+curl --request POST \
+  --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "source_branch": "'"${BRANCH_NAME}"'",
+    "target_branch": "main",
+    "title": "Documentation: '"${PROGRAM_NAME}"' from '"${SOURCE_REPO_NAME}"'",
+    "description": "## Generated Documentation\n\n**Source Repository**: '"${SOURCE_REPO_URL}"'\n**OmniScript Program**: '"${PROGRAM_NAME}"'\n**Documentation Date**: '"$(date +%Y-%m-%d)"'\n\n### Documentation Generated\n- [x] Program Overview\n- [x] Data Dictionary\n- [x] Call Graph\n- [x] Procedures Documentation\n- [x] Diagrams\n\n### Review Checklist\n- [ ] Business logic accuracy verified\n- [ ] Variable purposes reviewed\n- [ ] Call relationships validated",
+    "labels": ["documentation", "omniscript", "automated"],
+    "assignee_ids": ['"${REVIEWER_IDS}"'],
+    "remove_source_branch": false
+  }' \
+  "https://gitlab.com/api/v4/projects/${PROJECT_ID}/merge_requests"
+```
+
+**Alternative: Using GitLab CLI (glab)**:
+```bash
+glab mr create \
+  --source-branch ${BRANCH_NAME} \
+  --target-branch main \
+  --title "Documentation: ${PROGRAM_NAME} from ${SOURCE_REPO_NAME}" \
+  --description-file /tmp/mr-description.md \
+  --label "documentation,omniscript,automated" \
+  --assignee @omniscript-expert \
+  --repo ${DOCS_REPO_URL}
+```
+
+**Output**:
+- Merge request created in documentation repository
+- Reviewers notified
+- URL to merge request displayed for tracking
+
+### 6.4 Cleanup Temporary Files
+- **Objective**: Remove temporary clones after successful push
+- **Actions**:
+  - Verify push was successful
+  - Verify merge request was created
+  - Remove source repository clone
+  - Remove documentation repository clone
+  - Preserve parser context file if needed
+
+**Example Commands**:
+```bash
+# Only cleanup if push was successful
+if [ $? -eq 0 ]; then
+  rm -rf /tmp/source-repo
+  rm -rf /tmp/omniscript-docs
+  echo "Cleanup complete"
+else
+  echo "Error: Push failed, preserving clones for debugging"
+fi
+```
+
+**Output**:
+- Temporary files removed
+- Merge request URL displayed
+- Documentation workflow complete
+
+---
+
+**WORKFLOW SUMMARY**:
+```
+Phase 0: Repository Setup
+  ├── Clone source repository (variable URL)
+  ├── Clone documentation repository (fixed URL)
+  └── Extract metadata
+
+Phase 1-5: [Existing documentation generation phases]
+  └── Generate all documentation files
+
+Phase 6: Publishing
+  ├── Commit documentation
+  ├── Push to documentation repository
+  ├── Create merge request
+  └── Cleanup
+```
 
 ## Best Practices Summary
 

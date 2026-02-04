@@ -1,504 +1,508 @@
 # GAP_NewLoanCash Error Handling Analysis
 
-## Program: GAP_NewLoanCash
-**Purpose**: Error handling assessment and risk analysis  
-**Last Updated**: 2026-02-03
+**Program**: GAP_NewLoanCash.cbl  
+**Last Updated**: February 4, 2026  
+**Purpose**: Document error handling strategies, risks, and mitigation approaches
 
 ---
 
-## Executive Summary
+## Error Handling Strategy Overview
 
-GAP_NewLoanCash implements **minimal explicit error handling**, relying primarily on:
-- OMNISCRIPT runtime error handling
-- Date validation with fallback logic
-- Idempotency protection via database field comparison
-- Parameter validation in subroutines
+The GAP_NewLoanCash program employs a **defensive programming** approach with:
+- Input validation for critical parameters
+- Fallback logic for environmental dependencies
+- Idempotency to handle re-runs safely
+- Conditional processing to skip invalid data
 
-**Risk Level**: MEDIUM - Program lacks comprehensive error handling for file I/O and database operations, though business logic includes protective measures.
+However, the program **lacks explicit error trapping** for:
+- Database connection failures
+- File I/O errors
+- Data type mismatches
+- Missing environment variables
 
 ---
 
 ## Implemented Error Handling
 
-### 1. Date Validation (Lines 22-28)
+### 1. Invalid Run Date Handling
 
-**Mechanism**: Validates RunDate and falls back to current date if invalid
+**Location**: Lines 22-28
 
+**Error Condition**: $RUN-DATE environment variable invalid or missing
+
+**Detection Method**:
 ```omniscript
-RunDate = octext_tonum(octext_getenv('$RUN-DATE'));
 if OcDate_Valid(RunDate);
-   SevenDaysAgo = OcDate_AddDays(RunDate -7);
-   LastBusiness = OcDate_AddBusDays(RunDate -1);
+```
+
+**Recovery Strategy**:
+```omniscript
 else;
    SevenDaysAgo = OcDate_AddDays(OcDate_Current() -7);
    LastBusiness = OcDate_AddBusDays(OcDate_Current() -1);
 end;
 ```
 
-**Error Handled**: Invalid or missing `$RUN-DATE` environment variable
+**Risk Level**: LOW
+- **Impact**: Uses current date instead of configured run date
+- **Business Impact**: May process slightly different date range than intended
+- **Mitigation**: Explicit date validation with automatic fallback
 
-**Recovery Action**: Use current date as fallback
-
-**Risk Mitigation**: ✓ Prevents program crash, allows processing to continue
-
-**Limitations**:
-- No logging of fallback usage
-- Silent failure may hide environment configuration issues
-- Different results if RunDate vs current date used
-
-**Recommendation**: Log when fallback is used for operational visibility
+**Recommendation**: ✅ Adequate - consider logging when fallback is used
 
 ---
 
-### 2. Parameter Validation in CHECK.SSSA (Line 60)
+### 2. Zero Secondary1Buys Optimization
 
-**Mechanism**: Validates parameters before database query
+**Location**: Line 37
 
+**Condition**: No loan activity on position record
+
+**Handling**:
 ```omniscript
-if (RKPlan <> '') and (TradeDate <> 0);
-   WK001 = 0;
-   sssaobj_view(PLAN:RKPlan SECURITYID:'POOLLOAN3' DATE:TradeDate);
-   [... processing ...]
-end;
-GOBACK;
+If (Secondary1Buys <> 0);
+   PERFORM 'CHECK.SSSA';
+End;
 ```
 
-**Error Prevented**: Invalid database query with null/empty parameters
+**Risk Level**: LOW
+- **Impact**: Skips unnecessary SSSA query
+- **Business Impact**: Performance optimization only
+- **Mitigation**: Explicit guard clause
 
-**Recovery Action**: Early exit from routine without processing
-
-**Risk Mitigation**: ✓ Prevents database errors from malformed queries
-
-**Side Effect**: `Secondary1Buys` remains unchanged (uses original value)
-
-**Recommendation**: Current implementation is appropriate for defensive programming
+**Recommendation**: ✅ Optimal - reduces database load
 
 ---
 
-### 3. Idempotency Protection (Line 40)
+### 3. Idempotency Protection
 
-**Mechanism**: Checks if record already processed to prevent duplicates
+**Location**: Line 40
 
+**Error Condition**: Attempting to process already-handled position
+
+**Detection Method**:
 ```omniscript
 if (PriorCashApplied <> Secondary1Buys) and (Secondary1Buys <> 0);
-   [... process and write C1 record ...]
-end;
 ```
 
-**Error Prevented**: Duplicate C1 activity records
+**Recovery Strategy**: Skip processing, move to next record
 
-**Recovery Action**: Skip already-processed records
+**Risk Level**: LOW
+- **Impact**: Prevents duplicate C1 records
+- **Business Impact**: Critical for data integrity on re-runs
+- **Mitigation**: Compare current value to previously processed value
 
-**Risk Mitigation**: ✓ Allows safe re-execution of program
-
-**Business Value**: HIGH - Critical for data integrity in batch processing
-
-**Recommendation**: No changes needed; robust implementation
+**Recommendation**: ✅ Excellent - essential idempotency pattern
 
 ---
 
-## Missing Error Handling (Risk Areas)
+### 4. CHECK.SSSA Parameter Validation
 
-### HIGH RISK: File Operations
+**Location**: Line 60
 
-#### Issue 1: File Open Failure (Line 19)
+**Error Condition**: Missing required parameters for SSSA query
+
+**Detection Method**:
 ```omniscript
-OcFile1_Open(name:FileName mode:'OUTPUT');
+if (RKPlan <> '') and (TradeDate <> 0);
 ```
 
-**Missing Error Handling**:
-- No check if file open succeeded
-- No handling for:
-  - Directory doesn't exist
-  - Permission denied
-  - Disk full
-  - Invalid path
+**Recovery Strategy**: Early exit via GOBACK without processing
 
-**Failure Impact**: 
-- Program crash
-- No C1 records generated
-- Silent failure (no output file created)
+**Risk Level**: MEDIUM
+- **Impact**: SSSA query skipped, uses original Secondary1Buys value
+- **Business Impact**: May use incorrect amount if SSSA data exists
+- **Mitigation**: Explicit parameter validation
 
-**Current Runtime Behavior**: Likely throws OMNISCRIPT runtime error
+**Recommendation**: ⚠️ Consider logging when parameters invalid - indicates data quality issue
 
-**Recommendation**: Add explicit error checking
+---
+
+## Unhandled Error Scenarios
+
+### CRITICAL RISKS
+
+#### 1. Database Connection Failures
+
+**Affected Operations**:
+- `poppobj_view()` (Line 31)
+- `sssaobj_view()` (Line 62)
+- `poppobj_update()` (Line 55)
+
+**Current Handling**: None - program assumes database availability
+
+**Potential Impact**:
+- **poppobj_view() failure**: No positions processed, zero C1 records (complete failure)
+- **sssaobj_view() failure**: Uses original Secondary1Buys (potentially incorrect amounts)
+- **poppobj_update() failure**: No idempotency tracking, duplicate C1s on re-run
+
+**Risk Level**: CRITICAL
+
+**Mitigation Strategies**:
+1. **Wrap in error handler**: Check return codes from database operations
+2. **Retry logic**: Implement connection retry with exponential backoff
+3. **Alerting**: Send notification on database connection failure
+4. **Logging**: Log failed queries with parameters for debugging
+
+**Recommended Code Enhancement**:
 ```omniscript
-if OcFile1_Open(name:FileName mode:'OUTPUT') = SUCCESS;
-   [... continue processing ...]
+/* Check if view succeeded */
+if poppobj_view(securityid:'POOLLOAN3' datelo:SevenDaysAgo datehi:LastBusiness);
+   loop while poppobj_next();
+      /* process records */
+   endloop;
 else;
-   OcShow('ERROR: Cannot open output file: ' FileName);
-   [... set error status and exit ...]
+   /* Log error and exit */
+   OcShow('ERROR: Failed to query position objects');
+   sd080 = 1;  /* Set error return code */
 end;
 ```
 
 ---
 
-#### Issue 2: File Write Failure (Line 53)
+#### 2. File I/O Failures
+
+**Affected Operations**:
+- `OcFile1_Open()` (Line 19)
+- `OcFile1_Write()` (Line 53)
+
+**Current Handling**: None - assumes file system availability
+
+**Potential Impact**:
+- **Open failure**: Program crashes or writes to wrong location
+- **Write failure**: Lost C1 records, incomplete reconciliation
+- **Disk full**: Partial file written, reconciliation data corrupted
+
+**Risk Level**: CRITICAL
+
+**Mitigation Strategies**:
+1. **Check open result**: Verify file opened successfully
+2. **Check write result**: Verify each write succeeded
+3. **Pre-flight check**: Verify $XDAT directory exists and is writable
+4. **Disk space check**: Verify sufficient space before processing
+5. **Atomic writes**: Write to temp file, rename on success
+
+**Recommended Code Enhancement**:
 ```omniscript
-OcFile1_Write(Line);
-```
-
-**Missing Error Handling**:
-- No check if write succeeded
-- No handling for:
-  - Disk full during write
-  - I/O error
-  - File system error
-
-**Failure Impact**:
-- Incomplete output file
-- Database updated but C1 record not written (data inconsistency)
-- Silent data loss
-
-**Current Runtime Behavior**: Likely throws OMNISCRIPT runtime error
-
-**Recommendation**: Add write verification
-```omniscript
-if OcFile1_Write(Line) = SUCCESS;
-   poppobj_setde(denum:877 value:Secondary1Buys);
-   poppobj_update();
+/* Verify file opened */
+if OcFile1_Open(name:FileName mode:'OUTPUT');
+   /* proceed */
 else;
-   OcShow('ERROR: Failed to write C1 record for Plan: ' RKPlan);
-   [... rollback or log error ...]
+   OcShow('ERROR: Failed to open output file: ' FileName);
+   sd080 = 2;
 end;
 ```
 
 ---
 
-### HIGH RISK: Database Operations
+#### 3. Missing Environment Variables
 
-#### Issue 3: Database Connection Failure
+**Affected Variables**:
+- `$XDAT` (Line 16)
+- `$RUN-DATE` (Line 21)
+
+**Current Handling**:
+- $XDAT: No validation - could be undefined
+- $RUN-DATE: Validated via OcDate_Valid(), has fallback
+
+**Potential Impact**:
+- **$XDAT undefined**: Filename constructed incorrectly, file written to wrong location
+- **$RUN-DATE invalid**: Handled via fallback (LOW risk)
+
+**Risk Level**: HIGH (for $XDAT)
+
+**Mitigation Strategies**:
+1. **Validate environment variables**: Check for undefined/empty values
+2. **Default values**: Provide sensible defaults if undefined
+3. **Pre-flight validation**: Check all required env vars at program start
+
+**Recommended Code Enhancement**:
 ```omniscript
-poppobj_view(securityid:'POOLLOAN3' datelo:SevenDaysAgo datehi:LastBusiness);
-sssaobj_view(PLAN:RKPlan SECURITYID:'POOLLOAN3' DATE:TradeDate);
+/* Validate $XDAT */
+x.XdatDir = OcText_GetEnv('$XDAT');
+if (x.XdatDir = '');
+   x.XdatDir = '/data/omniscript';  /* Default location */
+   OcShow('WARNING: $XDAT undefined, using default: ' x.XdatDir);
+end;
 ```
 
-**Missing Error Handling**:
-- No check if view operation succeeded
-- No handling for:
-  - Database unavailable
-  - Connection timeout
-  - Network error
-  - Invalid credentials
+---
 
-**Failure Impact**:
-- Program crash
-- No processing occurs
-- Zero output
+### HIGH RISKS
 
-**Current Runtime Behavior**: OMNISCRIPT runtime exception
+#### 4. Data Type Mismatches
 
-**Recommendation**: Add connection validation
+**Risk Areas**:
+- Numeric fields containing non-numeric data
+- Date fields with invalid date values
+- String fields exceeding expected length
+
+**Current Handling**: None - assumes clean data
+
+**Potential Impact**:
+- Calculation errors in CHECK.SSSA (WK001 accumulation)
+- Invalid C1 record formatting
+- Program crash on type coercion failure
+
+**Risk Level**: HIGH
+
+**Mitigation Strategies**:
+1. **Type validation**: Check field types before arithmetic operations
+2. **Range checks**: Validate amounts are within reasonable bounds
+3. **Data quality monitoring**: Track and alert on invalid data patterns
+
+**Recommended Code Enhancement**:
 ```omniscript
-if poppobj_view(securityid:'POOLLOAN3' datelo:SevenDaysAgo datehi:LastBusiness) = SUCCESS;
-   [... continue ...]
+/* Validate numeric fields */
+if OcNum_Valid(Secondary1Buys) and (Secondary1Buys >= 0);
+   /* proceed */
 else;
-   OcShow('ERROR: Cannot connect to POPP database');
-   [... exit with error code ...]
+   OcShow('WARNING: Invalid Secondary1Buys value: ' Secondary1Buys ' for plan: ' RKPlan);
+   /* Skip this record */
 end;
 ```
 
 ---
 
-#### Issue 4: Database Update Failure (Line 55)
+#### 5. Missing SSSA Records
+
+**Scenario**: Position has Secondary1Buys but no corresponding SSSA records
+
+**Current Handling**: WK001 remains 0, Secondary1Buys set to 0 (implicit)
+
+**Potential Impact**:
+- No C1 record generated (because Secondary1Buys becomes 0)
+- Cash reconciliation incomplete
+- Unreported discrepancy between position and settlement
+
+**Risk Level**: HIGH
+
+**Mitigation Strategies**:
+1. **Log missing SSSA**: Alert when position has activity but no SSSA records
+2. **Exception report**: Generate report of positions with missing SSSA
+3. **Business rule**: Decide if missing SSSA should use position value or skip
+
+**Recommended Code Enhancement**:
 ```omniscript
-poppobj_setde(denum:877 value:Secondary1Buys);
-poppobj_update();
-```
-
-**Missing Error Handling**:
-- No check if update succeeded
-- No handling for:
-  - Record lock conflict
-  - Constraint violation
-  - Transaction rollback
-
-**Failure Impact**:
-- Record not marked as processed
-- Re-run creates duplicate C1 records
-- Idempotency broken
-
-**Current Runtime Behavior**: OMNISCRIPT runtime exception
-
-**Recommendation**: Add update verification
-```omniscript
-poppobj_setde(denum:877 value:Secondary1Buys);
-if poppobj_update() = SUCCESS;
-   [... continue ...]
-else;
-   OcShow('ERROR: Failed to update position for Plan: ' RKPlan);
-   [... consider compensating transaction ...]
-end;
-```
-
----
-
-### MEDIUM RISK: Environment Variables
-
-#### Issue 5: Missing Environment Variables
-```omniscript
-FileName = OcText_string(OCTEXT_GETENV('$XDAT') '\OTDALY.OMNISCRIPT.C1.NEWLOANOFFSET.' ...);
-```
-
-**Missing Error Handling**:
-- No check if `$XDAT` exists or is empty
-- Falls back gracefully for `$RUN-DATE` but not for `$XDAT`
-
-**Failure Impact**:
-- Invalid file path
-- File created in wrong location
-- Path construction error
-
-**Current Runtime Behavior**: May create file in unexpected location or fail
-
-**Recommendation**: Validate environment variables
-```omniscript
-XDAT_PATH = octext_getenv('$XDAT');
-if XDAT_PATH = '' or XDAT_PATH = NULL;
-   OcShow('ERROR: $XDAT environment variable not set');
-   [... exit with error ...]
-end;
-```
-
----
-
-### LOW RISK: Data Validation
-
-#### Issue 6: Field Data Type Assumptions
-```omniscript
-Secondary1Buys = poppobj_numde(741);
-NewLoanUnits = 0 - Secondary1Buys;
-```
-
-**Missing Error Handling**:
-- No validation that field 741 contains valid numeric data
-- No handling for NULL or invalid values
-- No range checking (negative values, extreme values)
-
-**Failure Impact**:
-- Arithmetic errors
-- Incorrect C1 amounts
-- Invalid output records
-
-**Current Runtime Behavior**: Depends on OMNISCRIPT type coercion
-
-**Recommendation**: Add data validation
-```omniscript
-Secondary1Buys = poppobj_numde(741);
-if Secondary1Buys = NULL or Secondary1Buys < 0;
-   OcShow('WARNING: Invalid Secondary1Buys for Plan: ' RKPlan ' TradeDate: ' TradeDate);
-   [... skip or use default value ...]
-end;
-```
-
----
-
-## Runtime Error Scenarios
-
-### Scenario Matrix
-
-| Scenario | Probability | Impact | Current Handling | Recommended Action |
-|----------|-------------|--------|------------------|-------------------|
-| File open failure | Low | HIGH | Runtime error | Add explicit check + error logging |
-| Disk full during write | Low | HIGH | Runtime error | Add write validation + disk space check |
-| Database unavailable | Low | HIGH | Runtime error | Add connection check + retry logic |
-| Database update failure | Low | HIGH | Runtime error | Add update validation + transaction rollback |
-| Invalid RunDate | Medium | LOW | Fallback to current date | Add logging of fallback |
-| Missing $XDAT | Low | MEDIUM | Unpredictable path | Add environment validation |
-| Missing $RUN-DATE | Medium | LOW | Fallback to current date | Add logging |
-| Invalid field data | Low | MEDIUM | Type coercion | Add data validation |
-| Record lock conflict | Low | MEDIUM | Runtime error | Add retry logic with backoff |
-| Network timeout | Low | HIGH | Runtime error | Add timeout handling + retry |
-| Zero records found | High | NONE | Natural completion | No action needed |
-| Empty CHECK.SSSA result | Medium | NONE | WK001 = 0 | No action needed |
-
----
-
-## Error Recovery Strategies
-
-### Recommended Enhancements
-
-#### 1. Structured Error Handling Framework
-```omniscript
-sd080 = 0;  /* Success status */
-ERROR_CODE = 0;
-
-/* File operations */
-if OcFile1_Open(name:FileName mode:'OUTPUT') <> SUCCESS;
-   ERROR_CODE = 1001;
-   OcShow('ERROR ' ERROR_CODE ': Cannot open file: ' FileName);
-   PERFORM 'ERROR.EXIT';
-end;
-
-/* Database operations */
-if poppobj_view(...) <> SUCCESS;
-   ERROR_CODE = 2001;
-   OcShow('ERROR ' ERROR_CODE ': Database connection failed');
-   PERFORM 'ERROR.EXIT';
-end;
-
-ROUTINE 'ERROR.EXIT';
-   sd080 = ERROR_CODE;
-   [... cleanup operations ...]
-   [... close files ...]
-   [... set exit status ...]
-   EXIT;
-GOBACK;
-```
-
-#### 2. Operational Logging
-```omniscript
-LOG_LEVEL = octext_getenv('$LOG_LEVEL');  /* INFO, WARN, ERROR */
-
-ROUTINE 'LOG.INFO';
-   if LOG_LEVEL >= 'INFO';
-      OcShow('[INFO] ' LOG_MESSAGE);
+ROUTINE 'CHECK.SSSA';
+if (RKPlan <> '') and (TradeDate <> 0);
+   WK001 = 0;
+   n.RecordCount = 0;
+   sssaobj_view(PLAN:RKPlan SECURITYID:'POOLLOAN3' DATE:TradeDate);
+   loop while sssaobj_next();
+      n.RecordCount = n.RecordCount + 1;
+      /* process records */
+   endloop;
+   if (n.RecordCount = 0) and (Secondary1Buys <> 0);
+      OcShow('WARNING: No SSSA records found for plan: ' RKPlan ' date: ' TradeDate ' amount: ' Secondary1Buys);
    end;
-GOBACK;
-
-ROUTINE 'LOG.ERROR';
-   OcShow('[ERROR] ' LOG_MESSAGE);
-   /* Write to error log file */
-GOBACK;
-```
-
-#### 3. Transaction Consistency
-```omniscript
-/* Ensure C1 write and database update are atomic */
-OcFile1_Write(Line);
-WRITE_STATUS = OcFile1_Status();  /* Check status */
-
-if WRITE_STATUS = SUCCESS;
-   poppobj_setde(denum:877 value:Secondary1Buys);
-   if poppobj_update() = SUCCESS;
-      RECORDS_PROCESSED = RECORDS_PROCESSED + 1;
-   else;
-      /* Compensating action: Remove C1 record or log inconsistency */
-      OcShow('WARNING: C1 written but DB update failed for Plan: ' RKPlan);
-   end;
-else;
-   OcShow('ERROR: File write failed, skipping DB update for Plan: ' RKPlan);
+   Secondary1Buys = WK001;
 end;
+GOBACK;
 ```
 
 ---
 
-## Monitoring and Alerting
+### MEDIUM RISKS
+
+#### 6. Concurrent Execution
+
+**Scenario**: Multiple instances of program running simultaneously
+
+**Current Handling**: None - no locking mechanism
+
+**Potential Impact**:
+- File name collisions (LOW - timestamp provides uniqueness)
+- Duplicate C1 records if both instances process before UDF1 updates
+- Database contention on position updates
+
+**Risk Level**: MEDIUM
+
+**Mitigation Strategies**:
+1. **File locking**: Use lock file to prevent concurrent execution
+2. **Timestamp granularity**: Current timestamp to seconds provides uniqueness
+3. **Scheduler control**: Ensure batch scheduler prevents concurrent runs
+4. **Database locking**: Rely on database row-level locks during update
+
+---
+
+#### 7. Incomplete SSSA Data
+
+**Scenario**: SSSA records not yet fully loaded when program runs
+
+**Current Handling**: None - assumes SSSA data complete
+
+**Potential Impact**:
+- Incorrect netting calculations (missing recent SELLS)
+- Cash reconciliation inaccurate
+- Must be re-run after SSSA loading completes
+
+**Risk Level**: MEDIUM
+
+**Mitigation Strategies**:
+1. **Dependency management**: Ensure SSSA loading completes before program runs
+2. **Timestamp checks**: Validate SSSA data freshness
+3. **Batch sequencing**: Schedule program after SSSA load job
+
+---
+
+## Error Handling Maturity Assessment
+
+| Category | Current State | Recommended State | Gap |
+|----------|---------------|-------------------|-----|
+| **Input Validation** | Partial (dates only) | Comprehensive | HIGH |
+| **Database Errors** | None | Explicit handling | CRITICAL |
+| **File I/O Errors** | None | Explicit handling | CRITICAL |
+| **Data Quality** | Implicit (skip on conditions) | Explicit validation + logging | HIGH |
+| **Error Logging** | Minimal (OcShow only) | Structured logging | MEDIUM |
+| **Error Recovery** | Fallback (dates) | Retry + alerting | HIGH |
+| **Alerting** | None | Critical error alerts | HIGH |
+
+---
+
+## Recommended Error Handling Enhancements
+
+### Priority 1: Critical
+
+1. **Add database error checking**:
+   - Validate poppobj_view() success
+   - Validate poppobj_update() success
+   - Log and alert on failures
+
+2. **Add file I/O error checking**:
+   - Validate OcFile1_Open() success
+   - Validate OcFile1_Write() success
+   - Check $XDAT directory exists
+
+3. **Implement structured error logging**:
+   - Log to error file (not just OcShow)
+   - Include timestamp, program name, error details
+   - Capture full context (plan, date, amounts)
+
+### Priority 2: High
+
+4. **Add data validation**:
+   - Validate numeric fields before arithmetic
+   - Check date field validity
+   - Validate string lengths
+
+5. **Implement missing SSSA detection**:
+   - Log when position has activity but no SSSA records
+   - Generate exception report
+
+6. **Add environment variable validation**:
+   - Check $XDAT defined and valid path
+   - Provide defaults or fail gracefully
+
+### Priority 3: Medium
+
+7. **Add concurrent execution protection**:
+   - Implement lock file mechanism
+   - Detect and prevent concurrent runs
+
+8. **Implement retry logic**:
+   - Retry database operations on transient failures
+   - Exponential backoff strategy
+
+9. **Add monitoring metrics**:
+   - Count records processed
+   - Count records skipped
+   - Count C1 records generated
+   - Track processing time
+
+---
+
+## Error Logging Standards
+
+### Proposed Log Format
+
+```
+[TIMESTAMP] [LEVEL] [PROGRAM] [PLAN] [MESSAGE]
+```
+
+### Log Levels
+
+- **ERROR**: Critical failures requiring intervention
+- **WARN**: Recoverable issues requiring investigation
+- **INFO**: Normal processing events
+- **DEBUG**: Detailed diagnostic information
+
+### Example Log Entries
+
+```
+[2026-02-04 14:30:52] ERROR GAP_NewLoanCash - Failed to open output file: /data/OTDALY.OMNISCRIPT.C1.NEWLOANOFFSET.20260204.143052.DAT
+[2026-02-04 14:31:15] WARN GAP_NewLoanCash ABC123 No SSSA records found for plan: ABC123 date: 20260204 amount: 100000.00
+[2026-02-04 14:31:16] INFO GAP_NewLoanCash ABC123 Generated C1 record for plan: ABC123 amount: 75000.00
+```
+
+---
+
+## Operational Monitoring
 
 ### Key Metrics to Track
 
-1. **Success Indicators**
-   - Records processed count
-   - C1 records written count
-   - Database updates completed count
-   - Execution time
+1. **Success Rate**: % of runs completing without errors
+2. **Record Counts**:
+   - Position records queried
+   - Position records with activity
+   - C1 records generated
+   - Position records skipped (already processed)
+3. **Processing Time**: Duration of batch run
+4. **Error Counts**: By error type
+5. **Data Quality**: Count of validation failures
 
-2. **Error Indicators**
-   - File operation failures
-   - Database connection errors
-   - Update failures
-   - Data validation failures
+### Alert Conditions
 
-3. **Business Metrics**
-   - Positions found in date range
-   - Positions already processed (skipped)
-   - Positions with reversals
-   - Total loan amount processed
-
-### Recommended Log Output
-```
-[INFO] GAP_NewLoanCash started: 2024-01-15 02:00:00
-[INFO] RunDate: 20240115, SevenDaysAgo: 20240108, LastBusiness: 20240114
-[INFO] Output file: /data/OTDALY.OMNISCRIPT.C1.NEWLOANOFFSET.20240115.020000.DAT
-[INFO] Querying POOLLOAN3 positions...
-[INFO] Found 47 position records
-[INFO] Processing record 1/47: Plan ABC123, TradeDate 20240112
-[INFO] Reversal check called for Plan ABC123
-[INFO] C1 record written, database updated
-[INFO] Processing record 2/47: Plan DEF456, TradeDate 20240113
-[INFO] Record already processed (skipped)
-...
-[INFO] Processing complete
-[INFO] Summary: 47 found, 12 processed, 35 skipped, 0 errors
-[INFO] GAP_NewLoanCash completed: 2024-01-15 02:03:27 (207 seconds)
-```
+1. **Database connection failure** → Page on-call
+2. **File write failure** → Page on-call
+3. **Zero C1 records generated** (when activity expected) → Email alert
+4. **High rate of missing SSSA records** → Email alert
+5. **Processing time > threshold** → Email alert
 
 ---
 
-## Validation Report
+## Disaster Recovery
 
-### Current State Assessment
+### Recovery Procedures
 
-| Category | Status | Risk Level | Notes |
-|----------|--------|-----------|-------|
-| Date Validation | ✓ Implemented | LOW | Fallback logic present |
-| Parameter Validation | ✓ Implemented | LOW | CHECK.SSSA validates inputs |
-| Idempotency | ✓ Implemented | LOW | Robust duplicate prevention |
-| File Open | ✗ Missing | HIGH | No error checking |
-| File Write | ✗ Missing | HIGH | No error checking |
-| Database Connection | ✗ Missing | HIGH | No error checking |
-| Database Update | ✗ Missing | HIGH | No error checking |
-| Environment Variables | ~ Partial | MEDIUM | RunDate validated, XDAT not |
-| Data Validation | ✗ Missing | MEDIUM | No field value validation |
-| Error Logging | ✗ Missing | MEDIUM | Limited to OcShow calls |
-| Transaction Consistency | ✗ Missing | HIGH | No atomicity guarantee |
+**Scenario 1: Program crashes mid-run**
+- **Detection**: No output file created or file incomplete
+- **Recovery**: 
+  1. Fix underlying issue (database, disk space, etc.)
+  2. Re-run program
+  3. Idempotency prevents duplicate C1 records
 
-**Overall Assessment**: Program has good business logic protection (idempotency, date validation) but lacks comprehensive technical error handling for I/O and database operations.
+**Scenario 2: Duplicate C1 records generated**
+- **Detection**: Manual review or reconciliation reports
+- **Root Cause**: poppobj_update() failed to mark records as processed
+- **Recovery**:
+  1. Identify duplicate C1 records
+  2. Manually mark position records (set UDF1 = Secondary1Buys)
+  3. Re-run program to process remaining positions only
 
----
-
-## Testing Recommendations
-
-### Error Scenario Test Cases
-
-1. **File System Errors**
-   - Remove write permissions on $XDAT directory
-   - Fill disk to 100% during processing
-   - Set $XDAT to non-existent path
-
-2. **Database Errors**
-   - Stop database service during execution
-   - Lock position records externally
-   - Introduce constraint violations in POPP table
-
-3. **Environment Errors**
-   - Unset $XDAT environment variable
-   - Unset $RUN-DATE environment variable
-   - Set $RUN-DATE to invalid format
-
-4. **Data Errors**
-   - Insert NULL values in field 741
-   - Insert negative values in field 741
-   - Insert extremely large values (overflow test)
-
-5. **Network Errors**
-   - Simulate network timeout
-   - Disconnect network during database query
-   - Throttle network bandwidth
+**Scenario 3: Incorrect C1 amounts**
+- **Detection**: Cash reconciliation discrepancies
+- **Root Cause**: SSSA data incomplete or incorrect
+- **Recovery**:
+  1. Investigate SSSA data quality
+  2. Correct SSSA records
+  3. Reset position UDF1 fields to 0
+  4. Re-run program
 
 ---
 
-## Priority Recommendations
+## Questions for Expert Review
 
-### Immediate Actions (High Priority)
-1. Add file open error checking
-2. Add file write error checking
-3. Add database update validation
-4. Implement transaction consistency (write + update atomicity)
-
-### Short-Term Actions (Medium Priority)
-5. Add environment variable validation
-6. Implement structured error logging
-7. Add data validation for field values
-8. Create error code framework
-
-### Long-Term Actions (Low Priority)
-9. Add retry logic for transient failures
-10. Implement comprehensive operational logging
-11. Add performance monitoring
-12. Create error recovery procedures
+1. **Error Handling Standards**: What are organizational standards for OMNISCRIPT error handling?
+2. **Database Error Codes**: What error codes does OMNISCRIPT return for database failures?
+3. **File I/O Return Codes**: How to check success of OcFile1_Open() and OcFile1_Write()?
+4. **Logging Infrastructure**: Is there a centralized logging system for OMNISCRIPT programs?
+5. **Alerting**: What alerting mechanisms are available (email, paging, etc.)?
+6. **Missing SSSA Policy**: Should program skip positions with missing SSSA or use original value?
+7. **Concurrent Execution**: Are there existing lock file patterns in use?
 
 ---
 
-*This error handling analysis was generated through comprehensive code review and risk assessment.*  
-*Last Updated*: 2026-02-03
+**Review Status**: Generated by automated analysis - **REQUIRES EXPERT VALIDATION** of error handling requirements and organizational standards
+
+**Generated**: February 4, 2026
