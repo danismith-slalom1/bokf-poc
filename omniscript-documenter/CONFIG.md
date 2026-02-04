@@ -190,31 +190,15 @@ omniscript-documentation/
 
 ## Quality Gates
 
-**Quality Assessment Template**: Use `templates/CODE_QUALITY_ASSESSMENT.template.md` for standardized quality gate evaluation.
-
 - **Coverage Requirements**:
   - Minimum % of procedures documented: [100% for critical, variable for others]
   - Minimum % of data structures documented: [100% recommended]
   - Call graph completeness: [All procedure call relationships mapped]
-  - **Quality assessment completion**: [Required for mission-critical, recommended for all production code]
-
-- **Quality Gate Criteria** (from CODE_QUALITY_ASSESSMENT template):
-  - **PASS Criteria**: No CRITICAL risks, HIGH risks mitigated, error handling present, input validation present
-  - **PASS WITH WARNINGS**: Some HIGH/MEDIUM risks with documented mitigation plans
-  - **FAIL**: Any CRITICAL security/operational risk, hardcoded credentials, injection vulnerabilities, missing error handling
 
 - **Review Requirements**:
   - Expert approval required: [Yes/No by program type]
   - Peer review required: [Yes/No by program type]
-  - **Security team review**: [Required for programs with CRITICAL/HIGH security findings]
-  - **Operations team review**: [Required for programs with CRITICAL/HIGH operational risks]
   - Documentation update lag: [Maximum days between code change and doc update]
-
-- **Pre-Production Requirements**:
-  - Quality assessment must be performed: [Yes/No by program type]
-  - Quality gate status must be PASS or PASS WITH WARNINGS: [Yes/No]
-  - All CRITICAL findings remediated: [Yes/No]
-  - Remediation roadmap approved: [Yes/No]
 
 ## Maintenance Process
 
