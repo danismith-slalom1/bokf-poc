@@ -90,7 +90,6 @@ omniscript-documentation/
 - **See**: WORKFLOW.md Phase 3.1 for validation process
 
 ### Comprehensive Code Quality Assessment
-- **Template**: [CODE_QUALITY_ASSESSMENT.template.md](./templates/CODE_QUALITY_ASSESSMENT.template.md)
 - **When to use**: After Phase 5 completion, or standalone for existing code
 - **Scope**: Security, operational risk, best practices, quality gates (Sections A-F)
 - **Output file**: `{PROGRAM}_QUALITY_ASSESSMENT.md`
