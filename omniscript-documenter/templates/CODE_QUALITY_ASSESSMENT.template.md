@@ -175,11 +175,11 @@ Analyze potential runtime error scenarios and their handling:
 
 ---
 
-## Section B: OmniScript/COBOL Best Practices Assessment
+## Section B: OmniScript Best Practices Assessment
 
 **Objective**: Evaluate adherence to language-specific best practices and identify anti-patterns.
 
-### B.1 OmniScript-Specific Quality Checks
+### OmniScript-Specific Quality Checks
 
 #### API Usage Patterns
 | API/Function | Usage Location | Pattern Quality | Issue | Recommendation |
@@ -233,44 +233,57 @@ Analyze potential runtime error scenarios and their handling:
 - **Read/Write Patterns**: [Efficient/Inefficient]
 - **Transaction Management**: [Present/Missing]
 
-### B.2 COBOL-Specific Quality Checks
+### Test Coverage Assessment
 
-**Note**: Apply only if program contains COBOL code or interacts with COBOL programs.
+**Objective**: Evaluate the completeness and quality of test coverage for the OmniScript program.
 
-#### GOTO Usage Analysis
-- **Total GOTO Statements**: [Count]
-- **Assessment**: [Acceptable / Excessive / Anti-pattern]
+#### Test Inventory
+| Test Type | Coverage | Location | Adequacy | Gaps |
+|-----------|----------|----------|----------|------|
+| Unit Tests | [%] | [Location] | [Adequate/Inadequate] | [Description] |
+| Integration Tests | [%] | [Location] | [Adequate/Inadequate] | [Description] |
+| Error Scenario Tests | [%] | [Location] | [Adequate/Inadequate] | [Description] |
+| Boundary Tests | [%] | [Location] | [Adequate/Inadequate] | [Description] |
 
-| GOTO Location | Target | Justification | Refactoring Opportunity |
-|--------------|--------|---------------|------------------------|
-| Lines [X-Y] | [Label] | [Reason or "None"] | [Yes/No - Suggestion] |
+#### Critical Path Coverage
+- **Critical Operations Tested**: [%]
+- **Error Paths Tested**: [%]
+- **Edge Cases Covered**: [List or count]
 
-#### PERFORM Best Practices
-- **PERFORM Usage**: [Structured/Mixed/Unstructured]
-- **Paragraph Organization**: [Well-organized/Needs improvement]
+#### Test Quality Assessment
+| Aspect | Status | Risk Level | Recommendation |
+|--------|--------|------------|----------------|
+| Test Existence | [Present/Missing] | [Level] | [Action] |
+| Test Completeness | [Complete/Partial] | [Level] | [Action] |
+| Test Maintainability | [Good/Poor] | [Level] | [Action] |
+| Mock/Stub Quality | [Adequate/Inadequate] | [Level] | [Action] |
 
-| Issue Type | Location | Current Pattern | Best Practice | Priority |
-|-----------|----------|-----------------|---------------|----------|
-| [Issue] | Lines [X-Y] | [Description] | [Recommendation] | [HIGH/MEDIUM/LOW] |
+#### OmniScript Configuration Management
+- **Configuration Externalization**: [Yes/No/Partial]
+- **Environment-Specific Settings**: [Properly managed/Hardcoded]
+- **Secret Management**: [Secure/Insecure]
 
-#### Data Division Organization
-- **Organization Quality**: [Excellent/Good/Fair/Poor]
-- **Logical Grouping**: [Present/Inconsistent/Missing]
-- **Naming Conventions**: [Consistent/Inconsistent]
+| Configuration Item | Location | Method | Security Risk | Recommendation |
+|-------------------|----------|--------|---------------|----------------|
+| [Item] | Lines [X-Y] | [Hardcoded/External] | [Level] | [Action] |
 
-#### File Handling
-- **OPEN/CLOSE Sequences**: [Proper/Improper]
-- **Error Checking**: [Comprehensive/Partial/Missing]
+#### Data Element Usage
+- **Data Element Validation**: [Comprehensive/Partial/Missing]
+- **Type Safety**: [Strong/Weak]
+- **Null Handling**: [Consistent/Inconsistent]
 
-| File Operation | Location | Issue | Risk | Recommendation |
-|---------------|----------|-------|------|----------------|
-| [Operation] | Lines [X-Y] | [Issue or "None"] | [Level] | [Action] |
+| Data Element | Location | Validation Present | Issue | Recommendation |
+|--------------|----------|-------------------|-------|----------------|
+| [Element] | Lines [X-Y] | [Yes/No/Partial] | [Issue or "None"] | [Action] |
 
-#### WORKING-STORAGE Efficiency
-- **Memory Footprint**: [Optimal/Acceptable/Excessive]
-- **Redef Usage**: [Appropriate/Questionable]
-- **01-Level Organization**: [Well-structured/Needs improvement]
+#### Integration Patterns - OmniScript Specific
+- **Remote Procedure Calls**: [Best practice/Needs improvement]
+- **Data Transformation**: [Efficient/Inefficient]
+- **Error Propagation**: [Proper/Improper]
 
+| Integration Point | Location | Pattern Quality | Issue | Best Practice |
+|------------------|----------|-----------------|-------|---------------|
+| [Call/Integration] | Lines [X-Y] | [Optimal/Suboptimal] | [Issue or "None"] | [Recommendation] |
 ---
 
 ## Section C: Security and Safety Assessment
@@ -334,6 +347,48 @@ Analyze potential runtime error scenarios and their handling:
 - **Data Retention**: [Compliant/Non-compliant]
 - **Access Logging**: [Present/Missing]
 
+### C.5 OmniScript-Specific Security Controls
+
+**Objective**: Assess security controls specific to OmniScript implementations and integrations.
+
+#### Integration Security
+- **Remote Procedure Call Security**: [✅ Secure / ⚠️ Needs Review / ❌ Insecure]
+  - Authentication on external calls: [Present/Missing]
+  - Authorization checks: [Present/Missing]
+  - Timeout handling: [Present/Missing]
+  - Retry logic security: [Safe/Unsafe]
+
+#### Configuration Security
+- **Configuration Management**: [✅ Externalized / ⚠️ Partially Hardcoded / ❌ Hardcoded]
+- **Environment-Specific Values**: [Properly managed/Hardcoded]
+- **Secret Management**: [Secure vault/Config files/Hardcoded]
+
+| Configuration Type | Location | Storage Method | Risk Level | Recommendation |
+|-------------------|----------|----------------|------------|----------------|
+| Database credentials | Lines [X-Y] | [Method] | [Level] | [Action] |
+| API keys | Lines [X-Y] | [Method] | [Level] | [Action] |
+| Service endpoints | Lines [X-Y] | [Method] | [Level] | [Action] |
+| Environment flags | Lines [X-Y] | [Method] | [Level] | [Action] |
+
+#### Data Element Security
+- **Data Element Access Control**: [✅ Present / ❌ Missing]
+- **Sensitive Data Handling**: [Encrypted/Masked/Plain text]
+- **Data Element Validation**: [Comprehensive/Partial/Missing]
+
+| Data Element | Sensitivity | Protection Method | Risk | Recommendation |
+|--------------|-------------|-------------------|------|----------------|
+| [Element] | [High/Medium/Low] | [Method or "None"] | [Level] | [Action] |
+
+#### OmniScript-Specific Vulnerabilities
+- **Deprecated API Usage**: [Count] deprecated APIs with security implications
+- **Integration Point Exposure**: [Assessment of external call security]
+- **Data Transformation Risks**: [Injection risks during data mapping]
+
+| Vulnerability Type | Location | Description | Severity | Mitigation |
+|-------------------|----------|-------------|----------|------------|
+| [Type] | Lines [X-Y] | [Details] | [🔴/🟠/🟡] | [Action] |
+
+---
 ---
 
 ## Section D: Operational Risk Assessment
@@ -446,11 +501,6 @@ For each major section or procedure, provide detailed assessment:
   - **Recommendation**: [Specific action]
   - **Effort**: [Estimate]
 
-##### COBOL-Specific (if applicable):
-- ❌ [Violation description] (Location: Lines [X-Y])
-  - **Recommendation**: [Specific action]
-  - **Effort**: [Estimate]
-
 **Performance Impact**:
 - **Current Complexity**: [O(n), O(n²), etc.]
 - **Potential Improvement**: [O(n), etc.]
@@ -513,6 +563,14 @@ For each major section or procedure, provide detailed assessment:
 - [ ] No input validation on user-provided data
 - [ ] Data corruption risk identified
 - [ ] System crash scenarios without handling
+
+#### OmniScript-Specific Quality Gates
+- [ ] No deprecated OmniScript APIs in use (or migration plan documented)
+- [ ] All external integrations have timeout handling
+- [ ] Configuration externalized (no hardcoded environment-specific values)
+- [ ] Data element validation present for all user inputs
+- [ ] Integration error handling follows OmniScript patterns
+- [ ] Remote procedure calls have proper authentication/authorization
 
 ### F.2 Quality Gate Determination
 
@@ -633,7 +691,11 @@ B. BEST PRACTICES ASSESSMENT
    - OmniScript API usage patterns
    - Integration patterns (external calls, parameters, return codes)
    - Performance patterns (loops, string ops, file I/O)
-   - COBOL patterns (if applicable): GOTO usage, PERFORM, file handling
+   - Performance optimization opportunities
+   - Configuration management (externalization, secrets, environment settings)
+   - Data element usage and validation patterns
+   - OmniScript-specific integration patterns
+   - Test coverage assessment (unit, integration, error scenarios, boundaries)
 
 C. SECURITY ASSESSMENT
    - Critical risks: hardcoded credentials, injection vulnerabilities
@@ -711,6 +773,13 @@ FAIL CRITERIA (any triggers failure):
 - Missing file error handling
 - No input validation
 - Data corruption risk
+
+OMNISCRIPT-SPECIFIC CRITERIA:
+- Deprecated APIs without migration plan
+- Missing timeout handling on integrations
+- Hardcoded configuration values
+- Missing data element validation
+- Improper integration error handling
 
 Provide:
 - Quality gate status (✅ PASS / ⚠️ PASS WITH WARNINGS / ❌ FAIL)
