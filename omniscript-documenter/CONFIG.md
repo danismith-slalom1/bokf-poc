@@ -190,8 +190,6 @@ omniscript-documentation/
 
 ## Quality Gates
 
-<!-- EDGAR_CHANGE: UPDATED - Enhanced quality gates to reference CODE_QUALITY_ASSESSMENT template -->
-
 **Quality Assessment Template**: Use `templates/CODE_QUALITY_ASSESSMENT.template.md` for standardized quality gate evaluation.
 
 - **Coverage Requirements**:
