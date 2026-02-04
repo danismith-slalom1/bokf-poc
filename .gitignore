@@ -1,2 +1,5 @@
 temp-repos/
 .DS_Store
+
+# Environment variables
+.env
