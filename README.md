@@ -140,7 +140,34 @@ cat ~/.ssh/gitlab_ed25519.pub | pbcopy
 ssh -T git@gitlab.com
 ```
 
-### Step 3: Git Configuration
+### Step 3: Generate Access Token for Documentation Repository
+
+Create a project access token for the documentation repository:
+
+```bash
+# 1. Navigate to your documentation repository in GitLab
+#    Example: https://gitlab.com/your-org/omniscript-documentation
+
+# 2. Go to Settings → Access Tokens
+
+# 3. Create a new project access token:
+#    - Token name: "OmniScript Documentation Automation"
+#    - Role: Developer
+#    - Scopes: Select ALL scopes
+#    - Expiration date: Set as needed (or no expiration)
+
+# 4. Click "Create project access token"
+
+# 5. Copy the generated token and add it to your .env file as GITLAB_DOCS_TOKEN
+```
+
+**Important Notes:**
+- The role must be **Developer** to allow pushing branches and creating merge requests
+- Select **all scopes** to ensure the token has sufficient permissions
+- This token is specifically for the documentation repository where generated docs will be pushed
+- Store the token securely - you won't be able to see it again after creation
+
+### Step 4: Git Configuration
 
 Configure your Git identity:
 
@@ -313,13 +340,6 @@ bokf-poc/
 ## Troubleshooting
 
 ### Common Issues
-
-**"GITLAB_TOKEN not found" or "Token not found"**
-- Ensure `.env` file exists in workspace root
-- Verify `GITLAB_DOCS_TOKEN` is set
-- Try setting environment variable in shell profile
-- Token is only needed for merge request creation (API operations)
-- Git operations use SSH keys (no token needed)
 
 **"Authentication failed"**
 - For SSH operations: Verify SSH key is added to GitLab and ssh-agent

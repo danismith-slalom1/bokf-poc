@@ -123,7 +123,7 @@ git checkout develop
 source omniscript-documenter/.env
 
 # Clone documentation repository (using environment variable)
-git clone https://oauth2:${GITLAB_TOKEN}@${DOCS_REPOSITORY_URL#https://} ${WORK_DIR}/omniscript-docs
+git clone https://oauth2:${GITLAB_DOCS_TOKEN}@${DOCS_REPOSITORY_URL#https://} ${WORK_DIR}/omniscript-docs
 
 cd ${WORK_DIR}/omniscript-docs
 
@@ -1161,7 +1161,7 @@ git ls-remote --heads origin ${BRANCH_NAME}
 ```bash
 # Create merge request using GitLab API
 curl --request POST \
-  --header "PRIVATE-TOKEN: ${GITLAB_TOKEN}" \
+  --header "PRIVATE-TOKEN: ${GITLAB_DOCS_TOKEN}" \
   --header "Content-Type: application/json" \
   --data '{
     "source_branch": "'"${BRANCH_NAME}"'",

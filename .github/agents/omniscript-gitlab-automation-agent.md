@@ -70,23 +70,28 @@ SSH-first authentication approach:
 
 ### Phase 1: Repository Setup
 1. Parse GitLab URL to extract: `gitlab-host`, `owner`, `repo`, `branch`
-2. Clone source repository using SSH to `temp-repos/{repo-name}/`
+2. Clone source repository using SSH to `temp-repos/{repo-name}/` (ALWAYS use git clone, NEVER fetch URL directly)
 3. Clone documentation repository using SSH (if separate repo provided)
 4. Configure Git user (from env vars or global config)
-5. Create feature branch in docs repo: `docs/omniscript-documentation-{timestamp}`
+5. Create feature branch in docs repo: `docs/{repo-name}-documentation-{timestamp}`
 6. Checkout feature branch
 
+**Important:** ALWAYS use `git clone` to access source code. Do NOT attempt to fetch URLs directly with web tools as they may return authentication errors (403). SSH git clone operations handle authentication properly.
+
 ### Phase 2: Documentation Generation
-1. Identify all OmniScript files (*.os, *.omniscript, *.omni)
-2. Read `omniscript-documenter/WORKFLOW.md` for complete process
-3. Execute all 5 phases for each OmniScript file:
+1. Read source files from cloned repository (use file read tools, NOT web fetch)
+2. Identify all source files to document (*.os, *.omniscript, *.omni, *.cbl, *.cobol, etc.)
+3. Read `omniscript-documenter/WORKFLOW.md` for complete process
+4. Execute all 5 phases for each source file:
    - Phase 1: Initial Analysis
    - Phase 2: Data Structure Documentation
    - Phase 3: Comprehensive Documentation
    - Phase 4: Diagram Generation
    - Phase 5: Index & Summary
-4. Follow standard output structure from `omniscript-documenter/CONFIG.md`
-5. Generate completion report: `omniscript-documentation/DOCUMENTATION_REPORT.md`
+5. Follow standard output structure from `omniscript-documenter/CONFIG.md`
+6. Generate completion report: `DOCUMENTATION_REPORT.md`
+
+**Critical:** All source code must be read from the cloned repository directory using file read operations. Do NOT use web/fetch tools to retrieve source code.
 
 ### Phase 3: Git Operations
 1. Stage all generated documentation files
@@ -95,7 +100,24 @@ SSH-first authentication approach:
 4. Push feature branch to GitLab remote
 
 ### Phase 4: Merge Request Creation
-1. If GITLAB_DOCS_TOKEN is available:
+
+**CRITICAL: Load Environment Variables First**
+Before attempting to create merge requests via GitLab API, you MUST load environment variables from the workspace `.env` file:
+
+```bash
+# Load .env file to access GITLAB_DOCS_TOKEN
+source /path/to/workspace/.env
+```
+
+The `.env` file contains:
+- `GITLAB_DOCS_TOKEN` - Required for GitLab API authentication
+- `GITLAB_USERNAME` - GitLab username
+- `GITLAB_EMAIL` - GitLab email
+- `GITLAB_HOST` - GitLab host (defaults to gitlab.com)
+
+**Workflow:**
+1. **Load .env file**: Always source the `.env` file before checking token availability
+2. If GITLAB_DOCS_TOKEN is available (after loading .env):
    - Extract project ID from GitLab API
    - Create merge request via GitLab REST API with:
      - Source branch: feature branch
@@ -104,7 +126,7 @@ SSH-first authentication approach:
      - Description: Summary of generated documentation with file list
      - Labels: `documentation`, `automated`
    - Return merge request URL to user
-2. If GITLAB_DOCS_TOKEN is NOT available:
+3. If GITLAB_DOCS_TOKEN is NOT available (even after loading .env):
    - Provide instructions for manual MR creation
    - Display GitLab URL for creating MR
    - Show branch name and suggested title/description
@@ -113,17 +135,16 @@ SSH-first authentication approach:
 
 ### Documentation Location
 ```
-omniscript-documentation/
-  {REPO-NAME}/
-    {PROGRAM-NAME}/
-      {PROGRAM-NAME}_INDEX.md
-      {PROGRAM-NAME}_DATA_DICTIONARY.md
-      {PROGRAM-NAME}_COMPREHENSIVE_DOC.md
-      {PROGRAM-NAME}_CALL_GRAPH.md
-      {PROGRAM-NAME}_MERMAID_DIAGRAMS.md
-      procedures/
-        {PROCEDURE_NAME}_DOC.md
-  DOCUMENTATION_REPORT.md
+{REPO-NAME}/
+  {PROGRAM-NAME}/
+    {PROGRAM-NAME}_INDEX.md
+    {PROGRAM-NAME}_DATA_DICTIONARY.md
+    {PROGRAM-NAME}_COMPREHENSIVE_DOC.md
+    {PROGRAM-NAME}_CALL_GRAPH.md
+    {PROGRAM-NAME}_MERMAID_DIAGRAMS.md
+    procedures/
+      {PROCEDURE_NAME}_DOC.md
+DOCUMENTATION_REPORT.md
 ```
 
 ### Git Branch Structure
@@ -148,19 +169,38 @@ git config user.name "${GITLAB_USERNAME:-$(git config --global user.name)}"
 git config user.email "${GITLAB_EMAIL:-$(git config --global user.email)}"
 
 # 4. Create feature branch
-git checkout -b docs/omniscript-documentation-{timestamp}
+git checkout -b docs/{repo-name}-documentation-{timestamp}
 
-# 5. Generate documentation in omniscript-documentation/ directory
+# 5. Analyze source code (read from cloned repository, NEVER use web fetch)
 
-# 6. Stage and commit
-git add omniscript-documentation/
-git commit -m "docs: Add OmniScript documentation for {count} programs"
+# 6. Generate documentation in {REPO-NAME}/ directory
 
-# 7. Push via SSH
-git push -u origin docs/omniscript-documentation-{timestamp}
+# 7. Stage and commit
+git add {REPO-NAME}/
+git commit -m "docs: Add {language} documentation for {count} programs"
+
+# 8. Push via SSH
+git push -u origin docs/{repo-name}-documentation-{timestamp}
 ```
 
+**Note on Source Code Access:**
+- ALWAYS read source files from the cloned repository using file read operations
+- NEVER attempt to fetch source code via HTTP/web URLs
+- Web fetching fails with 403 errors due to authentication requirements
+- Git clone with SSH handles authentication correctly
+
 ### GitLab API Integration
+
+**IMPORTANT: Environment Variable Loading**
+All GitLab API calls require loading the `.env` file first to access the `GITLAB_DOCS_TOKEN`:
+
+```bash
+# Step 1: Load environment variables (REQUIRED)
+source .env
+
+# Step 2: Use token in API calls
+curl --header "PRIVATE-TOKEN: $GITLAB_DOCS_TOKEN" ...
+```
 
 **Base URL:**
 ```
@@ -169,23 +209,32 @@ https://{gitlab-host}/api/v4
 
 **Get Project ID:**
 ```bash
-GET /projects/{owner}%2F{repo}
-Authorization: Bearer ${GITLAB_DOCS_TOKEN}
+# Load .env first!
+source .env
+
+# Then make API call
+curl -s --header "PRIVATE-TOKEN: $GITLAB_DOCS_TOKEN" \
+  "https://gitlab.com/api/v4/projects/{owner}%2F{repo}"
 ```
 
 **Create Merge Request:**
 ```bash
-POST /projects/{project_id}/merge_requests
-Authorization: Bearer ${GITLAB_DOCS_TOKEN}
-Content-Type: application/json
+# Load .env first!
+source .env
 
-{
-  "source_branch": "docs/omniscript-documentation-{timestamp}",
-  "target_branch": "main",
-  "title": "docs: Add OmniScript documentation for {count} programs",
-  "description": "## Generated Documentation\n\n- Processed {count} OmniScript files\n- Generated comprehensive documentation\n- Created call graphs and diagrams\n\n### Files Documented\n{file-list}",
-  "labels": ["documentation", "automated"],
-  "remove_source_branch": false
+# Then create merge request
+curl --request POST \
+  --header "PRIVATE-TOKEN: $GITLAB_DOCS_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{
+    "source_branch": "docs/omniscript-documentation-{timestamp}",
+    "target_branch": "main",
+    "title": "docs: Add OmniScript documentation for {count} programs",
+    "description": "## Generated Documentation\n\n- Processed {count} OmniScript files\n- Generated comprehensive documentation\n- Created call graphs and diagrams\n\n### Files Documented\n{file-list}",
+    "labels": ["documentation", "automated"],
+    "remove_source_branch": false
+  }' \
+  "https://gitlab.com/api/v4/projects/{project_id}/merge_requests"
 }
 ```
 
