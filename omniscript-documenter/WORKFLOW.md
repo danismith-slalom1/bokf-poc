@@ -206,31 +206,59 @@ Explain:
 - Keep context window manageable (<4000 tokens per request)
 - Document called procedures before calling procedures when possible
 
-### 2.3 Error Handling Overview
+### 2.3 Document Error Handling and Risk Analysis
+**Critical Priority**: Document error handling mechanisms and identify risks
 
-**Objective**: Identify error handling patterns during procedure documentation for detailed assessment.
+**Error Handling Documentation Requirements**:
+1. **Error Status Analysis**:
+   - Identify all error handling mechanisms (try-catch, status codes, error flags)
+   - Document expected status codes and handling procedures
+   - Note operations without error checking
+   - Document recovery procedures for errors
 
-**Quick Error Handling Check During Documentation**:
-As you document each procedure, make note of:
-- Presence or absence of error handling (try-catch, status checks, error flags)
-- File operations that may fail (OPEN, READ, WRITE)
-- External calls without return code validation
-- Input validation gaps
-- Resource limits and potential overflow conditions
+2. **Runtime Error Scenarios**:
+   - File not found or access denied
+   - Invalid data format or type mismatch
+   - Buffer overflow conditions
+   - Division by zero or arithmetic errors
+   - String overflow in concatenation operations
+   - Array index out of bounds
 
-**Forward Reference**:
-For comprehensive error handling analysis, security assessment, and operational risk evaluation, refer to the **CODE_QUALITY_ASSESSMENT** template (templates/CODE_QUALITY_ASSESSMENT.template.md). This comprehensive template covers:
+3. **Resource Limit Documentation**:
+   - Maximum file sizes supported
+   - Buffer size limitations and overflow risks
+   - Array bounds and size limits
+   - Memory usage patterns
+   - Token/record count limits
 
-- **Section A: Error Handling Analysis** - Detailed error handling mechanisms, runtime scenarios, resource limits, input validation, and risk assessment
-- **Section C: Security Assessment** - Security vulnerabilities and safety risks
-- **Section D: Operational Risk Assessment** - Operational risks and impact analysis
+4. **Input Validation**:
+   - File path validation and sanitization
+   - Data format validation
+   - Range checking on numeric fields
+   - Special character handling
 
-**When to Perform Comprehensive Assessment**:
-- After completing all procedure documentation (Phase 4)
-- Before production deployment
-- For mission-critical or high-complexity programs
+5. **Risk Assessment**:
+   - High Risk: No error handling, buffer overflows possible
+   - Medium Risk: Limited validation, missing error recovery
+   - Low Risk: Comprehensive error handling implemented
 
-**Note**: Brief error handling observations should be included in individual procedure documentation. The comprehensive quality assessment provides enterprise-level risk analysis and quality gates.
+**Create error handling document**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_ERROR_HANDLING.md`
+
+**AI Prompt Template**:
+```
+Analyze this OMNISCRIPT program for error handling and risks:
+
+1. Identify all error handling mechanisms
+2. List all file operations and their error handling
+3. Document buffer sizes and overflow risks
+4. Identify input validation mechanisms
+5. List potential runtime error scenarios
+6. Assess risk level (High/Medium/Low) for each category
+7. Recommend error handling improvements
+
+[Insert program source]
+[Insert file I/O procedures]
+```
 
 ### 2.4 Create Call Graphs (Call Relationships)
 
@@ -272,7 +300,7 @@ For comprehensive error handling analysis, security assessment, and operational 
 - ARRAY-PROCESSING: Loop over array elements
 ```
 
-### 2.5 Identify Global Variable Mutation Patterns
+### 2.4 Identify Global Variable Mutation Patterns
 **Fourth Documentation Priority**: Track state changes across the program
 
 **Process**:
@@ -750,97 +778,6 @@ omniscript-documentation/
 
 **Create metrics dashboard**: Track and visualize documentation health over time
 
-## Comprehensive Code Quality Assessment (Use Independent Template)
-
-**When to Perform**: After completing phases 1-5, or as standalone assessment for existing code.
-
-**Template Location**: `templates/CODE_QUALITY_ASSESSMENT.template.md`
-
-**Purpose**: Perform comprehensive code quality, security, and operational risk assessment following industry standards and best practices for production-ready code validation.
-
-### Assessment Scope
-
-The CODE_QUALITY_ASSESSMENT template provides structured analysis across six critical dimensions:
-
-**Section A: Error Handling Analysis**
-- Comprehensive error handling mechanisms inventory
-- Runtime error scenario analysis
-- Resource limits and buffer overflow assessment
-- Input validation evaluation
-- Risk categorization (Critical/High/Medium/Low)
-
-**Section B: OmniScript/COBOL Best Practices**
-- API usage patterns and deprecated feature detection
-- Integration patterns (external calls, parameters, return codes)
-- Performance patterns (loops, string operations, file I/O)
-- COBOL-specific checks (GOTO usage, PERFORM, file handling, WORKING-STORAGE)
-
-**Section C: Security and Safety Assessment**
-- 🔴 Critical security risks (hardcoded credentials, injection vulnerabilities, path traversal, auth bypass)
-- 🟠 High security risks (missing validation, info disclosure, insecure file handling, race conditions)
-- 🟡 Medium security risks (weak sanitization, insufficient logging, deprecated crypto)
-- Security posture summary and compliance checklist
-
-**Section D: Operational Risk Assessment**
-- 🔴 Critical operational risks (data corruption, crashes, unrecoverable errors, silent data loss)
-- 🟠 High operational risks (performance degradation, resource exhaustion, error recovery gaps)
-- 🟡 Medium operational risks (suboptimal patterns, minor leaks, maintainability issues)
-- 🟢 Low risks and ⚪ informational findings
-
-**Section E: Code Quality Scoring**
-- Overall quality metrics (0-100 scores with grades A-F)
-- Per-procedure quality assessment cards
-- Best practice violations with specific recommendations
-- Performance impact analysis
-- Security posture evaluation
-- Prioritized remediation roadmap
-
-**Section F: Automated Quality Gate Checks**
-- Pass/Fail/Pass-with-Warnings determination
-- Deployment readiness recommendation
-- Compliance checklist (regulatory, internal standards, production readiness)
-- Blocking issues identification
-
-### Integration with Documentation Workflow
-
-**Phase 2.3 Reference**: Error handling observations during procedure documentation reference Section A of quality assessment template for comprehensive analysis.
-
-**Phase 4 Integration**: Link quality assessment from master index and comprehensive documentation.
-
-**Pre-Production Gate**: Mandatory quality assessment before production deployment for mission-critical programs.
-
-**Output Document**: Create `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_QUALITY_ASSESSMENT.md`
-
-### When to Use Quality Assessment
-
-**Mandatory For**:
-- Mission-critical programs before production deployment
-- Programs handling sensitive data or financial transactions
-- Programs with external integrations
-- Compliance and audit requirements
-
-**Recommended For**:
-- All production-bound code
-- Major version releases
-- After significant refactoring
-- Periodic security reviews
-
-**Optional For**:
-- Simple utility programs with limited scope
-- Internal development tools
-- Proof-of-concept code
-
-### Quick Reference: Assessment Priority by Program Type
-
-| Program Type | Assessment Scope | Sections Required | Quality Gate |
-|-------------|------------------|-------------------|--------------|
-| **Mission-Critical** | Comprehensive (A-F) | All sections mandatory | ✅ Must PASS |
-| **Standard Business Logic** | Standard (A, C, D, F) | Core sections + gate | ✅/⚠️ PASS or PASS WITH WARNINGS |
-| **Utility Programs** | Targeted (A, D, F) | Error handling + risks + gate | ⚠️ Can PASS WITH WARNINGS |
-| **Internal Tools** | Optional | As needed | Not required |
-
-**For detailed instructions and template structure**, refer to `templates/CODE_QUALITY_ASSESSMENT.template.md`.
-
 ## Decision Trees
 
 ### Chunking Strategy Decision Tree
@@ -920,10 +857,10 @@ Documentation Validation Focus:
 
 **Phase 2 Complete When**:
 - [ ] Data dictionary completed for all variables (with buffer limits documented)
-- [ ] Each procedure documented individually (with brief error handling notes included)
+- [ ] Each procedure documented individually (with error handling and performance notes)
 - [ ] Call graph created showing all call relationships
 - [ ] Variable mutation patterns identified and documented
-  
+- [ ] **Error handling analysis completed with risk assessment**
 
 **Phase 3 Complete When**:
 - [ ] Automated validation has analyzed all documentation
@@ -946,32 +883,18 @@ Documentation Validation Focus:
 - [ ] Documentation repository established
 - [ ] Metrics and quality gates implemented
 
-
-**Comprehensive Quality Assessment Complete When** (Using CODE_QUALITY_ASSESSMENT Template):
-- [ ] Code quality assessment performed using template (templates/CODE_QUALITY_ASSESSMENT.template.md)
-- [ ] Error handling comprehensively analyzed (Template Section A)
-- [ ] Best practices evaluated for OmniScript/COBOL (Template Section B)
-- [ ] Security vulnerabilities identified and categorized (Template Section C)
-- [ ] Operational risks assessed with priority levels (Template Section D)
-- [ ] Quality scoring completed for all major procedures (Template Section E)
-- [ ] Quality gate status determined (PASS/PASS WITH WARNINGS/FAIL) (Template Section F)
-- [ ] Remediation roadmap created with effort estimates and priorities
-- [ ] Quality assessment document created: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_QUALITY_ASSESSMENT.md`
-- [ ] Quality assessment linked from master index and comprehensive documentation
-- [ ] Expert security/operations team review completed (for mission-critical programs)
-
 ### Overall Success Indicators
 
 **Immediate Success**:
-- Documentation covers all program components
+- Documentation covers all program components (including error handling, performance, testing)
 - Automated validation passes with high confidence scores
 - Documentation is clear, complete, and self-consistent
 - Documentation integrated into development workflow
-- **Comprehensive quality assessment completed (using CODE_QUALITY_ASSESSMENT template)**
-- **Quality gate determination made (PASS/PASS WITH WARNINGS/FAIL)**
-- **Security vulnerabilities identified and prioritized**
-- **Operational risks assessed with mitigation plans**
-- **Remediation roadmap created for all critical/high priority findings**
+- **Risk assessment completed for all file operations and buffers**
+- **Performance bottlenecks identified and documented**
+- **Testing scenarios comprehensive (standard, edge, error cases)**
+- **Integration contracts fully specified**
+- **Business rules explicitly documented**
 
 **Long-term Success**:
 - Documentation automatically updates with code changes
