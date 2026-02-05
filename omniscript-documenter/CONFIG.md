@@ -89,6 +89,12 @@ omniscript-documentation/
 - **Output file**: `{PROGRAM}_ERROR_HANDLING.md`
 - **See**: WORKFLOW.md Phase 3.1 for validation process
 
+### Comprehensive Code Quality Assessment
+- **When to use**: After Phase 5 completion, or standalone for existing code
+- **Scope**: Security, operational risk, best practices, quality gates (Sections A-F)
+- **Output file**: `{PROGRAM}_QUALITY_ASSESSMENT.md`
+- **See**: WORKFLOW.md "Comprehensive Code Quality Assessment" section
+
 ### Integration Documentation (MANDATORY)
 - **Document all external calls**: **YES** (REQUIRED)
 - **Entry point contract**: **Always** (REQUIRED)

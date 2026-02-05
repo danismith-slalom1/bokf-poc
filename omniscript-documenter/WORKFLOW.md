@@ -171,6 +171,40 @@ generate a comprehensive data dictionary entry for each data item. Include:
    - Data dictionary entries for variables used
    - Call hierarchy showing callers and callees
    - Related static analysis (conditional logic, I/O operations)
+3. **Generate procedure documentation**:
+   - Purpose and function of the procedure
+   - Input requirements (expected state, parameters)
+   - Processing steps with business logic explanation
+   - Output and side effects (variables modified, files updated)
+   - Error handling mechanisms and recovery procedures
+   - Performance characteristics (loops, string operations, I/O)
+   - Edge cases and boundary conditions
+   - Security considerations (input validation, resource limits)
+   - Error handling and edge cases
+   - Dependencies on other procedures
+4. **Create individual procedure document**: `${OMNISCRIPT_DOCS_DIR}/procedures/[PROCEDURE-NAME].md`
+
+**AI Prompt Template**:
+```
+Document this OMNISCRIPT procedure with the following context:
+- Data dictionary for variables used: [link]
+- Call hierarchy: [link to callers/callees]
+- Static analysis: [relevant analysis]
+
+Explain:
+1. What this procedure does (business purpose)
+2. Step-by-step processing logic
+3. Variables it reads and modifies
+4. How it fits into the overall program flow
+5. Any error conditions or special handling
+
+[Insert procedure source code]
+```
+
+**Chunking Guidance**:
+- Document 1-3 related procedures per AI interaction
+- Keep context window manageable (<4000 tokens per request)
+- Document called procedures before calling procedures when possible
 
 ### 2.3 Document Error Handling and Risk Analysis
 **Critical Priority**: Document error handling mechanisms and identify risks
@@ -225,44 +259,9 @@ Analyze this OMNISCRIPT program for error handling and risks:
 [Insert program source]
 [Insert file I/O procedures]
 ```
-   
-3. **Generate procedure documentation**:
-   - Purpose and function of the procedure
-   - Input requirements (expected state, parameters)
-   - Processing steps with business logic explanation
-   - Output and side effects (variables modified, files updated)
-   - Error handling mechanisms and recovery procedures
-   - Performance characteristics (loops, string operations, I/O)
-   - Edge cases and boundary conditions
-   - Security considerations (input validation, resource limits)
-   - Error handling and edge cases
-   - Dependencies on other procedures
 
-4. **Create individual procedure document**: `${OMNISCRIPT_DOCS_DIR}/procedures/[PROCEDURE-NAME].md`
+### 2.4 Create Call Graphs (Call Relationships)
 
-**AI Prompt Template**:
-```
-Document this OMNISCRIPT procedure with the following context:
-- Data dictionary for variables used: [link]
-- Call hierarchy: [link to callers/callees]
-- Static analysis: [relevant analysis]
-
-Explain:
-1. What this procedure does (business purpose)
-2. Step-by-step processing logic
-3. Variables it reads and modifies
-4. How it fits into the overall program flow
-5. Any error conditions or special handling
-
-[Insert procedure source code]
-```
-
-**Chunking Guidance**:
-- Document 1-3 related procedures per AI interaction
-- Keep context window manageable (<4000 tokens per request)
-- Document called procedures before calling procedures when possible
-
-### 2.3 Create Call Graphs (Call Relationships)
 **Third Documentation Priority**: Map program control flow
 
 **Process**:
@@ -862,8 +861,6 @@ Documentation Validation Focus:
 - [ ] Call graph created showing all call relationships
 - [ ] Variable mutation patterns identified and documented
 - [ ] **Error handling analysis completed with risk assessment**
-- [ ] **Performance analysis completed with bottleneck identification**
-- [ ] **Testing guide created with edge cases and scenarios**
 
 **Phase 3 Complete When**:
 - [ ] Automated validation has analyzed all documentation

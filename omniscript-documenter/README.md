@@ -9,7 +9,8 @@ Transform undocumented or poorly documented OMNISCRIPT programs into comprehensi
 **🎯 Key Features**: 
 - **Deterministic Grammar Parser** for accurate language analysis
 - **Mandatory Mermaid Diagrams** for visual program understanding
-- **Enhanced Documentation** including error handling, performance analysis, testing guides, integration docs, and business rules extraction
+- **Comprehensive Code Quality Assessment** with security, operational risk analysis, and automated quality gates (🔴 Critical / 🟠 High / 🟡 Medium risk ratings)
+- Enhanced documentation including error handling, performance analysis, testing guides, integration docs, and business rules extraction
 
 ## Quick Start
 
@@ -75,7 +76,16 @@ After documenting an OMNISCRIPT program, you will have:
   See [MERMAID_GUIDE.md](./MERMAID_GUIDE.md) for complete diagram generation instructions.
 
 ### Enhanced Documentation (Automatically Generated)
-Based on program criticality configured in CONFIG.md, the following additional documentation is generated:
+
+**Comprehensive Code Quality Assessment** ⭐ using standardized template ([CODE_QUALITY_ASSESSMENT.template.md](./templates/CODE_QUALITY_ASSESSMENT.template.md)):
+- **Section A: Error Handling Analysis** - Error status handling, runtime scenarios, resource limits, input validation, risk assessment
+- **Section B: Best Practices Assessment** - OmniScript API usage, integration patterns, performance patterns, deprecated features
+- **Section C: Security Assessment** - 🔴 Critical/🟠 High/🟡 Medium security risks with exploit scenarios and remediation
+- **Section D: Operational Risk Assessment** - 🔴 Critical/🟠 High/🟡 Medium/🟢 Low operational risks with impact analysis
+- **Section E: Quality Scoring** - Overall metrics, per-procedure assessments, best practice violations, performance impact
+- **Section F: Quality Gate Checks** - ✅ PASS/⚠️ PASS WITH WARNINGS/❌ FAIL determination with deployment recommendations
+
+**Additional Enhanced Documentation** (based on program criticality configured in [CONFIG.md](./CONFIG.md#documentation-enhancement-settings)):
 - **Error Handling Analysis** - Error status handling, risks, and recovery procedures
 - **Performance Analysis** - Bottlenecks, costs, and optimization opportunities
 - **Testing Guide** - Standard tests, edge cases, error scenarios, and integration tests

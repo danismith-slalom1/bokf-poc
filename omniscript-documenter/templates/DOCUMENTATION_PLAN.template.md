@@ -211,8 +211,6 @@ Use this exact template structure when creating OMNISCRIPT documentation plan do
 - Links to all documentation artifacts
 - Quick reference sections
 
-**Deliverable**: `${OMNISCRIPT_DOCS_DIR}/{PROGRAM-NAME}_INDEX.md` (updated)
-
 **Timeline**: [Estimated hours]
 
 ## Phase 5: Maintenance Process - Detailed Plan

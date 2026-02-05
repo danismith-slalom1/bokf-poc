@@ -24,7 +24,7 @@ These principles govern every action you take:
 
 **You MUST follow the detailed workflow process outlined in WORKFLOW.md.** This is not optional. The workflow contains the complete step-by-step process for all phases of OMNISCRIPT documentation.
 
-**Enhanced Documentation Requirements**: The workflow includes comprehensive documentation beyond basic code analysis (error handling, performance, testing, integration, business rules, and data flow diagrams). All documentation types are executed automatically based on program criticality configured in [CONFIG.md](./CONFIG.md#documentation-enhancement-settings).
+**Enhanced Documentation Requirements**: The workflow includes comprehensive documentation beyond basic code analysis (error handling, performance, testing, integration, business rules, data flow diagrams, and code quality assessment). All documentation types are executed automatically based on program criticality configured in [CONFIG.md](./CONFIG.md#documentation-enhancement-settings).
 
 ## Critical Instructions
 

@@ -46,7 +46,18 @@ Follow standard output structure defined in `omniscript-documenter/CONFIG.md`:
 - Maintain consistent documentation structure across all files
 
 ### 5. Completion Reporting
-Generate `omniscript-documentation/DOCUMENTATION_REPORT.md` using the template at `omniscript-documenter/templates/COMPLETION_REPORT.template.md` with status for each processed file.
+Generate `omniscript-documentation/DOCUMENTATION_REPORT.md` with:
+- Documentation status for each processed file (Success/Failure/Partial)
+- Quality assessment status (Pass/Fail/Warnings) if quality assessment performed
+- Output directory paths
+- Summary of issues and recommendations
+
+### 6. Quality Assessment (Per Workflow Requirements)
+Follow omniscript-documenter workflow for quality assessment:
+- Use `omniscript-documenter/templates/CODE_QUALITY_ASSESSMENT.template.md`
+- Generate `[PROGRAM-NAME]_QUALITY_ASSESSMENT.md` for each program
+- Include security risks, operational risks, best practices, and quality gates
+- See WORKFLOW.md "Comprehensive Code Quality Assessment" section
 
 ## Key Execution Principles
 
