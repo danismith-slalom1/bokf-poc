@@ -286,6 +286,14 @@ generate a comprehensive data dictionary entry for each data item. Include:
 ### 2.2 Document Each Procedure Individually
 **Second Documentation Priority**: Document procedural logic one chunk at a time
 
+**CRITICAL REQUIREMENT**: **EVERY PROCEDURE/ROUTINE MUST HAVE ITS OWN SEPARATE MARKDOWN FILE** in the `procedures/` subdirectory. This is **NON-NEGOTIABLE** and applies to:
+- All ROUTINE declarations
+- All PERFORM procedures
+- All procedure-like code blocks (e.g., gosub routines)
+- Main program logic (if not in a named routine, create MAIN_PROGRAM.md)
+
+**NO EXCEPTIONS**: Even single-line procedures must have individual documentation files.
+
 **Process for Each Procedure**:
 1. **Select next procedure** from documentation plan sequence
 2. **Gather context for AI**:
@@ -360,7 +368,11 @@ Analyze this OMNISCRIPT program for error handling and risks:
    - Error handling and edge cases
    - Dependencies on other procedures
 
-4. **Create individual procedure document**: `${OMNISCRIPT_DOCS_DIR}/procedures/[PROCEDURE-NAME].md`
+4. **MANDATORY: Create individual procedure document**: `${OMNISCRIPT_DOCS_DIR}/procedures/[PROCEDURE-NAME]_DOC.md`
+   - **CRITICAL**: Create `procedures/` subdirectory if it doesn't exist
+   - **REQUIRED FILE NAMING**: Use format `[PROCEDURE-NAME]_DOC.md` (e.g., `CALCULATE_TAX_DOC.md`)
+   - **ONE FILE PER PROCEDURE**: Never combine multiple procedures in one file
+   - **NO INLINE DOCUMENTATION**: Procedures must NOT be documented only within comprehensive docs
 
 **AI Prompt Template**:
 ```
@@ -980,7 +992,11 @@ Documentation Validation Focus:
 
 **Phase 2 Complete When**:
 - [ ] Data dictionary completed for all variables (with buffer limits documented)
-- [ ] Each procedure documented individually (with error handling and performance notes)
+- [ ] **CRITICAL: procedures/ subdirectory created**
+- [ ] **CRITICAL: Each procedure documented individually in separate .md file (ONE FILE PER PROCEDURE)**
+- [ ] **CRITICAL: Procedure count verification - number of .md files in procedures/ MUST equal number of procedures/routines in source code**
+- [ ] **CRITICAL: No procedures documented only inline or in comprehensive docs - ALL must have individual files**
+- [ ] Each procedure documentation includes error handling and performance notes
 - [ ] Call graph created showing all call relationships
 - [ ] Variable mutation patterns identified and documented
 - [ ] **Error handling analysis completed with risk assessment**
@@ -1087,9 +1103,33 @@ Documentation Validation Focus:
 ### 6.1 Stage and Commit Documentation
 - **Objective**: Commit all generated documentation to the documentation repository branch
 - **Actions**:
+  - **CRITICAL PRE-COMMIT VALIDATION**: Verify procedures/ directory exists with correct number of files
+  - Count procedures/routines in source code
+  - Count .md files in procedures/ directory
+  - **FAIL COMMIT** if counts don't match (missing procedure documentation)
   - Stage all documentation files in `omniscript-documentation/{SOURCE-REPO-NAME}/{PROGRAM-NAME}/`
   - Create commit with descriptive message following template from CONFIG.md
   - Include source repository metadata in commit message
+
+**Pre-Commit Validation Script**:
+```bash
+# Count procedures in source code (adjust pattern for your language)
+PROCEDURE_COUNT=$(grep -c "^ROUTINE " /tmp/source-repo/src/${PROGRAM_NAME}.cbl)
+
+# Count procedure documentation files
+DOC_COUNT=$(find omniscript-documentation/${SOURCE_REPO_NAME}/${PROGRAM_NAME}/procedures/ -name "*_DOC.md" | wc -l)
+
+# Validate counts match
+if [ "$PROCEDURE_COUNT" -ne "$DOC_COUNT" ]; then
+  echo "ERROR: Procedure documentation incomplete!"
+  echo "  Source code has ${PROCEDURE_COUNT} procedures"
+  echo "  Only ${DOC_COUNT} procedure documentation files found"
+  echo "  MISSING: $((PROCEDURE_COUNT - DOC_COUNT)) procedure documentation files"
+  exit 1
+fi
+
+echo "✓ Procedure documentation complete: ${DOC_COUNT}/${PROCEDURE_COUNT} procedures documented"
+```
 
 **Example Commands**:
 ```bash

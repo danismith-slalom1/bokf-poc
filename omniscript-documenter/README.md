@@ -78,6 +78,7 @@ See [GRAMMAR_PARSER.md](./GRAMMAR_PARSER.md) for complete parser documentation.
 Send this prompt to your AI agent:
 
 ⚠️ **Thoroughly review all AI-generated documentation with OMNISCRIPT experts** - _Human-in-the-loop is CRITICAL for OMNISCRIPT_<br>
+⚠️ **EVERY procedure MUST have its own file** - _See [PROCEDURES_CHECKLIST.md](./PROCEDURES_CHECKLIST.md) for requirements_<br>
 ✅ **Use the grammar parser first** - _Provides deterministic analysis for more accurate documentation_<br>
 ✅ **Configure GitLab repositories** - _Source repo URL varies, docs repo URL is fixed_<br>
 ✅ **Generate static analysis first** - _Cross-reference reports and call graphs are essential_<br>
@@ -165,7 +166,9 @@ omniscript-docs/  (Documentation GitLab repository)
 ### Core Documentation (Always Generated)
 - **Program Overview** (consolidates index + comprehensive doc) with executive summary, architecture, embedded core diagrams, and navigation
 - **Data Dictionary** for all variables with purposes, usage patterns, buffer limits, and **Variable Mutations section**
-- **Procedure Documentation** for each procedure with business logic, error handling, and performance notes
+- **Procedure Documentation** for **EVERY procedure/routine** with business logic, error handling, and performance notes
+  - ⚠️ **CRITICAL**: Every procedure must have its own file in `procedures/` subdirectory
+  - ⚠️ See [PROCEDURES_CHECKLIST.md](./PROCEDURES_CHECKLIST.md) for validation requirements
 - **Call Graph** showing all PERFORM relationships and control flow
 - **Diagrams** with complex Mermaid visualizations:
   - Module dependencies
@@ -210,6 +213,7 @@ Before using this module, you should have:
 - **[CONFIG.md](./CONFIG.md)** - Configuration settings including GitLab repository setup
 - **[WORKFLOW.md](./WORKFLOW.md)** - Complete 7-phase workflow process
 - **[INITIALIZER_PROMPT.md](./INITIALIZER_PROMPT.md)** - Instructions for AI agents
+- **[PROCEDURES_CHECKLIST.md](./PROCEDURES_CHECKLIST.md)** - ⚠️ **MANDATORY** validation checklist for procedure documentation
 - **[GITLAB_WORKFLOW.md](./GITLAB_WORKFLOW.md)** - Detailed GitLab integration guide
 - **[GRAMMAR_PARSER.md](./GRAMMAR_PARSER.md)** - Parser documentation
 - **[MERMAID_GUIDE.md](./MERMAID_GUIDE.md)** - Diagram generation guide

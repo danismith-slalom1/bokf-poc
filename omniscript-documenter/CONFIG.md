@@ -149,14 +149,23 @@ Configure in `.env` file:
 
 - **Documentation Depth by Program Type**:
   - **Mission-critical**: Comprehensive documentation (all phases + all supplemental docs)
-    - **REQUIRED FILES**: Overview, Data dictionary (with mutations), Call graph, Diagrams, Error handling, Integration guide, Business rules, Cross reference, Validation report, Procedures (all)
+    - **REQUIRED FILES**: Overview, Data dictionary (with mutations), Call graph, Diagrams, Error handling, Integration guide, Business rules, Cross reference, Validation report, **Procedures (ALL - MANDATORY)**
     - **OPTIONAL**: Performance analysis
   - **Standard business logic**: Standard documentation (overview + data dictionary + procedures + call graph + essentials)
-    - **REQUIRED FILES**: Overview, Data dictionary (with mutations), Call graph, Diagrams, Error handling, Integration guide, Business rules, Cross reference, Validation report, Procedures (key)
+    - **REQUIRED FILES**: Overview, Data dictionary (with mutations), Call graph, Diagrams, Error handling, Integration guide, Business rules, Cross reference, Validation report, **Procedures (ALL - MANDATORY)**
     - **OPTIONAL**: Performance analysis, Testing guide (basic)
   - **Simple utilities**: Minimal documentation (overview + key sections)
-    - **REQUIRED FILES**: Overview (with embedded flow diagram), Data dictionary, Procedures (key)
+    - **REQUIRED FILES**: Overview (with embedded flow diagram), Data dictionary, **Procedures (ALL - MANDATORY)**
     - **OPTIONAL**: Error handling assessment (if file I/O present)
+
+**CRITICAL PROCEDURE DOCUMENTATION REQUIREMENT**: 
+**ALL procedures/routines MUST have individual documentation files** in the `procedures/` subdirectory, regardless of program type or complexity. This includes:
+- All ROUTINE declarations
+- All PERFORM blocks
+- All gosub-style procedures
+- Main program logic (if not in a named routine)
+
+**NO EXCEPTIONS**: Even trivial or single-line procedures require separate documentation files.
 
 **DEFAULT DOCUMENTATION LEVEL**: If not specified, use **Standard business logic** level for all programs.
 
@@ -177,11 +186,22 @@ omniscript-documentation/
         ├── {PROGRAM}_BUSINESS_RULES.md            [REQUIRED: See Phase 4.4 in WORKFLOW.md]
         ├── {PROGRAM}_CROSS_REFERENCE.md           [REQUIRED: See Phase 4.2 in WORKFLOW.md]
         ├── {PROGRAM}_VALIDATION_REPORT.md         [REQUIRED: See Phase 3.1 in WORKFLOW.md]
-        └── procedures/
-            ├── PROCEDURE-1.md
-            ├── PROCEDURE-2.md
-            └── ...
+        └── procedures/                            [REQUIRED: MUST contain one .md file per procedure]
+            ├── PROCEDURE_1_DOC.md                 [REQUIRED: Individual file per procedure]
+            ├── PROCEDURE_2_DOC.md                 [REQUIRED: Individual file per procedure]
+            ├── PROCEDURE_N_DOC.md                 [REQUIRED: Individual file per procedure]
+            └── MAIN_PROGRAM_DOC.md                [REQUIRED: If main logic not in named routine]
 ```
+
+**CRITICAL PROCEDURES DIRECTORY REQUIREMENT**:
+- **MUST CREATE** `procedures/` subdirectory for EVERY program
+- **MUST CONTAIN** one markdown file per procedure/routine
+- **FILE NAMING**: Use format `[PROCEDURE_NAME]_DOC.md` (underscores, uppercase)
+- **NO COMBINED FILES**: Never document multiple procedures in one file
+- **COMPLETENESS CHECK**: Number of .md files in procedures/ MUST equal number of procedures in source code
+
+**DO NOT CREATE**:
+- `DOCUMENTATION_SUMMARY.md` - This is a temporary working file, not a deliverable
 
 **Path Naming Conventions**:
 - **Source Repository name**: Extract from source GitLab repository name (not full URL)

@@ -218,24 +218,22 @@ curl -s --header "PRIVATE-TOKEN: $GITLAB_DOCS_TOKEN" \
 ```
 
 **Create Merge Request:**
-```bash
-# Load .env first!
-source .env
 
-# Then create merge request
-curl --request POST \
-  --header "PRIVATE-TOKEN: $GITLAB_DOCS_TOKEN" \
-  --header "Content-Type: application/json" \
-  --data '{
-    "source_branch": "docs/omniscript-documentation-{timestamp}",
-    "target_branch": "main",
-    "title": "docs: Add OmniScript documentation for {count} programs",
-    "description": "## Generated Documentation\n\n- Processed {count} OmniScript files\n- Generated comprehensive documentation\n- Created call graphs and diagrams\n\n### Files Documented\n{file-list}",
-    "labels": ["documentation", "automated"],
-    "remove_source_branch": false
-  }' \
-  "https://gitlab.com/api/v4/projects/{project_id}/merge_requests"
-}
+**CRITICAL**: Use this EXACT command structure every time. Do NOT use multi-line commands with backslashes - they fail when combined with `source`.
+
+```bash
+# Standard single-line command (ALWAYS use this format)
+cd /path/to/workspace && source .env && curl --request POST --header "PRIVATE-TOKEN: $GITLAB_DOCS_TOKEN" --header "Content-Type: application/json" --data '{"source_branch":"docs/REPONAME-documentation-TIMESTAMP","target_branch":"main","title":"docs: Add documentation for PROGRAMNAME","description":"Comprehensive documentation generated including overview, data dictionary, call graphs, diagrams, error handling analysis, and procedure documentation.","labels":["documentation","automated"],"remove_source_branch":false}' "https://gitlab.com/api/v4/projects/PROJECT_ID/merge_requests"
+```
+
+**Template with substitutions:**
+```bash
+cd {workspace_path} && source .env && curl --request POST --header "PRIVATE-TOKEN: $GITLAB_DOCS_TOKEN" --header "Content-Type: application/json" --data '{"source_branch":"{branch_name}","target_branch":"main","title":"docs: Add documentation for {program_name}","description":"Comprehensive documentation generated including overview, data dictionary, call graphs, diagrams, error handling analysis, and procedure documentation. Files: {file_count}, Total lines: {line_count}.","labels":["documentation","automated"],"remove_source_branch":false}' "https://gitlab.com/api/v4/projects/{project_id}/merge_requests"
+```
+
+**If merge request already exists**, get the URL with:
+```bash
+source .env && curl -s --header "PRIVATE-TOKEN: $GITLAB_DOCS_TOKEN" "https://gitlab.com/api/v4/projects/{project_id}/merge_requests?state=opened&source_branch={branch_name}" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data[0]['web_url'] if data else 'No MR found')"
 ```
 
 ## Error Handling
