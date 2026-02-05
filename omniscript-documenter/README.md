@@ -79,7 +79,7 @@ After documenting an OMNISCRIPT program, you will have:
 
 **Comprehensive Code Quality Assessment** ⭐ using standardized template ([CODE_QUALITY_ASSESSMENT.template.md](./templates/CODE_QUALITY_ASSESSMENT.template.md)):
 - **Section A: Error Handling Analysis** - Error status handling, runtime scenarios, resource limits, input validation, risk assessment
-- **Section B: Best Practices Assessment** - OmniScript/COBOL API usage, integration patterns, performance patterns, deprecated features
+- **Section B: Best Practices Assessment** - OmniScript API usage, integration patterns, performance patterns, deprecated features
 - **Section C: Security Assessment** - 🔴 Critical/🟠 High/🟡 Medium security risks with exploit scenarios and remediation
 - **Section D: Operational Risk Assessment** - 🔴 Critical/🟠 High/🟡 Medium/🟢 Low operational risks with impact analysis
 - **Section E: Quality Scoring** - Overall metrics, per-procedure assessments, best practice violations, performance impact
