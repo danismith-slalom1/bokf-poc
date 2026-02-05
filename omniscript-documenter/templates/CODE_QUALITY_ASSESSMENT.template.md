@@ -56,122 +56,71 @@ Use this exact template structure when creating code quality assessment document
 
 **Objective**: Comprehensive analysis of error handling mechanisms, recovery procedures, and risk assessment for all operations.
 
-### A.1 Error Status Analysis
+### A.1 Error Handling & Runtime Risk Analysis
 
-#### Error Handling Mechanisms Inventory
-Document all error handling approaches used in the program:
+**Objective**: Comprehensive analysis of error handling mechanisms, runtime scenarios, and risk assessment.
 
-| Mechanism Type | Location | Coverage | Adequacy | Risk Level |
-|---------------|----------|----------|----------|------------|
-| Try-Catch Blocks | Lines [X-Y], Proc [NAME] | [Complete/Partial/Missing] | [Adequate/Inadequate] | [Level] |
-| Status Code Checks | Lines [X-Y], Proc [NAME] | [Complete/Partial/Missing] | [Adequate/Inadequate] | [Level] |
-| Error Flags/Variables | Lines [X-Y], Proc [NAME] | [Complete/Partial/Missing] | [Adequate/Inadequate] | [Level] |
-| Return Code Validation | Lines [X-Y], Proc [NAME] | [Complete/Partial/Missing] | [Adequate/Inadequate] | [Level] |
+#### Error Handling Coverage
 
-#### Status Codes Documentation
-List all error status codes and their handling:
+| Operation/Scenario | Location | Error Mechanism | Coverage | Risk Level | Recommendation |
+|-------------------|----------|-----------------|----------|------------|----------------|
+| File Open/Not Found | Lines [X-Y] | [Try-Catch/Status/None] | [Complete/Partial/Missing] | [Level] | [Action] |
+| File Access Denied | Lines [X-Y] | [Try-Catch/Status/None] | [Complete/Partial/Missing] | [Level] | [Action] |
+| Database Query/Timeout | Lines [X-Y] | [Try-Catch/Status/None] | [Complete/Partial/Missing] | [Level] | [Action] |
+| External Call Failure | Lines [X-Y] | [Try-Catch/Status/None] | [Complete/Partial/Missing] | [Level] | [Action] |
+| Invalid Data Format | Lines [X-Y] | [Try-Catch/Status/None] | [Complete/Partial/Missing] | [Level] | [Action] |
+| Type Mismatch | Lines [X-Y] | [Try-Catch/Status/None] | [Complete/Partial/Missing] | [Level] | [Action] |
+| Division by Zero | Lines [X-Y] | [Try-Catch/Status/None] | [Complete/Partial/Missing] | [Level] | [Action] |
+| Array Out of Bounds | Lines [X-Y] | [Try-Catch/Status/None] | [Complete/Partial/Missing] | [Level] | [Action] |
+| Null/Empty Reference | Lines [X-Y] | [Try-Catch/Status/None] | [Complete/Partial/Missing] | [Level] | [Action] |
 
-| Status Code | Meaning | Handler Location | Recovery Procedure | Completeness |
-|------------|---------|------------------|-------------------|--------------|
+#### Status Codes & Recovery Procedures
+
+| Status Code | Meaning | Handler Location | Recovery Action | Adequacy |
+|------------|---------|------------------|-----------------|----------|
 | [Code] | [Description] | Lines [X-Y] | [What happens] | [Adequate/Partial/None] |
 
-#### Operations Without Error Checking
-**🔴 CRITICAL GAPS**: Operations that lack error handling:
+#### Critical Gaps (Operations Without Error Checking)
 
-| Operation Type | Location | Potential Failure | Impact | Priority |
-|---------------|----------|-------------------|--------|----------|
-| File Open | Lines [X-Y] | File not found, access denied | [Impact description] | [IMMEDIATE/HIGH] |
-| Database Query | Lines [X-Y] | Connection failure, timeout | [Impact description] | [IMMEDIATE/HIGH] |
-| External Call | Lines [X-Y] | Program unavailable, parameter error | [Impact description] | [HIGH/MEDIUM] |
+| Operation | Location | Potential Failure | Impact | Priority |
+|-----------|----------|-------------------|--------|----------|
+| [Operation] | Lines [X-Y] | [Failure type] | [Impact] | [IMMEDIATE/HIGH] |
 
-### A.2 Runtime Error Scenarios
+### A.2 Resource Limits & Input Validation
 
-Analyze potential runtime error scenarios and their handling:
-
-#### File Operations
-| Scenario | Likelihood | Current Handling | Impact if Unhandled | Recommendation |
-|----------|------------|------------------|---------------------|----------------|
-| File not found | [High/Medium/Low] | [Description or "None"] | [Impact] | [Action needed] |
-| Access denied | [High/Medium/Low] | [Description or "None"] | [Impact] | [Action needed] |
-| Disk full | [High/Medium/Low] | [Description or "None"] | [Impact] | [Action needed] |
-| Corrupt file | [High/Medium/Low] | [Description or "None"] | [Impact] | [Action needed] |
-
-#### Data Processing
-| Scenario | Likelihood | Current Handling | Impact if Unhandled | Recommendation |
-|----------|------------|------------------|---------------------|----------------|
-| Invalid data format | [High/Medium/Low] | [Description or "None"] | [Impact] | [Action needed] |
-| Type mismatch | [High/Medium/Low] | [Description or "None"] | [Impact] | [Action needed] |
-| Buffer overflow | [High/Medium/Low] | [Description or "None"] | [Impact] | [Action needed] |
-| Division by zero | [High/Medium/Low] | [Description or "None"] | [Impact] | [Action needed] |
-| String overflow | [High/Medium/Low] | [Description or "None"] | [Impact] | [Action needed] |
-| Array out of bounds | [High/Medium/Low] | [Description or "None"] | [Impact] | [Action needed] |
-| Null/empty reference | [High/Medium/Low] | [Description or "None"] | [Impact] | [Action needed] |
-
-### A.3 Resource Limits Documentation
+**Objective**: Document system limits, boundary protections, and input validation mechanisms.
 
 #### Buffer and Memory Limits
-| Resource | Maximum Size | Overflow Protection | Overflow Impact | Risk Level |
-|----------|-------------|---------------------|-----------------|------------|
-| String buffers | [Size] | [Yes/No - Method] | [What happens] | [Level] |
-| Arrays | [Size] | [Yes/No - Method] | [What happens] | [Level] |
-| File buffers | [Size] | [Yes/No - Method] | [What happens] | [Level] |
-| Memory allocation | [Size] | [Yes/No - Method] | [What happens] | [Level] |
 
-#### Operational Limits
+| Resource | Maximum Size | Overflow Protection | Validation Method | Risk Level |
+|----------|-------------|---------------------|-------------------|------------|
+| String buffers | [Size] | [Yes/No - Method] | [Method or "None"] | [Level] |
+| Arrays | [Size] | [Yes/No - Method] | [Method or "None"] | [Level] |
+| File buffers | [Size] | [Yes/No - Method] | [Method or "None"] | [Level] |
+| Memory allocation | [Size] | [Yes/No - Method] | [Method or "None"] | [Level] |
+
+#### Operational Limits & Enforcement
+
 | Limit Type | Maximum Value | Enforcement | Exceeded Handling | Documentation |
 |-----------|---------------|-------------|------------------|---------------|
 | Record count | [Count] | [Yes/No] | [What happens] | [Where documented] |
-| Token count | [Count] | [Yes/No] | [What happens] | [Where documented] |
 | File size | [Size] | [Yes/No] | [What happens] | [Where documented] |
 | Transaction size | [Size] | [Yes/No] | [What happens] | [Where documented] |
 
-### A.4 Input Validation
+#### Input Validation & Sanitization
 
-#### File Path Validation
-- **Validation Present**: [Yes/No/Partial]
-- **Sanitization Method**: [Description or "None"]
-- **Path Traversal Protection**: [Yes/No]
-- **Injection Protection**: [Yes/No]
-- **Risk Assessment**: [Level with justification]
+**File Path Validation**:
+- **Validation Present**: [Yes/No/Partial] | **Sanitization**: [Method or "None"]
+- **Path Traversal Protection**: [Yes/No] | **Injection Protection**: [Yes/No]
 
-#### Data Format Validation
-| Input Type | Validation Method | Completeness | Risk if Missing |
-|-----------|------------------|--------------|-----------------|
-| Numeric fields | [Method or "None"] | [Complete/Partial/None] | [Risk level + description] |
-| Date fields | [Method or "None"] | [Complete/Partial/None] | [Risk level + description] |
-| String fields | [Method or "None"] | [Complete/Partial/None] | [Risk level + description] |
-| File formats | [Method or "None"] | [Complete/Partial/None] | [Risk level + description] |
+**Data Format Validation**:
 
-#### Range and Boundary Checking
-| Field/Variable | Expected Range | Range Check Present | Boundary Handling |
-|---------------|----------------|---------------------|-------------------|
-| [Field name] | [Min-Max] | [Yes/No] | [How handled] |
-
-### A.5 Error Handling Risk Assessment
-
-#### Overall Error Handling Maturity
-- **Maturity Level**: [None / Minimal / Partial / Comprehensive / Exemplary]
-- **Coverage Percentage**: [Estimate]% of critical operations covered
-- **Consistency**: [Inconsistent / Partially Consistent / Fully Consistent]
-
-#### Risk Categories
-**🔴 HIGH RISK - Immediate Action Required**:
-1. [Description of high risk item with location]
-2. [Description of high risk item with location]
-
-**🟠 MEDIUM RISK - Address Before Production**:
-1. [Description of medium risk item with location]
-2. [Description of medium risk item with location]
-
-**🟢 LOW RISK - Monitor and Improve**:
-1. [Description of low risk item with location]
-
-#### Recommended Improvements
-| Priority | Improvement | Location | Effort Estimate | Impact |
-|----------|-------------|----------|-----------------|--------|
-| IMMEDIATE | [Description] | Lines [X-Y] | [Hours/Days] | [Prevents critical failure] |
-| HIGH | [Description] | Lines [X-Y] | [Hours/Days] | [Prevents data corruption] |
-| MEDIUM | [Description] | Lines [X-Y] | [Hours/Days] | [Improves reliability] |
+| Input Type | Validation Method | Range/Boundary Check | Risk if Missing |
+|-----------|------------------|---------------------|-----------------|
+| Numeric fields | [Method or "None"] | [Yes/No - Range] | [Risk level + description] |
+| Date fields | [Method or "None"] | [Yes/No - Range] | [Risk level + description] |
+| String fields | [Method or "None"] | [Yes/No - Length] | [Risk level + description] |
+| File formats | [Method or "None"] | [Yes/No] | [Risk level + description] |
 
 ---
 
@@ -214,24 +163,19 @@ Analyze potential runtime error scenarios and their handling:
 
 #### Performance Patterns
 
-**Loop Structures**:
-| Loop Location | Type | Complexity | Optimization Status | Recommendation |
-|--------------|------|------------|---------------------|----------------|
-| Lines [X-Y] | [FOR/WHILE/etc] | [O(n)/O(n²)/etc] | [Optimal/Suboptimal] | [Suggestion] |
+| Pattern Type | Location | Current State | Complexity/Impact | Optimization Opportunity |
+|--------------|----------|---------------|-------------------|-------------------------|
+| Loop Structure | Lines [X-Y] | [FOR/WHILE/etc] | [O(n)/O(n²)/etc] | [Suggestion] |
+| String Concatenation | Lines [X-Y] | [In loop/Outside] | [High/Medium/Low] | [Suggestion] |
+| String Buffer Usage | Lines [X-Y] | [Optimal/Suboptimal] | [Impact] | [Suggestion] |
+| File I/O Buffering | Lines [X-Y] | [Present/Missing] | [Impact] | [Suggestion] |
+| File Read/Write Pattern | Lines [X-Y] | [Efficient/Inefficient] | [Impact] | [Suggestion] |
+| Transaction Management | Lines [X-Y] | [Present/Missing] | [Impact] | [Suggestion] |
 
-**String Operations**:
-- **Total String Operations**: [Count]
-- **Concatenation in Loops**: [Count] (potential performance issue)
-- **String Buffer Usage**: [Optimal/Suboptimal]
-
-| Operation | Location | Frequency | Impact | Optimization Opportunity |
-|-----------|----------|-----------|--------|-------------------------|
-| [Operation] | Lines [X-Y] | [Count/loop] | [High/Medium/Low] | [Suggestion] |
-
-**File I/O Efficiency**:
-- **Buffering**: [Optimal/Suboptimal/None]
-- **Read/Write Patterns**: [Efficient/Inefficient]
-- **Transaction Management**: [Present/Missing]
+**Performance Summary**:
+- **Critical Performance Issues**: [Count]
+- **Estimated Performance Impact**: [High/Medium/Low]
+- **Optimization Priority**: [IMMEDIATE/HIGH/MEDIUM/LOW]
 
 ### Test Coverage Assessment
 
@@ -290,46 +234,40 @@ Analyze potential runtime error scenarios and their handling:
 
 **Objective**: Identify security vulnerabilities, safety risks, and compliance gaps.
 
-### C.1 Critical Security Risks (🔴 CRITICAL)
+### C.1 Security Vulnerabilities & Risks
 
-**Immediate remediation required** - These issues pose severe security threats:
+**Objective**: Identify and categorize all security vulnerabilities by severity.
 
-| Vulnerability | Location | Description | Exploit Scenario | Remediation | Effort |
-|--------------|----------|-------------|------------------|-------------|--------|
-| Hardcoded Credentials | Lines [X-Y] | [Details] | [How it could be exploited] | [Required fix] | [Estimate] |
-| SQL Injection | Lines [X-Y] | [Details] | [How it could be exploited] | [Required fix] | [Estimate] |
-| Command Injection | Lines [X-Y] | [Details] | [How it could be exploited] | [Required fix] | [Estimate] |
-| Path Traversal | Lines [X-Y] | [Details] | [How it could be exploited] | [Required fix] | [Estimate] |
-| Auth Bypass | Lines [X-Y] | [Details] | [How it could be exploited] | [Required fix] | [Estimate] |
+**Security Findings Summary**:
+- 🔴 **Critical**: [Count] - Immediate remediation required
+- 🟠 **High**: [Count] - Address before production
+- 🟡 **Medium**: [Count] - Address in next cycle
+- **Block Deployment**: [YES / NO] - [Justification]
 
-**Critical Security Findings Count**: [Count]
-**Block Deployment**: [YES / NO] - [Justification]
+#### All Security Findings
 
-### C.2 High Security Risks (🟠 HIGH)
+| Severity | Vulnerability Type | Location | Description | Exploit Scenario/Impact | Remediation | Effort | Priority |
+|----------|-------------------|----------|-------------|------------------------|-------------|--------|----------|
+| 🔴 | Hardcoded Credentials | Lines [X-Y] | [Details] | [How exploited] | [Fix] | [Estimate] | IMMEDIATE |
+| 🔴 | SQL Injection | Lines [X-Y] | [Details] | [How exploited] | [Fix] | [Estimate] | IMMEDIATE |
+| 🔴 | Command Injection | Lines [X-Y] | [Details] | [How exploited] | [Fix] | [Estimate] | IMMEDIATE |
+| 🔴 | Path Traversal | Lines [X-Y] | [Details] | [How exploited] | [Fix] | [Estimate] | IMMEDIATE |
+| 🔴 | Auth Bypass | Lines [X-Y] | [Details] | [How exploited] | [Fix] | [Estimate] | IMMEDIATE |
+| 🔴 | Hardcoded API Keys/Secrets | Lines [X-Y] | [Details] | [How exploited] | [Fix] | [Estimate] | IMMEDIATE |
+| 🟠 | Missing Input Validation | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | HIGH |
+| 🟠 | Error Info Disclosure | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | HIGH |
+| 🟠 | Insecure File Handling | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | HIGH |
+| 🟠 | Race Conditions | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | HIGH |
+| 🟠 | Access Control Gaps | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | HIGH |
+| 🟠 | Missing RPC Auth/Timeout | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | HIGH |
+| 🟠 | Data Element Access Control | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | HIGH |
+| 🟡 | Weak Input Sanitization | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | MEDIUM |
+| 🟡 | Insufficient Logging | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | MEDIUM |
+| 🟡 | Deprecated Crypto | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | MEDIUM |
+| 🟡 | Deprecated OmniScript APIs | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | MEDIUM |
+| 🟡 | Data Transformation Risks | Lines [X-Y] | [Details] | [Impact] | [Fix] | [Estimate] | MEDIUM |
 
-**Address before production** - Significant security concerns:
-
-| Risk Type | Location | Description | Potential Impact | Mitigation | Priority |
-|-----------|----------|-------------|------------------|------------|----------|
-| Missing Input Validation | Lines [X-Y] | [Details] | [Impact] | [Fix] | [HIGH/MEDIUM] |
-| Error Info Disclosure | Lines [X-Y] | [Details] | [Impact] | [Fix] | [HIGH/MEDIUM] |
-| Insecure File Handling | Lines [X-Y] | [Details] | [Impact] | [Fix] | [HIGH/MEDIUM] |
-| Race Conditions | Lines [X-Y] | [Details] | [Impact] | [Fix] | [HIGH/MEDIUM] |
-| Access Control Gaps | Lines [X-Y] | [Details] | [Impact] | [Fix] | [HIGH/MEDIUM] |
-
-**High Security Findings Count**: [Count]
-
-### C.3 Medium Security Risks (🟡 MEDIUM)
-
-**Address in next cycle** - Moderate security concerns:
-
-| Risk Type | Location | Description | Mitigation Strategy |
-|-----------|----------|-------------|---------------------|
-| Weak Input Sanitization | Lines [X-Y] | [Details] | [Recommendation] |
-| Insufficient Logging | Lines [X-Y] | [Details] | [Recommendation] |
-| Deprecated Crypto | Lines [X-Y] | [Details] | [Recommendation] |
-
-### C.4 Security Posture Summary
+### C.2 Security Posture Summary
 
 #### Security Controls Present
 - ✅ **Authentication**: [Present/Missing/Inadequate]
@@ -341,114 +279,66 @@ Analyze potential runtime error scenarios and their handling:
 - ✅ **Data Encryption**: [Present/Missing/N/A]
 - ✅ **Session Management**: [Secure/Insecure/N/A]
 
+#### OmniScript-Specific Controls
+- ✅ **RPC Security**: [Secure/Needs Review/Insecure] - Auth, authz, timeout handling on external calls
+- ✅ **Configuration Management**: [Externalized/Partially Hardcoded/Hardcoded] - Secrets in vault vs hardcoded
+- ✅ **Data Element Security**: [Present/Partial/Missing] - Access control, sensitive data handling, validation
+
 #### Compliance Considerations
 - **Data Privacy**: [GDPR/CCPA/Other compliance requirements]
 - **Audit Trail**: [Complete/Incomplete/Missing]
 - **Data Retention**: [Compliant/Non-compliant]
 - **Access Logging**: [Present/Missing]
-
-### C.5 OmniScript-Specific Security Controls
-
-**Objective**: Assess security controls specific to OmniScript implementations and integrations.
-
-#### Integration Security
-- **Remote Procedure Call Security**: [✅ Secure / ⚠️ Needs Review / ❌ Insecure]
-  - Authentication on external calls: [Present/Missing]
-  - Authorization checks: [Present/Missing]
-  - Timeout handling: [Present/Missing]
-  - Retry logic security: [Safe/Unsafe]
-
-#### Configuration Security
-- **Configuration Management**: [✅ Externalized / ⚠️ Partially Hardcoded / ❌ Hardcoded]
-- **Environment-Specific Values**: [Properly managed/Hardcoded]
-- **Secret Management**: [Secure vault/Config files/Hardcoded]
-
-| Configuration Type | Location | Storage Method | Risk Level | Recommendation |
-|-------------------|----------|----------------|------------|----------------|
-| Database credentials | Lines [X-Y] | [Method] | [Level] | [Action] |
-| API keys | Lines [X-Y] | [Method] | [Level] | [Action] |
-| Service endpoints | Lines [X-Y] | [Method] | [Level] | [Action] |
-| Environment flags | Lines [X-Y] | [Method] | [Level] | [Action] |
-
-#### Data Element Security
-- **Data Element Access Control**: [✅ Present / ❌ Missing]
-- **Sensitive Data Handling**: [Encrypted/Masked/Plain text]
-- **Data Element Validation**: [Comprehensive/Partial/Missing]
-
-| Data Element | Sensitivity | Protection Method | Risk | Recommendation |
-|--------------|-------------|-------------------|------|----------------|
-| [Element] | [High/Medium/Low] | [Method or "None"] | [Level] | [Action] |
-
-#### OmniScript-Specific Vulnerabilities
-- **Deprecated API Usage**: [Count] deprecated APIs with security implications
-- **Integration Point Exposure**: [Assessment of external call security]
-- **Data Transformation Risks**: [Injection risks during data mapping]
-
-| Vulnerability Type | Location | Description | Severity | Mitigation |
-|-------------------|----------|-------------|----------|------------|
-| [Type] | Lines [X-Y] | [Details] | [🔴/🟠/🟡] | [Action] |
-
----
 ---
 
-## Section D: Operational Risk Assessment
+## Section D: Operational and Error Handling Risk Assessment
 
-**Objective**: Assess operational risks that could impact system stability, data integrity, or business operations.
+**Objective**: Assess operational risks, error handling maturity, and impacts on system stability, data integrity, and business operations.
 
-### D.1 Critical Operational Risks (🔴 CRITICAL)
+### D.1 Error Handling Maturity
 
-**Immediate action required** - Risk of system failure or data loss:
+- **Maturity Level**: [None / Minimal / Partial / Comprehensive / Exemplary]
+- **Coverage**: [Estimate]% of critical operations covered
+- **Consistency**: [Inconsistent / Partially Consistent / Fully Consistent]
 
-| Risk | Location | Scenario | Impact | Likelihood | Mitigation | Owner |
-|------|----------|----------|--------|------------|------------|-------|
-| Data Corruption | Lines [X-Y] | [Scenario] | [Business impact] | [High/Medium] | [Required action] | [Team] |
-| System Crash | Lines [X-Y] | [Scenario] | [Business impact] | [High/Medium] | [Required action] | [Team] |
-| Unrecoverable Error | Lines [X-Y] | [Scenario] | [Business impact] | [High/Medium] | [Required action] | [Team] |
-| Silent Data Loss | Lines [X-Y] | [Scenario] | [Business impact] | [High/Medium] | [Required action] | [Team] |
+### D.2 Operational Risks & Findings
 
-**Critical Risk Count**: [Count]
-**Production Readiness**: [BLOCKED / CONDITIONAL / CLEARED]
+**Objective**: Assess all operational risks that could impact system stability, data integrity, or business operations.
 
-### D.2 High Operational Risks (🟠 HIGH)
+**Operational Risk Summary**:
+- 🔴 **Critical**: [Count] - Risk of system failure or data loss
+- 🟠 **High**: [Count] - Significant operational concerns
+- 🟡 **Medium**: [Count] - Should be improved
+- 🟢 **Low/Info**: [Count] - Minor improvements and observations
+- **Production Readiness**: [BLOCKED / CONDITIONAL / CLEARED]
 
-**Address before production** - Significant operational concerns:
+#### All Operational Findings
 
-| Risk | Location | Description | Impact | Mitigation Plan | Timeline |
-|------|----------|-------------|--------|-----------------|----------|
-| Performance Degradation | Lines [X-Y] | [Details] | [Impact] | [Plan] | [Timeline] |
-| Resource Exhaustion | Lines [X-Y] | [Details] | [Impact] | [Plan] | [Timeline] |
-| Error Recovery Gap | Lines [X-Y] | [Details] | [Impact] | [Plan] | [Timeline] |
-| Data Inconsistency | Lines [X-Y] | [Details] | [Impact] | [Plan] | [Timeline] |
-| Integration Failure | Lines [X-Y] | [Details] | [Impact] | [Plan] | [Timeline] |
+| Severity | Risk Type | Location | Scenario/Description | Impact | Mitigation | Owner | Timeline |
+|----------|-----------|----------|---------------------|--------|------------|-------|----------|
+| 🔴 | Data Corruption | Lines [X-Y] | [Scenario] | [Business impact] | [Action] | [Team] | IMMEDIATE |
+| 🔴 | System Crash | Lines [X-Y] | [Scenario] | [Business impact] | [Action] | [Team] | IMMEDIATE |
+| 🔴 | Unrecoverable Error | Lines [X-Y] | [Scenario] | [Business impact] | [Action] | [Team] | IMMEDIATE |
+| 🔴 | Silent Data Loss | Lines [X-Y] | [Scenario] | [Business impact] | [Action] | [Team] | IMMEDIATE |
+| 🟠 | Performance Degradation | Lines [X-Y] | [Details] | [Impact] | [Plan] | [Team] | [Timeline] |
+| 🟠 | Resource Exhaustion | Lines [X-Y] | [Details] | [Impact] | [Plan] | [Team] | [Timeline] |
+| 🟠 | Error Recovery Gap | Lines [X-Y] | [Details] | [Impact] | [Plan] | [Team] | [Timeline] |
+| 🟠 | Data Inconsistency | Lines [X-Y] | [Details] | [Impact] | [Plan] | [Team] | [Timeline] |
+| 🟠 | Integration Failure | Lines [X-Y] | [Details] | [Impact] | [Plan] | [Team] | [Timeline] |
+| 🟡 | Suboptimal Performance | Lines [X-Y] | [Details] | [Impact] | [Action] | [Team] | Next Cycle |
+| 🟡 | Minor Resource Leak | Lines [X-Y] | [Details] | [Impact] | [Action] | [Team] | Next Cycle |
+| 🟡 | Inconsistent Handling | Lines [X-Y] | [Details] | [Impact] | [Action] | [Team] | Next Cycle |
+| 🟡 | Maintainability Issue | Lines [X-Y] | [Details] | [Impact] | [Action] | [Team] | Next Cycle |
+| 🟢 | Code Style Inconsistency | Lines [X-Y] | [Details] | [Impact] | [Suggestion] | [Team] | Backlog |
+| 🟢 | Minor Inefficiency | Lines [X-Y] | [Details] | [Impact] | [Suggestion] | [Team] | Backlog |
+| 🟢 | Documentation Gap | Lines [X-Y] | [Details] | [Impact] | [Suggestion] | [Team] | Backlog |
+| ⚪ | Best Practice Opportunity | Lines [X-Y] | [Details] | [Impact] | [Suggestion] | [Team] | Future |
 
-### D.3 Medium Operational Risks (🟡 MEDIUM)
+### D.3 Risk Mitigation Status
 
-**Address in next cycle** - Should be improved but not blocking:
-
-| Risk | Location | Description | Impact | Recommendation |
-|------|----------|-------------|--------|----------------|
-| Suboptimal Performance | Lines [X-Y] | [Details] | [Impact] | [Action] |
-| Minor Resource Leak | Lines [X-Y] | [Details] | [Impact] | [Action] |
-| Inconsistent Handling | Lines [X-Y] | [Details] | [Impact] | [Action] |
-| Maintainability Issue | Lines [X-Y] | [Details] | [Impact] | [Action] |
-
-### D.4 Low Operational Risks (🟢 LOW)
-
-**Nice to have** - Minor improvements:
-
-| Risk | Description | Recommendation |
-|------|-------------|----------------|
-| Code Style Inconsistency | [Details] | [Suggestion] |
-| Minor Inefficiency | [Details] | [Suggestion] |
-| Documentation Gap | [Details] | [Suggestion] |
-
-### D.5 Informational (⚪ INFO)
-
-**No action required** - Observations and opportunities:
-
-- [Best practice suggestion]
-- [Optimization opportunity]
-- [Refactoring recommendation]
+**Critical Risks**: [Count with mitigation status]
+**High Risks**: [Count with mitigation status]
+**Overall Risk Trend**: [Improving/Stable/Declining]
 
 ---
 
@@ -468,65 +358,16 @@ Analyze potential runtime error scenarios and their handling:
 | Best Practices | [0-100] | [A-F] | 75+ | [Above/At/Below] |
 | Documentation | [0-100] | [A-F] | 80+ | [Above/At/Below] |
 
-### E.2 Quality Assessment by Section/Procedure
+### E.2 Key Findings by Area
 
-For each major section or procedure, provide detailed assessment:
+**Note**: Reference detailed findings from Sections A-D above. Provide summary only for highest-priority items.
 
-#### Quality Assessment: [Procedure/Section Name]
-
-**Overall Risk Level**: [🔴 CRITICAL / 🟠 HIGH / 🟡 MEDIUM / 🟢 LOW]
-
-**Risk Breakdown**:
-- Security: [🔴/🟠/🟡/🟢] ([Count] issues)
-- Operational: [🔴/🟠/🟡/🟢] ([Count] issues)
-- Performance: [🔴/🟠/🟡/🟢] ([Count] issues)
-- Maintainability: [🔴/🟠/🟡/🟢] ([Count] issues)
-
-**Critical Findings**:
-
-##### [Risk Level]: [Finding Title]
-- **Location**: Line(s) [X-Y], Procedure [NAME]
-- **Issue**: [Detailed description]
-- **Impact**: [Business and technical impact]
-- **Recommendation**: [Specific remediation steps]
-- **Effort**: [Hours/Days estimate]
-- **Priority**: [IMMEDIATE/HIGH/MEDIUM/LOW]
-
-[Repeat for each finding]
-
-**Best Practice Violations**:
-
-##### OmniScript-Specific:
-- ❌ [Violation description] (Location: Lines [X-Y])
-  - **Recommendation**: [Specific action]
-  - **Effort**: [Estimate]
-
-**Performance Impact**:
-- **Current Complexity**: [O(n), O(n²), etc.]
-- **Potential Improvement**: [O(n), etc.]
-- **Estimated Performance Gain**: [Percentage or description]
-- **Optimization Effort**: [Estimate]
-
-**Security Posture**:
-- **Authentication**: [✅ Present / ❌ Missing / ⚠️ Inadequate]
-- **Input Validation**: [✅ Comprehensive / ⚠️ Partial / ❌ Missing]
-- **Error Disclosure**: [✅ Secure / ❌ Exposes internals]
-- **Audit Logging**: [✅ Present / ⚠️ Partial / ❌ Missing]
-
-**Recommended Actions** (Prioritized):
-1. **IMMEDIATE**: [Action with location and brief justification]
-2. **Before Production**: [Action with location and brief justification]
-3. **Next Sprint/Cycle**: [Action with location and brief justification]
-4. **Technical Debt**: [Action with location and brief justification]
-
-[Repeat assessment for each major procedure/section]
-
-### E.3 Trend Analysis
-
-**Historical Comparison** (if previous assessments available):
-- Quality Score Trend: [Improving/Stable/Declining]
-- Critical Issues Trend: [Decreasing/Stable/Increasing]
-- Technical Debt: [Reduced/Stable/Growing]
+| Area | Risk Level | Top Issue | Location | Priority Action |
+|------|-----------|-----------|----------|----------------|
+| Error Handling | [🔴/🟠/🟡/🟢] | [Brief description] | Lines [X-Y] | [Action needed] |
+| Security | [🔴/🟠/🟡/🟢] | [Brief description] | Lines [X-Y] | [Action needed] |
+| Performance | [🔴/🟠/🟡/🟢] | [Brief description] | Lines [X-Y] | [Action needed] |
+| Best Practices | [🔴/🟠/🟡/🟢] | [Brief description] | Lines [X-Y] | [Action needed] |
 
 ---
 
@@ -629,214 +470,65 @@ For each major section or procedure, provide detailed assessment:
 
 ## Remediation Roadmap
 
-**Total Issues**: [Count]
-**Total Estimated Effort**: [Hours/Days]
-**Recommended Timeline**: [Duration]
+**Total Issues**: [Count] | **Total Effort**: [Hours/Days] | **Timeline**: [Duration]
 
-### Phase 1: Immediate Actions (Do Now)
-**Duration**: [Estimate]
-**Blocking Production**: YES
+### Prioritized Remediation Plan
 
-| Priority | Issue | Location | Effort | Owner | Status |
-|----------|-------|----------|--------|-------|--------|
-| 🔴 CRITICAL | [Issue] | [Location] | [Estimate] | [Team/Person] | [Not Started/In Progress/Complete] |
+| Phase | Priority | Issue | Location | Effort | Owner | Blocks Production | Status |
+|-------|----------|-------|----------|--------|-------|------------------|--------|
+| 1 - Immediate | 🔴 CRITICAL | [Issue] | [Location] | [Est] | [Team] | YES | [Status] |
+| 1 - Immediate | 🔴 CRITICAL | [Issue] | [Location] | [Est] | [Team] | YES | [Status] |
+| 2 - Pre-Production | 🟠 HIGH | [Issue] | [Location] | [Est] | [Team] | YES | [Status] |
+| 2 - Pre-Production | 🟠 HIGH | [Issue] | [Location] | [Est] | [Team] | YES | [Status] |
+| 3 - Post-Production | 🟡 MEDIUM | [Issue] | [Location] | [Est] | [Team] | NO | [Status] |
+| 3 - Post-Production | 🟡 MEDIUM | [Issue] | [Location] | [Est] | [Team] | NO | [Status] |
+| 4 - Tech Debt | 🟢 LOW | [Issue] | [Location] | [Est] | [Team] | NO | [Status] |
 
-### Phase 2: Pre-Production (Before Go-Live)
-**Duration**: [Estimate]
-**Required for Production**: YES
-
-| Priority | Issue | Location | Effort | Owner | Status |
-|----------|-------|----------|--------|-------|--------|
-| 🟠 HIGH | [Issue] | [Location] | [Estimate] | [Team/Person] | [Status] |
-
-### Phase 3: Post-Production (Next Sprint/Cycle)
-**Duration**: [Estimate]
-**Required for Production**: NO
-
-| Priority | Issue | Location | Effort | Owner | Status |
-|----------|-------|----------|--------|-------|--------|
-| 🟡 MEDIUM | [Issue] | [Location] | [Estimate] | [Team/Person] | [Status] |
-
-### Phase 4: Technical Debt Reduction
-**Duration**: [Estimate]
-**Type**: Continuous Improvement
-
-| Priority | Issue | Location | Effort | Owner | Status |
-|----------|-------|----------|--------|-------|--------|
-| 🟢 LOW | [Issue] | [Location] | [Estimate] | [Team/Person] | [Status] |
+**Phase Timelines**:
+- **Phase 1 (Immediate)**: [Duration] - BLOCKING
+- **Phase 2 (Pre-Production)**: [Duration] - REQUIRED FOR GO-LIVE
+- **Phase 3 (Post-Production)**: [Duration] - Next sprint/cycle
+- **Phase 4 (Tech Debt)**: [Duration] - Continuous improvement
 
 ---
 
-## AI Prompt Templates
-
-### Comprehensive Quality Assessment Prompt
+## AI Prompt Template
 
 ```
-Perform a comprehensive code quality assessment for this OMNISCRIPT program following the CODE_QUALITY_ASSESSMENT template:
+Perform comprehensive code quality assessment for OMNISCRIPT program following CODE_QUALITY_ASSESSMENT template:
 
-Program Source: [Insert or reference]
-Static Analysis Reports: [Insert or reference]
-Previous Documentation: [Insert references to data dictionary, procedure docs, etc.]
+Program Source: [Insert/reference]
+Focus: [Comprehensive/Security/Performance/Error Handling]
 
 Generate assessment covering:
 
-A. ERROR HANDLING ANALYSIS
-   - Identify all error handling mechanisms
-   - Document runtime error scenarios
-   - Assess resource limits and buffer risks
-   - Evaluate input validation
-   - Provide risk assessment (High/Medium/Low)
+A. ERROR HANDLING: Mechanisms, runtime scenarios, resource limits, input validation, risk assessment
+B. BEST PRACTICES: OmniScript APIs, integration patterns, performance, configuration, data elements, test coverage
+C. SECURITY: Critical/High/Medium risks (credentials, injection, validation gaps, file handling), security controls
+D. OPERATIONAL RISK: Critical/High/Medium/Low risks (data corruption, crashes, performance, error recovery) + error handling maturity
+E. QUALITY SCORING: Overall metrics (0-100 scores), key findings summary by area
+F. QUALITY GATES: Evaluate pass/fail/warnings criteria, deployment recommendation, remediation roadmap
 
-B. BEST PRACTICES ASSESSMENT
-   - OmniScript API usage patterns
-   - Integration patterns (external calls, parameters, return codes)
-   - Performance patterns (loops, string ops, file I/O)
-   - Performance optimization opportunities
-   - Configuration management (externalization, secrets, environment settings)
-   - Data element usage and validation patterns
-   - OmniScript-specific integration patterns
-   - Test coverage assessment (unit, integration, error scenarios, boundaries)
+For OmniScript-specific items:
+- Deprecated API usage and migration paths
+- Integration timeout/auth handling
+- Configuration externalization
+- Data element validation patterns
 
-C. SECURITY ASSESSMENT
-   - Critical risks: hardcoded credentials, injection vulnerabilities
-   - High risks: missing validation, info disclosure, file handling
-   - Medium risks: sanitization, logging, deprecated functions
-   - Security posture summary
-
-D. OPERATIONAL RISK ASSESSMENT
-   - Critical: data corruption, crashes, unrecoverable errors
-   - High: performance issues, resource exhaustion, error recovery
-   - Medium: suboptimal patterns, minor leaks, maintainability
-   - Low/Informational: style, minor inefficiencies, opportunities
-
-E. QUALITY SCORING
-   - Overall metrics (0-100 scores with grades)
-   - Per-procedure assessments with risk breakdowns
-   - Best practice violations with specific recommendations
-   - Performance impact analysis
-   - Security posture evaluation
-
-F. QUALITY GATE CHECKS
-   - Evaluate against pass/fail criteria
-   - Determine deployment readiness
-   - Provide conditional approval requirements
-   - Generate remediation roadmap with timeline
-
-Provide specific line numbers, concrete examples, and actionable recommendations.
-Categorize all findings by severity (🔴 CRITICAL / 🟠 HIGH / 🟡 MEDIUM / 🟢 LOW / ⚪ INFO).
+Provide specific line numbers, severity levels (🔴/🟠/🟡/🟢/⚪), and actionable recommendations.
 ```
 
-### Targeted Security Assessment Prompt
+## Usage and Maintenance
 
-```
-Perform focused security assessment for [Procedure/Module Name]:
+**When to Generate**: During Phase 2.3 (error handling reference), after Phase 4 (comprehensive), pre-production (mandatory gate), periodic reviews
 
-Source Code: [Insert]
-Focus Areas: [e.g., "File handling", "External calls", "Input processing"]
+**Integration**: Link from Phase 2.3, Phase 4 master docs, and maintenance guides
 
-Analyze for:
-1. Critical security risks (hardcoded credentials, injection, path traversal, auth bypass)
-2. Input validation gaps
-3. Error information disclosure
-4. Insecure file/resource handling
-5. Access control weaknesses
+**Output Location**: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_QUALITY_ASSESSMENT.md`
 
-For each finding provide:
-- Severity (🔴/🟠/🟡)
-- Location (line numbers)
-- Exploit scenario
-- Business impact
-- Specific remediation steps
-- Effort estimate
-```
+**Update Triggers**: Significant code changes, pre-deployment, security discoveries, compliance reviews
 
-### Quality Gate Evaluation Prompt
-
-```
-Evaluate code quality gate status using the quality assessment:
-
-Quality Assessment Document: [Reference]
-
-Evaluate against criteria:
-
-PASS CRITERIA (all must be met):
-- No CRITICAL security/operational risks
-- HIGH risks have mitigation plans
-- Error handling for file I/O
-- Input validation for external data
-- No credentials/injection vulnerabilities
-
-FAIL CRITERIA (any triggers failure):
-- CRITICAL risks present
-- Hardcoded credentials
-- Injection vulnerabilities
-- Missing file error handling
-- No input validation
-- Data corruption risk
-
-OMNISCRIPT-SPECIFIC CRITERIA:
-- Deprecated APIs without migration plan
-- Missing timeout handling on integrations
-- Hardcoded configuration values
-- Missing data element validation
-- Improper integration error handling
-
-Provide:
-- Quality gate status (✅ PASS / ⚠️ PASS WITH WARNINGS / ❌ FAIL)
-- Justification with specific references
-- Deployment recommendation
-- Remediation roadmap if failed/warnings
-```
-
----
-
-## Integration with Documentation Workflow
-
-**When to Generate Quality Assessment**:
-- **During Phase 2.3**: Reference error handling analysis from this template
-- **After Phase 4**: Perform comprehensive assessment once all documentation complete
-- **Pre-Production**: Mandatory quality gate check before deployment
-- **Periodic Review**: Regular assessments for maintained code
-
-**Integration Points**:
-- **Phase 2.3 Error Handling**: Brief reference, links to Section A of this template
-- **Phase 4 Master Documentation**: Links to quality assessment in comprehensive doc
-- **Master Index**: Include link to quality assessment document
-- **Maintenance Guide**: Reference quality gates for ongoing changes
-
-**Output Location**:
-Create quality assessment document: `${OMNISCRIPT_DOCS_DIR}/[PROGRAM-NAME]_QUALITY_ASSESSMENT.md`
-
----
-
-## Maintenance and Updates
-
-**Update Triggers**:
-- After any significant code modification
-- Before production deployments
-- After security vulnerability discoveries
-- Periodic compliance reviews (quarterly/annually)
-- When quality gate criteria change
-
-**Version Control**:
-- Track assessment versions with dates
-- Link assessments to code versions/commits
-- Maintain historical trend data
-- Document remediation completion
-
----
-
-## Success Criteria
-
-✅ **Quality Assessment Complete When**:
-- [ ] All sections (A-F) thoroughly documented
-- [ ] Every critical finding has owner and timeline
-- [ ] Quality gate status determined with justification
-- [ ] Remediation roadmap created with effort estimates
-- [ ] Assessment reviewed by security team (for critical systems)
-- [ ] Assessment reviewed by operations team
-- [ ] Expert review and approval obtained
-- [ ] Assessment linked from master index and comprehensive documentation
+**Success Criteria**: All sections (A-F) documented, critical findings have owners/timelines, quality gate determined, remediation roadmap created
 
 ```
 
