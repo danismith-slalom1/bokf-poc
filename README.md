@@ -62,7 +62,34 @@ The documenter is designed to handle large OmniScript codebases and can process 
 
 ## Setup Instructions
 
-### Step 1: Environment Configuration
+### Step 1: Generate GitLab Access Token and Configure Environment
+
+#### Part A: Create Project Access Token for Documentation Repository
+
+Create a project access token for the documentation repository:
+
+1. Navigate to your documentation repository in GitLab
+   - Example: `https://gitlab.com/your-org/omniscript-documentation`
+
+2. Go to **Settings** → **Access Tokens**
+
+3. Create a new project access token:
+   - **Token name**: "OmniScript Documentation Automation"
+   - **Role**: Developer
+   - **Scopes**: Select **ALL scopes**
+   - **Expiration date**: Set as needed (or no expiration)
+
+4. Click **Create project access token**
+
+5. **Copy the generated token** - you'll need it in the next step
+
+**Important Notes:**
+- The role must be **Developer** to allow pushing branches and creating merge requests
+- Select **all scopes** to ensure the token has sufficient permissions
+- This token is specifically for the documentation repository where generated docs will be pushed
+- Store the token securely - you won't be able to see it again after creation
+
+#### Part B: Configure Environment Variables
 
 Copy the `.env.example` file to `.env` in the root of the workspace:
 
@@ -71,30 +98,17 @@ Copy the `.env.example` file to `.env` in the root of the workspace:
 cp .env.example .env
 ```
 
-Edit the `.env` file and add your credentials:
+Edit the `.env` file and add your credentials (using the token from Part A):
 
 ```bash
 # GitLab Authentication
-GITLAB_DOCS_TOKEN=your-docs-repo-token-here        # For API operations (merge requests)
+GITLAB_DOCS_TOKEN=your-docs-repo-token-here        # Token from Part A
 GITLAB_USERNAME=your.username
 GITLAB_EMAIL=your.email@company.com
 
 # Note: SSH keys (configured in Step 2) are used for git clone/push operations
 # No token needed for source repository access
 ```
-
-**How to get your GitLab Personal Access Token:**
-
-**GITLAB_DOCS_TOKEN (for API operations)**
-1. Log in to your GitLab account
-2. Go to **Settings** → **Access Tokens**
-3. Click **Add new token**
-4. Set the token name (e.g., "OmniScript Docs API")
-5. Select scopes: `api`, `read_repository`, `write_repository`
-6. Click **Create personal access token**
-7. Copy the token and add it to your `.env` file as `GITLAB_DOCS_TOKEN`
-
-**Note:** SSH keys (configured in Step 2) handle all git operations (clone, push). The token is only needed for GitLab API calls like creating merge requests.
 
 **Alternative: Set Environment Variables in Your Shell**
 
@@ -140,34 +154,7 @@ cat ~/.ssh/gitlab_ed25519.pub | pbcopy
 ssh -T git@gitlab.com
 ```
 
-### Step 3: Generate Access Token for Documentation Repository
-
-Create a project access token for the documentation repository:
-
-```bash
-# 1. Navigate to your documentation repository in GitLab
-#    Example: https://gitlab.com/your-org/omniscript-documentation
-
-# 2. Go to Settings → Access Tokens
-
-# 3. Create a new project access token:
-#    - Token name: "OmniScript Documentation Automation"
-#    - Role: Developer
-#    - Scopes: Select ALL scopes
-#    - Expiration date: Set as needed (or no expiration)
-
-# 4. Click "Create project access token"
-
-# 5. Copy the generated token and add it to your .env file as GITLAB_DOCS_TOKEN
-```
-
-**Important Notes:**
-- The role must be **Developer** to allow pushing branches and creating merge requests
-- Select **all scopes** to ensure the token has sufficient permissions
-- This token is specifically for the documentation repository where generated docs will be pushed
-- Store the token securely - you won't be able to see it again after creation
-
-### Step 4: Git Configuration
+### Step 3: Git Configuration
 
 Configure your Git identity:
 
@@ -175,23 +162,6 @@ Configure your Git identity:
 git config --global user.email "your.email@company.com"
 git config --global user.name "Your Name"
 ```
-
-### Step 4: GitHub Copilot Setup
-
-1. **Install GitHub Copilot Extension**
-   - Open VS Code
-   - Go to Extensions (⌘+Shift+X on macOS)
-   - Search for "GitHub Copilot"
-   - Install the extension
-   - Sign in with your GitHub account
-
-2. **Verify Copilot is Active**
-   - Look for the Copilot icon in the status bar (bottom right)
-   - Should show "GitHub Copilot: Active"
-
-3. **Enable Copilot Chat**
-   - Install "GitHub Copilot Chat" extension
-   - Open Copilot Chat panel (Ctrl+Cmd+I on macOS)
 
 ### Step 4: GitHub Copilot Setup
 
