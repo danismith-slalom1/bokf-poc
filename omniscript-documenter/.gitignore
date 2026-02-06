@@ -1,0 +1,20 @@
+# .env should not be committed
+.env
+
+# Temporary parser output
+*_PARSER_CONTEXT.txt
+
+# Temporary repository clones
+/tmp/source-repo*
+/tmp/omniscript-docs*
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
