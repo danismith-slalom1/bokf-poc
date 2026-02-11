@@ -1,0 +1,92 @@
+================================================================================
+OMNISCRIPT PROGRAM ANALYSIS: temp-code/GAP_NewLoanCash.txt
+================================================================================
+
+PROGRAM DOCUMENTATION:
+--------------------------------------------------------------------------------
+  NewLoanCash.txt
+  This script reads Plan Position Accounts for the last 7 calendar days, finding POOLLOAN3 position records
+  and the Secondary1Buys loaded from TRUSTTRANS.P1 and builds the necessary C1 activity for the right side (AC)
+  of the cash reconciliation.  Each record it finds, it checks UDF1 in POPP877 to see if it's value matches
+  the expected amount, if so, that record has already been updated.
+  12/21/2023 - Gary Matten - created OmniScript
+  06/27/2024 - Gary Matten - GPD-1704 - re-correcting position 92 to be a value of 2 instead of 1
+  09/25/2024 - Gary Matten - Recognize Loan Reversal Activity and Net Activity Correctly when there are BUYS and SELLS
+
+GLOBAL VARIABLES:
+--------------------------------------------------------------------------------
+  FileName (String)
+    Declared: Line 16
+    Assignments: Lines 16
+  LastBusiness (String)
+    Declared: Line 24
+    Assignments: Lines 24, 27
+  NewLoanUnits (String)
+    Declared: Line 43
+    Assignments: Lines 43
+  PriorCashApplied (String)
+    Declared: Line 36
+    Assignments: Lines 36
+  RKPlan (String)
+    Declared: Line 33
+    Assignments: Lines 33, 41
+  RunDate (String)
+    Declared: Line 21
+    Assignments: Lines 21
+  Secondary1Buys (String)
+    Declared: Line 35
+    Assignments: Lines 35, 73
+  SevenDaysAgo (String)
+    Declared: Line 23
+    Assignments: Lines 23, 26
+  TradeDate (String)
+    Declared: Line 34
+    Assignments: Lines 34, 42
+  TrustAccount (String)
+    Declared: Line 44
+    Assignments: Lines 44
+  sd080 (String)
+    Declared: Line 13
+    Assignments: Lines 13
+
+DATABASE OPERATIONS:
+--------------------------------------------------------------------------------
+  poppobj_next: Lines 32
+  poppobj_setde: Lines 54
+  poppobj_update: Lines 55
+  poppobj_view: Lines 31
+  sssaobj_next: Lines 63
+  sssaobj_view: Lines 62
+
+ROUTINES:
+--------------------------------------------------------------------------------
+  CHECK.SSSA
+    Lines: 59-75
+    Local variables: WK001
+    DB Operations: sssaobj_next, sssaobj_view
+
+CONTROL FLOW:
+--------------------------------------------------------------------------------
+  END (Line 28)
+  IF (Secondary1Buys <> 0) (Line 37)
+  END (Line 39)
+  IF (PriorCashApplied <> Secondary1Buys) and (Secondary1Buys <> 0) (Line 40)
+  END (Line 56)
+  ENDLOOP (Line 57)
+  IF (RKPlan <> '') and (TradeDate <> 0) (Line 60)
+  END (Line 67)
+  END (Line 70)
+  END (Line 71)
+  ENDLOOP (Line 72)
+  END (Line 74)
+
+BUILT-IN FUNCTION USAGE:
+--------------------------------------------------------------------------------
+  OcDate_Valid: Used on lines 22
+  OcFile1_Open: Used on lines 19
+  OcFile1_Write: Used on lines 53
+  OcShow: Used on lines 18, 29
+  OcText_Set: Used on lines 45, 46, 47, 48, 49, 50, 51, 52
+  OcTime_Current: Used on lines 17
+
+================================================================================
